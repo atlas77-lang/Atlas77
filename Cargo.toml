@@ -1,9 +1,11 @@
 [workspace]
 resolver = "1"
 members = [
+    "atlas_77",
     "atlas_frontend",
+    "atlas_hlir",
     "atlas_memory",
-    "atlas_runtime"
+    "atlas_runtime",
 ]
 
 [profile.bench]

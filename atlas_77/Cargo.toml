@@ -1,0 +1,24 @@
+[package]
+name = "atlas_77"
+version = "0.4.0-beta"
+edition = "2021"
+
+[profile.release]
+opt-level = 3
+panic = "abort"
+lto = true
+codegen-units = 1
+overflow-checks = false
+debug-assertions = false
+strip = "debuginfo"
+[profile.release.package."*"]
+opt-level = 3
+codegen-units = 1
+
+[dependencies]
+internment = "0.8.4"
+atlas_frontend = { path = "../atlas_frontend" }
+atlas_memory = { path = "../atlas_memory" }
+atlas_runtime = { path = "../atlas_runtime" }
+clap = { version = "4.4.8", features = ["derive"] }
+rand = "0.8.5"

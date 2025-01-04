@@ -19,6 +19,7 @@ fn main() {
     let args = Args::parse();
 
     run(args.run);
+
 }
 
 fn print(state: VMState) -> Result<VMData, ()> {
