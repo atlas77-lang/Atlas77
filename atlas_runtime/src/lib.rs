@@ -1,6 +1,7 @@
 pub mod value;
 pub mod visitor;
 pub mod vm_state;
+pub mod stdlib;
 use std::collections::HashMap;
 
 use crate::visitor::{Program, Visitor};
@@ -149,7 +150,20 @@ impl Visitor for Runtime {
         let lhs = self.visit_expression(&expression.left);
         let rhs = self.visit_expression(&expression.right);
         match expression.operator {
-            BinaryOperator::OpAdd => lhs + rhs,
+            BinaryOperator::OpAdd => match (lhs.tag, rhs.tag) {
+                (VMData::TAG_STR, VMData::TAG_STR) => {
+                    let s1 = self.object_map.get(lhs.as_object());
+                    let s2 = self.object_map.get(rhs.as_object());
+                    let res = self.object_map.put(Object::String(format!("{}{}", s1, s2)));
+                    match res {
+                        Ok(i) => VMData::new_string(i),
+                        Err(_) => {
+                            panic!("Out of memory for a new string");
+                        }
+                    }
+                }
+                _ => lhs + rhs,
+            },
             BinaryOperator::OpSub => lhs - rhs,
             BinaryOperator::OpMul => lhs * rhs,
             BinaryOperator::OpDiv => lhs / rhs,

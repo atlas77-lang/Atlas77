@@ -27,7 +27,7 @@ let guess_loop: (number_to_guess: int, max_attempts: int, current_attempts: int)
         end
         else do
             print("Incorrect guess.");
-            print("Reamining attemps: ");
+            print("Remaining attemps: ");
             print(max_attempts - current_attempts);
             guess_loop(number_to_guess, max_attempts, current_attempts + 1);
         end;
