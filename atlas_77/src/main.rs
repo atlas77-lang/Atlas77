@@ -1,6 +1,7 @@
 use std::{path::PathBuf, time::Instant};
 
 use atlas_frontend::parse;
+use atlas_hlir::translate;
 use atlas_memory::vm_data::VMData;
 use atlas_runtime::{visitor::Visitor, vm_state::VMState, Runtime};
 
@@ -9,7 +10,7 @@ use rand::prelude::*;
 
 #[derive(Parser)] // requires `derive` feature
 #[command(name = "Atlas 77")]
-#[command(bin_name = "atlas_77", author = "Gipson62", version, about = "Programming language made in Rust", long_about = None)]
+#[command(bin_name = "atlas_77", author = "Gipson62", version("v0.4-beta"), about = "Programming language made in Rust", long_about = None)]
 enum AtlasRuntimeCLI {
     #[command(arg_required_else_help = true)]
     Run { file_path: String },
@@ -63,17 +64,23 @@ pub(crate) fn run(path: String) {
             path_buf = current_dir.join(path_buf);
         }
     } else {
-        println!("Failed to get current directory");
+        eprintln!("Failed to get current directory");
     }
 
     let start = Instant::now();
 
     let program = parse(path_buf.to_str().unwrap()).expect("Failed to open the file");
+    #[cfg(debug_assertions)]
+    println!("{:?}", &program);
 
     let mut runtime = Runtime::new();
     runtime.add_extern_fn("print", print);
     runtime.add_extern_fn("read_int", read_int);
     runtime.add_extern_fn("random", random);
+
+    let hlir = translate(&program);
+    #[cfg(debug_assertions)]
+    println!("{:?}", &hlir);
 
     println!("{:?}", runtime.visit(&program));
 

@@ -1,3 +1,4 @@
+use internment::Intern;
 use u64 as HlirDataType;
 
 use crate::errors::HlirError;
@@ -9,13 +10,13 @@ pub struct ContextScope {
 }
 #[derive(Debug, Clone)]
 pub struct ContextVariable {
-    name: String,
+    name: Intern<String>,
     id: usize,
     data_type: HlirDataType,
     scope: ContextScope,
 }
 impl ContextVariable {
-    pub fn new(name: String, id: usize, data_type: HlirDataType, scope: ContextScope) -> ContextVariable {
+    pub fn new(name: Intern<String>, id: usize, data_type: HlirDataType, scope: ContextScope) -> ContextVariable {
         ContextVariable {
             name,
             id,
@@ -26,7 +27,7 @@ impl ContextVariable {
 }
 #[derive(Debug, Clone)]
 pub struct ContextFunction {
-    name: String,
+    name: Intern<String>,
     variables: Vec<ContextVariable>,
     id: usize,
     current_scope: ContextScope,
@@ -36,7 +37,7 @@ pub struct ContextFunction {
     next_variable: usize,
 }
 impl ContextFunction {
-    pub fn new(name: String, return_type: HlirDataType, id: usize) -> ContextFunction {
+    pub fn new(name: Intern<String>, return_type: HlirDataType, id: usize) -> ContextFunction {
         ContextFunction {
             name,
             variables: vec![],
@@ -64,23 +65,6 @@ impl HlirContext {
             functions: vec![],
             current_function: 0,
         }
-    }
-    pub fn create_function(&mut self, name: String, return_type: HlirDataType, args: Vec<(String, HlirDataType)>) -> Result<(), HlirError> {
-        if self.functions.iter().any(|f| f.name == name) {
-            return Err(HlirError::FunctionAlreadyExists(name, self.functions.len()));
-        }
-        self.functions.push(ContextFunction::new(name, return_type, self.current_function));
-        for arg in args {
-            self.create_variable(arg.0, arg.1)?;
-        }
-        self.current_function += 1;
-        Ok(())
-    }
-    pub fn get_function_id(&self, name: String) -> Result<usize, HlirError> {
-        self.functions
-            .iter()
-            .find_map(|f| if f.name == name { Some(f.id) } else { None })
-            .ok_or(HlirError::FunctionNotFound(name, 0))
     }
     pub fn create_variable(&mut self, name: String, data_type: HlirDataType) -> Result<(), HlirError> {
         for variable in self.functions[self.current_function].variables.iter() {

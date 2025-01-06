@@ -10,4 +10,4 @@ pub trait DataType {
     const FN_PTR_TYPE: u64 = 13; //FN_PTR might have to be changed because () -> int != (int) -> int for example
 }
 
-impl DataType for u64 { }
+impl DataType for u64 {}

@@ -1,7 +1,7 @@
+pub mod stdlib;
 pub mod value;
 pub mod visitor;
 pub mod vm_state;
-pub mod stdlib;
 use std::collections::HashMap;
 
 use crate::visitor::{Program, Visitor};
@@ -91,7 +91,7 @@ impl Runtime {
 impl Visitor for Runtime {
     fn visit(&mut self, program: &Program) -> VMData {
         for expr in program {
-            if let Expression::VariableDeclaration(v) = expr.as_ref() {
+            if let Expression::VariableDeclaration(v) = expr {
                 self.visit_variable_declaration(v);
             }
         }
@@ -119,6 +119,7 @@ impl Visitor for Runtime {
                 Literal::Bool(b) => VMData::new_bool(*b),
                 Literal::Float(f) => VMData::new_f64(*f),
                 Literal::Integer(i) => VMData::new_i64(*i),
+                Literal::Unit => VMData::new_unit(),
                 Literal::String(s) => {
                     let res = self.object_map.put(Object::String(s.to_string()));
                     match res {
@@ -175,7 +176,7 @@ impl Visitor for Runtime {
             BinaryOperator::OpGt => VMData::new_bool(lhs > rhs),
             BinaryOperator::OpGe => VMData::new_bool(lhs >= rhs),
             BinaryOperator::OpAnd => VMData::new_bool(lhs.as_bool() && rhs.as_bool()),
-            BinaryOperator::OpOr => VMData::new_bool(lhs.as_bool() || rhs.as_bool())
+            BinaryOperator::OpOr => VMData::new_bool(lhs.as_bool() || rhs.as_bool()),
         }
     }
     fn visit_do_expression(&mut self, do_expression: &DoExpression) -> VMData {
@@ -220,8 +221,7 @@ impl Visitor for Runtime {
                     vm_state::VMState::new(&mut self.stack, &mut self.object_map, &self.consts);
                 let res = f.1(vm_state).unwrap();
                 res
-            }
-            else {
+            } else {
                 if let Some(v) = self.find_variable(function_call.name) {
                     if let VMData::TAG_FN_PTR = v.tag {
                         let func = self.func_map[v.as_fn_ptr()].clone();
@@ -243,7 +243,10 @@ impl Visitor for Runtime {
         }
     }
 
-    fn visit_field_access_expression(&mut self, field_access_expression: &FieldAccessExpression) -> VMData {
+    fn visit_field_access_expression(
+        &mut self,
+        field_access_expression: &FieldAccessExpression,
+    ) -> VMData {
         let obj_ptr = self.find_variable(field_access_expression.name).unwrap();
         let obj = self.object_map.get(obj_ptr.as_object());
         match obj {
@@ -252,7 +255,10 @@ impl Visitor for Runtime {
         }
     }
 
-    fn visit_new_object_expression(&mut self, new_object_expression: &NewObjectExpression) -> VMData {
+    fn visit_new_object_expression(
+        &mut self,
+        new_object_expression: &NewObjectExpression,
+    ) -> VMData {
         let mut fields = Vec::new();
         for expr in &new_object_expression.fields {
             fields.push(self.visit_expression(expr));
@@ -320,7 +326,7 @@ impl Visitor for Runtime {
                     VMData::TAG_I64 => VMData::new_i64(-val.as_i64()),
                     VMData::TAG_FLOAT => VMData::new_f64(-val.as_f64()),
                     _ => panic!("Illegal operation"),
-                }
+                },
             }
         } else {
             val

@@ -1,9 +1,11 @@
 use atlas_frontend::parser::ast::{
-    BinaryExpression, DoExpression, Expression, FieldAccessExpression, FunctionCall, FunctionExpression, IdentifierNode, IfElseNode, IndexExpression, MatchExpression, NewObjectExpression, UnaryExpression, VariableDeclaration
+    BinaryExpression, DoExpression, Expression, FieldAccessExpression, FunctionCall,
+    FunctionExpression, IdentifierNode, IfElseNode, IndexExpression, MatchExpression,
+    NewObjectExpression, UnaryExpression, VariableDeclaration,
 };
 use atlas_memory::vm_data::VMData;
 
-pub type Program = Vec<Box<Expression>>;
+pub type Program = Vec<Expression>;
 
 pub trait Visitor {
     // Entry point
@@ -16,8 +18,14 @@ pub trait Visitor {
     fn visit_function_expression(&mut self, function_expression: &FunctionExpression) -> VMData;
     fn visit_function_call(&mut self, function_call: &FunctionCall) -> VMData;
     fn visit_index_expression(&mut self, index_expression: &IndexExpression) -> VMData;
-    fn visit_field_access_expression(&mut self, field_access_expression: &FieldAccessExpression) -> VMData;
-    fn visit_new_object_expression(&mut self, new_object_expression: &NewObjectExpression) -> VMData;
+    fn visit_field_access_expression(
+        &mut self,
+        field_access_expression: &FieldAccessExpression,
+    ) -> VMData;
+    fn visit_new_object_expression(
+        &mut self,
+        new_object_expression: &NewObjectExpression,
+    ) -> VMData;
 
     // Variables and Identifiers
     fn visit_variable_declaration(&mut self, variable_declaration: &VariableDeclaration) -> VMData;

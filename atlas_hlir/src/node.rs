@@ -11,6 +11,7 @@ pub type IdentID = u64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum HlirLiteral {
+    Unit,
     Int(i64),
     Float(f64),
     UInt(u64),
@@ -25,6 +26,7 @@ impl fmt::Display for HlirLiteral {
             Self::Int(i) => write!(f, "{}", i),
             Self::Float(fl) => write!(f, "{}", fl),
             Self::UInt(u) => write!(f, "{}", u),
+            Self::Unit => write!(f, "()"),
             Self::String(s) => write!(f, "{}", s),
             Self::Bool(b) => write!(f, "{}", b),
             Self::List(l) => write!(
@@ -66,7 +68,6 @@ impl fmt::Display for HlirStatement {
     }
 }
 
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct HlirStructDecl {
     pub name: IdentID,
@@ -99,8 +100,7 @@ impl fmt::Display for HlirStructDecl {
 pub struct HlirVarDecl {
     pub name: IdentID,
     pub t: TypeID,
-    pub mutable: bool, //unused so might be removed, everything is immutable
-    pub value: Option<Box<HlirExpr>>,
+    pub value: Box<HlirExpr>,
     pub span: Span,
 }
 impl Spanned for HlirVarDecl {
@@ -111,30 +111,19 @@ impl Spanned for HlirVarDecl {
 
 impl fmt::Display for HlirVarDecl {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.value.is_some() {
-            write!(
-                f,
-                "let {}{}: {} = {}\n",
-                if self.mutable { "mut " } else { "" },
-                self.name,
-                self.t,
-                self.clone().value.unwrap()
-            )
-        } else {
-            write!(
-                f,
-                "let {}{}: {}\n",
-                if self.mutable { "mut " } else { "" },
-                self.name,
-                self.t
-            )
-        }
+        write!(
+            f,
+            "let {}: {} = {}\n",
+            self.name,
+            self.t,
+            self.clone().value
+        )
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HlirFunExpr {
-    pub args: Vec<(Intern<String>, TypeID)>,
+    pub args: Vec<(IdentID, TypeID)>,
     pub body: Box<HlirExpr>,
     pub span: Span,
 }
@@ -234,14 +223,14 @@ impl From<&BinaryOperator> for HlirBinOp {
             BinaryOperator::OpMul => HlirBinOp::OpMul,
             BinaryOperator::OpDiv => HlirBinOp::OpDiv,
             BinaryOperator::OpMod => HlirBinOp::OpMod,
-            BinaryOperator::OpEq  => HlirBinOp::OpEq,
-            BinaryOperator::OpNe  => HlirBinOp::OpNe,
-            BinaryOperator::OpLt  => HlirBinOp::OpLt,
-            BinaryOperator::OpLe  => HlirBinOp::OpLe,
-            BinaryOperator::OpGt  => HlirBinOp::OpGt,
-            BinaryOperator::OpGe  => HlirBinOp::OpGe,
+            BinaryOperator::OpEq => HlirBinOp::OpEq,
+            BinaryOperator::OpNe => HlirBinOp::OpNe,
+            BinaryOperator::OpLt => HlirBinOp::OpLt,
+            BinaryOperator::OpLe => HlirBinOp::OpLe,
+            BinaryOperator::OpGt => HlirBinOp::OpGt,
+            BinaryOperator::OpGe => HlirBinOp::OpGe,
             BinaryOperator::OpAnd => HlirBinOp::OpAnd,
-            BinaryOperator::OpOr  => HlirBinOp::OpOr,
+            BinaryOperator::OpOr => HlirBinOp::OpOr,
         }
     }
 }
@@ -396,19 +385,19 @@ impl fmt::Display for HlirDoExpr {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MatchArm {
+pub struct HlirMatchArm {
     pub pattern: Box<HlirExpr>,
     pub body: Box<HlirExpr>,
     pub span: Span,
 }
 
-impl Spanned for MatchArm {
+impl Spanned for HlirMatchArm {
     fn span(&self) -> Span {
         self.span
     }
 }
 
-impl fmt::Display for MatchArm {
+impl fmt::Display for HlirMatchArm {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} => {}", self.pattern, self.body)
     }
@@ -417,7 +406,7 @@ impl fmt::Display for MatchArm {
 #[derive(Debug, Clone, PartialEq)]
 pub struct HlirMatchExpr {
     pub expr: Box<HlirExpr>,
-    pub arms: Vec<MatchArm>,
+    pub arms: Vec<HlirMatchArm>,
     pub default: Option<Box<HlirExpr>>,
     pub span: Span,
 }

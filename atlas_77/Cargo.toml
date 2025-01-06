@@ -20,5 +20,6 @@ internment = "0.8.4"
 atlas_frontend = { path = "../atlas_frontend" }
 atlas_memory = { path = "../atlas_memory" }
 atlas_runtime = { path = "../atlas_runtime" }
+atlas_hlir = { path = "../atlas_hlir" }
 clap = { version = "4.4.8", features = ["derive"] }
 rand = "0.8.5"

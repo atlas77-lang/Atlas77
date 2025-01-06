@@ -46,9 +46,9 @@ lexer_builder! {
     },
     Keyword {
         // Keywords
-        "then", "if", "else", "struct", "true", "false", "let", "import", "return", "enum", "List", "end", "do", "match", "new", "extern", "as", 
+        "then", "if", "else", "struct", "true", "false", "let", "import", "return", "enum", "List", "end", "do", "match", "new", "extern", "as",
         // Types
-        "int", "uint", "float", "string", "List", "char",
+        "int", "uint", "float", "string", "List", "char", "unit",
     },
     Number {
         trailing {

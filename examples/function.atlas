@@ -4,5 +4,6 @@ let main: () -> int = do
         | 0 ~> 0,
         | 1 ~> 1,
         \ _ ~> fib(a - 1) + fib(a - 2);
-    fib(10);
+    let anonymous_function: (a: int) -> int = fib;
+    anonymous_function(10);
 end

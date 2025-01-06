@@ -29,7 +29,7 @@ pub fn min(state: VMState) -> VMData {
 pub fn max(state: VMState) -> VMData {
     let v1 = state.stack.pop().unwrap().as_i64();
     let v2 = state.stack.pop().unwrap().as_i64();
-    VMData::new_i64(std::cmp::max(v1, v2)) 
+    VMData::new_i64(std::cmp::max(v1, v2))
 }
 //round(x: float) -> int
 pub fn round(state: VMState) -> VMData {
