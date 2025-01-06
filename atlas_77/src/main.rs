@@ -22,15 +22,24 @@ fn main() {
     run(file_path);
 }
 
+#[cfg(not(debug_assertions))]
 fn print(state: VMState) -> Result<VMData, ()> {
-    let val = state.stack.last().unwrap();
+    let val = state.stack.pop().unwrap();
     match val.tag {
-        VMData::TAG_BOOL
-        | VMData::TAG_CHAR
-        | VMData::TAG_FLOAT
-        | VMData::TAG_I64
-        | VMData::TAG_U64 => {
-            println!("{}", val);
+        VMData::TAG_BOOL => {
+            println!("{}", val.as_bool());
+        }
+        VMData::TAG_CHAR => {
+            println!("{}", val.as_char());
+        }
+        VMData::TAG_FLOAT => {
+            println!("{}", val.as_f64());
+        }
+        VMData::TAG_I64 => {
+            println!("{}", val.as_i64());
+        }
+        VMData::TAG_U64 => {
+            println!("{}", val.as_u64());
         }
         _ => {
             println!("{}", state.object_map.get(val.as_object()));
@@ -38,7 +47,21 @@ fn print(state: VMState) -> Result<VMData, ()> {
     }
     Ok(VMData::new_unit())
 }
-
+#[cfg(debug_assertions)]
+fn print(state: VMState) -> Result<VMData, ()> {
+    let val = state.stack.pop().unwrap();
+    match val.tag {
+        VMData::TAG_BOOL
+        | VMData::TAG_CHAR
+        | VMData::TAG_FLOAT
+        | VMData::TAG_I64
+        | VMData::TAG_U64 => println!("{}", val),
+        _ => {
+            println!("Object: {}", state.object_map.get(val.as_object()));
+        }
+    }
+    Ok(VMData::new_unit())
+}
 fn read_int(_state: VMState) -> Result<VMData, ()> {
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
@@ -67,8 +90,6 @@ pub(crate) fn run(path: String) {
         eprintln!("Failed to get current directory");
     }
 
-    let start = Instant::now();
-
     let program = parse(path_buf.to_str().unwrap()).expect("Failed to open the file");
     #[cfg(debug_assertions)]
     println!("{:?}", &program);
@@ -82,7 +103,8 @@ pub(crate) fn run(path: String) {
     #[cfg(debug_assertions)]
     println!("{:?}", &hlir);
 
-    println!("{:?}", runtime.visit(&program));
+    let start = Instant::now();
+    println!("{}", runtime.visit(&program));
 
     let end = Instant::now();
     println!("Elapsed time: {:?}", (end - start));

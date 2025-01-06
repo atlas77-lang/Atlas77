@@ -234,10 +234,7 @@ impl HlirBuilder {
         let expr = self.translate_expr(*un_expr.expression)?;
         Ok(HlirUnary {
             expression: Box::new(expr),
-            operator: match un_expr.operator {
-                Some(op) => Some((&op).into()),
-                None => None,
-            },
+            operator: un_expr.operator.map(|op| (&op).into()),
             span: un_expr.span,
         })
     }

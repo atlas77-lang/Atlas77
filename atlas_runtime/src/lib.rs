@@ -1,3 +1,5 @@
+//TODO: find a way to avoid all the cloning
+
 pub mod stdlib;
 pub mod value;
 pub mod visitor;
@@ -31,22 +33,23 @@ impl VarMap {
 }
 pub type CallBack = fn(vm_state::VMState) -> Result<VMData, ()>;
 
-pub struct Runtime {
+pub struct Runtime<'run> {
     pub varmap: Vec<VarMap>, //usize is the parent scope
     pub stack: Stack,
-    pub func_map: Vec<(String, FunctionExpression)>,
+    pub func_map: Vec<&'run FunctionExpression>,
     pub extern_fn: Vec<(String, CallBack)>,
     pub consts: HashMap<Intern<String>, VMData>,
     pub object_map: Memory,
+    pub main_fn: usize,
 }
 
-impl Default for Runtime {
+impl Default for Runtime<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Runtime {
+impl Runtime<'_> {
     pub fn new() -> Self {
         Runtime {
             varmap: vec![VarMap::new()],
@@ -66,6 +69,7 @@ impl Runtime {
                 h
             },
             object_map: Memory::new(4096),
+            main_fn: 0,
         }
     }
     pub fn add_extern_fn(&mut self, name: &str, f: CallBack) {
@@ -88,20 +92,17 @@ impl Runtime {
     }
 }
 
-impl Visitor for Runtime {
-    fn visit(&mut self, program: &Program) -> VMData {
+impl<'run> Visitor<'run> for Runtime<'run> {
+    fn visit(&mut self, program: &'run Program) -> VMData {
         for expr in program {
             if let Expression::VariableDeclaration(v) = expr {
-                self.visit_variable_declaration(v);
+                self.visit_variable_declaration(&v);
             }
         }
 
-        if let Some(func) = self.func_map.iter().find(|(k, _)| k == "main") {
-            return self.visit_function_expression(&func.1.clone());
-        }
-        VMData::new_unit()
+        return self.visit_function_expression(&self.func_map[self.main_fn]);
     }
-    fn visit_expression(&mut self, expression: &Expression) -> VMData {
+    fn visit_expression(&mut self, expression: &'run Expression) -> VMData {
         match expression {
             Expression::BinaryExpression(e) => self.visit_binary_expression(e),
             Expression::DoExpression(e) => self.visit_do_expression(e),
@@ -147,7 +148,7 @@ impl Visitor for Runtime {
             _ => unimplemented!("Expression not implemented"),
         }
     }
-    fn visit_binary_expression(&mut self, expression: &BinaryExpression) -> VMData {
+    fn visit_binary_expression(&mut self, expression: &'run BinaryExpression) -> VMData {
         let lhs = self.visit_expression(&expression.left);
         let rhs = self.visit_expression(&expression.right);
         match expression.operator {
@@ -179,34 +180,36 @@ impl Visitor for Runtime {
             BinaryOperator::OpOr => VMData::new_bool(lhs.as_bool() || rhs.as_bool()),
         }
     }
-    fn visit_do_expression(&mut self, do_expression: &DoExpression) -> VMData {
+    fn visit_do_expression(&mut self, do_expression: &'run DoExpression) -> VMData {
         let mut res = VMData::new_unit();
         for expr in &do_expression.body {
             res = self.visit_expression(expr);
         }
         res
     }
-    fn visit_function_call(&mut self, function_call: &FunctionCall) -> VMData {
-        let func = self
-            .func_map
-            .iter()
-            .find(|(k, _)| k == function_call.name.as_str())
-            .cloned();
-        if let Some(f) = func {
+    fn visit_function_call(&mut self, function_call: &'run FunctionCall) -> VMData {
+        let fn_ptr = self.find_variable(function_call.name);
+        if let Some(v) = fn_ptr {
+            if v.tag != VMData::TAG_FN_PTR {
+                //All the panics are temporary, will be replaced with proper error reporting
+                panic!("You can't call on type {:?}", v);
+            }
+            let func = self.func_map[v.as_fn_ptr()];
             let mut args = Vec::new();
             for arg in &function_call.args {
                 args.push(self.visit_expression(arg));
             }
             let mut new_varmap = VarMap::new();
-            for (i, arg) in f.1.args.iter().enumerate() {
+            for (i, arg) in func.args.iter().enumerate() {
                 new_varmap.insert(arg.0, args[i]);
             }
             self.varmap.push(new_varmap);
-            let res = self.visit_expression(&f.1.body);
+            let res = self.visit_expression(&func.body);
             self.varmap.pop();
-            res
+            return res;
+            
         } else {
-            let func = self
+            let func = self 
                 .extern_fn
                 .iter()
                 .find(|f| f.0 == function_call.name.as_str())
@@ -214,7 +217,7 @@ impl Visitor for Runtime {
             if let Some(f) = func {
                 let mut args = Vec::new();
                 for arg in &function_call.args {
-                    args.push(self.visit_expression(arg));
+                    args.push(self.visit_expression(&arg));
                 }
                 args.iter().for_each(|arg| self.stack.push(*arg));
                 let vm_state =
@@ -222,30 +225,14 @@ impl Visitor for Runtime {
                 let res = f.1(vm_state).unwrap();
                 res
             } else {
-                if let Some(v) = self.find_variable(function_call.name) {
-                    if let VMData::TAG_FN_PTR = v.tag {
-                        let func = self.func_map[v.as_fn_ptr()].clone();
-                        let mut new_varmap = VarMap::new();
-                        for (i, arg) in func.1.args.iter().enumerate() {
-                            new_varmap.insert(arg.0, self.visit_expression(&function_call.args[i]));
-                        }
-                        self.varmap.push(new_varmap);
-                        let res = self.visit_expression(&func.1.body);
-                        self.varmap.pop();
-                        res
-                    } else {
-                        panic!("You can't call on type {:?}", v);
-                    }
-                } else {
-                    panic!("Function {} not found", function_call.name);
-                }
+                panic!("Function {} not found", function_call.name);
             }
         }
     }
 
     fn visit_field_access_expression(
         &mut self,
-        field_access_expression: &FieldAccessExpression,
+        field_access_expression: &'run FieldAccessExpression,
     ) -> VMData {
         let obj_ptr = self.find_variable(field_access_expression.name).unwrap();
         let obj = self.object_map.get(obj_ptr.as_object());
@@ -257,7 +244,7 @@ impl Visitor for Runtime {
 
     fn visit_new_object_expression(
         &mut self,
-        new_object_expression: &NewObjectExpression,
+        new_object_expression: &'run NewObjectExpression,
     ) -> VMData {
         let mut fields = Vec::new();
         for expr in &new_object_expression.fields {
@@ -272,18 +259,18 @@ impl Visitor for Runtime {
         }
     }
 
-    fn visit_function_expression(&mut self, function_expression: &FunctionExpression) -> VMData {
+    fn visit_function_expression(&mut self, function_expression: &'run FunctionExpression) -> VMData {
         self.visit_expression(&function_expression.body)
     }
 
-    fn visit_identifier(&mut self, identifier: &IdentifierNode) -> VMData {
+    fn visit_identifier(&mut self, identifier: &'run IdentifierNode) -> VMData {
         if let Some(v) = self.find_variable(identifier.name) {
             *v
         } else {
             panic!("Variable {} not found", identifier.name);
         }
     }
-    fn visit_if_else_node(&mut self, if_else_node: &IfElseNode) -> VMData {
+    fn visit_if_else_node(&mut self, if_else_node: &'run IfElseNode) -> VMData {
         if self.visit_expression(&if_else_node.condition).as_bool() {
             self.visit_expression(&if_else_node.if_body)
         } else if let Some(else_body) = &if_else_node.else_body {
@@ -292,7 +279,7 @@ impl Visitor for Runtime {
             VMData::new_unit()
         }
     }
-    fn visit_index_expression(&mut self, index_expression: &IndexExpression) -> VMData {
+    fn visit_index_expression(&mut self, index_expression: &'run IndexExpression) -> VMData {
         let list = *self.find_variable(index_expression.name).unwrap();
         let index = self.visit_expression(&index_expression.index);
         if list.tag > 256 {
@@ -305,7 +292,7 @@ impl Visitor for Runtime {
             panic!("Not a list");
         }
     }
-    fn visit_match_expression(&mut self, match_expression: &MatchExpression) -> VMData {
+    fn visit_match_expression(&mut self, match_expression: &'run MatchExpression) -> VMData {
         let expr = self.visit_expression(&match_expression.expr);
         for arm in &match_expression.arms {
             if self.visit_expression(&arm.pattern) == expr {
@@ -317,7 +304,7 @@ impl Visitor for Runtime {
         }
         panic!("No match found");
     }
-    fn visit_unary_expression(&mut self, expression: &UnaryExpression) -> VMData {
+    fn visit_unary_expression(&mut self, expression: &'run UnaryExpression) -> VMData {
         let val = self.visit_expression(&expression.expression);
         if let Some(op) = &expression.operator {
             match op {
@@ -332,13 +319,16 @@ impl Visitor for Runtime {
             val
         }
     }
-    fn visit_variable_declaration(&mut self, variable_declaration: &VariableDeclaration) -> VMData {
+    fn visit_variable_declaration(&mut self, variable_declaration: &'run VariableDeclaration) -> VMData {
         let mut val = VMData::new_unit();
-        if let Some(v) = variable_declaration.value.clone() {
+        if let Some(v) = &variable_declaration.value {
             match v.as_ref() {
                 Expression::FunctionExpression(f) => {
-                    self.func_map
-                        .push((variable_declaration.name.to_string(), f.clone()));
+                    if variable_declaration.name.as_str() == "main" {
+                        self.main_fn = self.func_map.len();
+                    }
+                    self.varmap.last_mut().unwrap().insert(variable_declaration.name, VMData::new_fn_ptr(self.func_map.len()));
+                    self.func_map.push(&f);
                 }
                 _ => {
                     val = self.visit_expression(&v);
