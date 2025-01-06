@@ -8,8 +8,8 @@ use clap::{command, Parser};
 use rand::prelude::*;
 
 #[derive(Parser)] // requires `derive` feature
-#[command(name = "Atlas 77 Runtime")]
-#[command(bin_name = "atlas_runtime", author = "Gipson62", version, about = "Programming language made in Rust", long_about = None)]
+#[command(name = "Atlas 77")]
+#[command(bin_name = "atlas_77", author = "Gipson62", version, about = "Programming language made in Rust", long_about = None)]
 enum AtlasRuntimeCLI {
     #[command(arg_required_else_help = true)]
     Run { file_path: String },
