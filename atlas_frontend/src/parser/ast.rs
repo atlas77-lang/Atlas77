@@ -147,18 +147,18 @@ impl Spanned for VariableDeclaration {
 impl fmt::Display for VariableDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.value.is_some() {
-            write!(
+            writeln!(
                 f,
-                "let {}{}: {} = {}\n",
+                "let {}{}: {} = {}",
                 if self.mutable { "mut " } else { "" },
                 self.name,
                 self.t,
                 self.clone().value.unwrap()
             )
         } else {
-            write!(
+            writeln!(
                 f,
-                "let {}{}: {}\n",
+                "let {}{}: {}",
                 if self.mutable { "mut " } else { "" },
                 self.name,
                 self.t

@@ -111,9 +111,9 @@ impl Spanned for HlirVarDecl {
 
 impl fmt::Display for HlirVarDecl {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
+        writeln!(
             f,
-            "let {}: {} = {}\n",
+            "let {}: {} = {}",
             self.name,
             self.t,
             self.clone().value

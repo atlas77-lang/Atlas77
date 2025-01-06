@@ -28,7 +28,7 @@ pub struct SimpleParserV1 {
 impl SimpleParserV1 {
     pub fn with_file_path(&mut self, file_path: PathBuf) -> Result<(), std::io::Error> {
         self.file_path = file_path;
-        return Ok(());
+        Ok(())
     }
 
     pub fn with_tokens(&mut self, tokens: Vec<Token>) {
@@ -88,7 +88,7 @@ impl SimpleParserV1 {
                 while self.current().kind() != RParen {
                     let mut arg: (Intern<String>, Type) =
                         (Intern::new(String::default()), Type::Unit);
-                    match self.advance().kind().clone() {
+                    match self.advance().kind() {
                         TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => {
                             arg.0 = s;
                         }
@@ -109,14 +109,14 @@ impl SimpleParserV1 {
                 self.expect(RArrow)?;
                 let ret = self.parse_type()?;
 
-                return Ok(Box::new(Type::Function(args, ret)));
+                Ok(Box::new(Type::Function(args, ret)))
             }
             TokenKind::Keyword(kw) => match kw.as_str() {
                 "List" => {
                     self.expect(LBracket)?;
                     let t = self.parse_type()?;
                     self.expect(RBracket)?;
-                    return Ok(Box::new(Type::List(t)));
+                    Ok(Box::new(Type::List(t)))
                 }
                 "Map" => {
                     self.expect(LBracket)?;
@@ -126,15 +126,15 @@ impl SimpleParserV1 {
                     self.expect(RBracket)?;
                     Ok(Box::new(Type::Map(k, v)))
                 }
-                "int" => return Ok(Box::new(Type::Integer)),
-                "float" => return Ok(Box::new(Type::Float)),
-                "string" => return Ok(Box::new(Type::String)),
-                "bool" => return Ok(Box::new(Type::Bool)),
-                "unit" => return Ok(Box::new(Type::Unit)),
-                _ => return Ok(Box::new(Type::NonPrimitive(kw))),
+                "int" => Ok(Box::new(Type::Integer)),
+                "float" => Ok(Box::new(Type::Float)),
+                "string" => Ok(Box::new(Type::String)),
+                "bool" => Ok(Box::new(Type::Bool)),
+                "unit" => Ok(Box::new(Type::Unit)),
+                _ => Ok(Box::new(Type::NonPrimitive(kw))),
             },
             TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => {
-                return Ok(Box::new(Type::NonPrimitive(s)))
+                Ok(Box::new(Type::NonPrimitive(s)))
             }
             _ => {
                 eprintln!("Unexpected token: {:?}", tok.kind());
@@ -221,7 +221,7 @@ impl SimpleParserV1 {
 
     fn parse_variable_declaration(&mut self) -> Result<VariableDeclaration, ParseError> {
         let start_pos = self.current().span();
-        let name = match self.advance().kind().clone() {
+        let name = match self.advance().kind() {
             TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => s,
             _ => unreachable!("Unexpected token: {:?}", self.current().kind()),
         };
@@ -378,7 +378,7 @@ impl SimpleParserV1 {
 
     fn parse_primary(&mut self) -> Result<Box<Expression>, ParseError> {
         let start_pos = self.current().span();
-        match self.current().kind().clone() {
+        match self.current().kind() {
             TokenKind::Literal(crate::lexer::Literal::Float(f)) => {
                 self.advance();
                 Ok(Box::new(Expression::Literal(ast::Literal::Float(f))))

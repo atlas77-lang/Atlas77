@@ -15,6 +15,5 @@ pub fn parse(path: &str) -> Result<AbstractSyntaxTree, ParseError> {
         .unwrap();
     let mut parser = parser::SimpleParserV1::new();
     parser.with_tokens(tokens);
-    let program = parser.parse();
-    return program;
+    parser.parse()
 }

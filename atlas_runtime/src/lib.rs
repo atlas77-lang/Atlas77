@@ -13,10 +13,11 @@ use atlas_memory::stack::Stack;
 use atlas_memory::vm_data::VMData;
 use internment::Intern;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct VarMap {
     pub map: HashMap<Intern<String>, VMData>,
 }
+
 impl VarMap {
     pub fn new() -> Self {
         VarMap {
@@ -82,12 +83,10 @@ impl Runtime<'_> {
         }
         if let Some(v) = self.varmap.last().unwrap().get(&name) {
             Some(v)
+        } else if let Some(v) = self.varmap[0].get(&name) {
+            Some(v)
         } else {
-            if let Some(v) = self.varmap[0].get(&name) {
-                Some(v)
-            } else {
-                None
-            }
+            None
         }
     }
 }
@@ -96,11 +95,11 @@ impl<'run> Visitor<'run> for Runtime<'run> {
     fn visit(&mut self, program: &'run Program) -> VMData {
         for expr in program {
             if let Expression::VariableDeclaration(v) = expr {
-                self.visit_variable_declaration(&v);
+                self.visit_variable_declaration(v);
             }
         }
 
-        return self.visit_function_expression(&self.func_map[self.main_fn]);
+        self.visit_function_expression(self.func_map[self.main_fn])
     }
     fn visit_expression(&mut self, expression: &'run Expression) -> VMData {
         match expression {
@@ -206,7 +205,7 @@ impl<'run> Visitor<'run> for Runtime<'run> {
             self.varmap.push(new_varmap);
             let res = self.visit_expression(&func.body);
             self.varmap.pop();
-            return res;
+            res
             
         } else {
             let func = self 
@@ -217,13 +216,12 @@ impl<'run> Visitor<'run> for Runtime<'run> {
             if let Some(f) = func {
                 let mut args = Vec::new();
                 for arg in &function_call.args {
-                    args.push(self.visit_expression(&arg));
+                    args.push(self.visit_expression(arg));
                 }
                 args.iter().for_each(|arg| self.stack.push(*arg));
                 let vm_state =
                     vm_state::VMState::new(&mut self.stack, &mut self.object_map, &self.consts);
-                let res = f.1(vm_state).unwrap();
-                res
+                f.1(vm_state).unwrap()
             } else {
                 panic!("Function {} not found", function_call.name);
             }
@@ -328,10 +326,10 @@ impl<'run> Visitor<'run> for Runtime<'run> {
                         self.main_fn = self.func_map.len();
                     }
                     self.varmap.last_mut().unwrap().insert(variable_declaration.name, VMData::new_fn_ptr(self.func_map.len()));
-                    self.func_map.push(&f);
+                    self.func_map.push(f);
                 }
                 _ => {
-                    val = self.visit_expression(&v);
+                    val = self.visit_expression(v);
                     self.varmap
                         .last_mut()
                         .unwrap()
