@@ -4,21 +4,21 @@ use atlas_frontend::parse;
 use atlas_memory::vm_data::VMData;
 use atlas_runtime::{visitor::Visitor, vm_state::VMState, Runtime};
 
-use clap::Parser as ClapParser;
+use clap::{command, Parser};
 use rand::prelude::*;
 
-#[derive(ClapParser, Debug)]
-#[clap(author = "Gipson62", version, about = "Programming language made in Rust", long_about = None)]
-struct Args {
-    /// Run you program at the given <PATH>
-    #[arg(short, long, value_name = "PATH")]
-    run: String,
+#[derive(Parser)] // requires `derive` feature
+#[command(name = "Atlas 77 Runtime")]
+#[command(bin_name = "atlas_runtime", author = "Gipson62", version, about = "Programming language made in Rust", long_about = None)]
+enum AtlasRuntimeCLI {
+    #[command(arg_required_else_help = true)]
+    Run { file_path: String },
 }
 
 fn main() {
-    let args = Args::parse();
+    let AtlasRuntimeCLI::Run { file_path } = AtlasRuntimeCLI::parse();
 
-    run(args.run);
+    run(file_path);
 }
 
 fn print(state: VMState) -> Result<VMData, ()> {
