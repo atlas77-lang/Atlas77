@@ -1,6 +1,6 @@
 [package]
 name = "atlas_frontend"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2021"
 
 [profile.release]
@@ -16,6 +16,6 @@ opt-level = 3
 codegen-units = 1
 
 [dependencies]
-atlas-core = { git = "https://github.com/RedGear-Studio/Atlas-core"}
+atlas-core = { git = "https://github.com/RedGear-Studio/Atlas-core", branch = "main" }
 internment = "0.8.4"
-atlas_memory = { path = "../atlas_memory" }
+atlas_memory = { path = "../atlas_memory", version = "*" }

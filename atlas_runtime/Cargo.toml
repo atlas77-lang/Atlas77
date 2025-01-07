@@ -1,6 +1,6 @@
 [package]
 name = "atlas_runtime"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2021"
 
 [profile.release]
@@ -17,7 +17,7 @@ codegen-units = 1
 
 [dependencies]
 internment = "0.8.4"
-atlas_frontend = { path = "../atlas_frontend" }
-atlas_memory = { path = "../atlas_memory" }
+atlas_frontend = { path = "../atlas_frontend", version = "*"}
+atlas_memory = { path = "../atlas_memory", version = "*"}
 clap = { version = "4.4.8", features = ["derive"] }
 rand = "0.8.5"

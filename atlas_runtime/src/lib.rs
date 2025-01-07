@@ -1,5 +1,4 @@
-//TODO: find a way to avoid all the cloning
-
+pub mod errors;
 pub mod stdlib;
 pub mod value;
 pub mod visitor;
@@ -206,9 +205,8 @@ impl<'run> Visitor<'run> for Runtime<'run> {
             let res = self.visit_expression(&func.body);
             self.varmap.pop();
             res
-            
         } else {
-            let func = self 
+            let func = self
                 .extern_fn
                 .iter()
                 .find(|f| f.0 == function_call.name.as_str())
@@ -257,7 +255,10 @@ impl<'run> Visitor<'run> for Runtime<'run> {
         }
     }
 
-    fn visit_function_expression(&mut self, function_expression: &'run FunctionExpression) -> VMData {
+    fn visit_function_expression(
+        &mut self,
+        function_expression: &'run FunctionExpression,
+    ) -> VMData {
         self.visit_expression(&function_expression.body)
     }
 
@@ -317,7 +318,10 @@ impl<'run> Visitor<'run> for Runtime<'run> {
             val
         }
     }
-    fn visit_variable_declaration(&mut self, variable_declaration: &'run VariableDeclaration) -> VMData {
+    fn visit_variable_declaration(
+        &mut self,
+        variable_declaration: &'run VariableDeclaration,
+    ) -> VMData {
         let mut val = VMData::new_unit();
         if let Some(v) = &variable_declaration.value {
             match v.as_ref() {
@@ -325,7 +329,10 @@ impl<'run> Visitor<'run> for Runtime<'run> {
                     if variable_declaration.name.as_str() == "main" {
                         self.main_fn = self.func_map.len();
                     }
-                    self.varmap.last_mut().unwrap().insert(variable_declaration.name, VMData::new_fn_ptr(self.func_map.len()));
+                    self.varmap.last_mut().unwrap().insert(
+                        variable_declaration.name,
+                        VMData::new_fn_ptr(self.func_map.len()),
+                    );
                     self.func_map.push(f);
                 }
                 _ => {

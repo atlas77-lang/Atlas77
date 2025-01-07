@@ -7,6 +7,7 @@ use atlas_memory::vm_data::VMData;
 
 pub type Program = Vec<Expression>;
 
+//TODO: visit() should return a Result<VMData, crate::errors::RuntimeError>
 pub trait Visitor<'visitor> {
     // Entry point
     fn visit(&mut self, program: &'visitor Program) -> VMData;
@@ -15,7 +16,10 @@ pub trait Visitor<'visitor> {
     fn visit_expression(&mut self, expression: &'visitor Expression) -> VMData;
     fn visit_binary_expression(&mut self, expression: &'visitor BinaryExpression) -> VMData;
     fn visit_unary_expression(&mut self, expression: &'visitor UnaryExpression) -> VMData;
-    fn visit_function_expression(&mut self, function_expression: &'visitor FunctionExpression) -> VMData;
+    fn visit_function_expression(
+        &mut self,
+        function_expression: &'visitor FunctionExpression,
+    ) -> VMData;
     fn visit_function_call(&mut self, function_call: &'visitor FunctionCall) -> VMData;
     fn visit_index_expression(&mut self, index_expression: &'visitor IndexExpression) -> VMData;
     fn visit_field_access_expression(
@@ -28,7 +32,10 @@ pub trait Visitor<'visitor> {
     ) -> VMData;
 
     // Variables and Identifiers
-    fn visit_variable_declaration(&mut self, variable_declaration: &'visitor VariableDeclaration) -> VMData;
+    fn visit_variable_declaration(
+        &mut self,
+        variable_declaration: &'visitor VariableDeclaration,
+    ) -> VMData;
     fn visit_identifier(&mut self, identifier: &'visitor IdentifierNode) -> VMData;
 
     // Control flow
