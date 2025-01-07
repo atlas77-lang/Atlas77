@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use atlas_frontend::parser::ast::{
+use crate::atlas_frontend::parser::ast::{
     AbstractSyntaxTree, BinaryExpression, DoExpression, Expression, FieldAccessExpression,
     FunctionCall, FunctionExpression, IdentifierNode, IfElseNode, IndexExpression, Literal,
     MatchArm, MatchExpression, NewObjectExpression, StructDeclaration, Type, UnaryExpression,

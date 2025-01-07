@@ -1,9 +1,9 @@
-use atlas_frontend::parser::ast::{
+use crate::atlas_frontend::parser::ast::{
     BinaryExpression, DoExpression, Expression, FieldAccessExpression, FunctionCall,
     FunctionExpression, IdentifierNode, IfElseNode, IndexExpression, MatchExpression,
     NewObjectExpression, UnaryExpression, VariableDeclaration,
 };
-use atlas_memory::vm_data::VMData;
+use crate::atlas_memory::vm_data::VMData;
 
 pub type Program = Vec<Expression>;
 

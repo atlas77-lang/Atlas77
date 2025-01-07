@@ -1,5 +1,11 @@
 use std::{path::PathBuf, time::Instant};
 
+pub mod atlas_frontend;
+pub mod atlas_hlir;
+pub mod atlas_memory;
+pub mod atlas_runtime;
+pub mod atlas_stdlib;
+
 use atlas_frontend::parse;
 use atlas_hlir::translate;
 use atlas_memory::vm_data::VMData;

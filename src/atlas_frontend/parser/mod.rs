@@ -2,7 +2,7 @@ pub mod ast;
 
 use std::path::PathBuf;
 
-use crate::lexer::{Token, TokenKind, TokenKind::*};
+use crate::atlas_frontend::lexer::{Token, TokenKind, TokenKind::*};
 use ast::{
     AbstractSyntaxTree, BinaryOperator, FieldAccessExpression, MatchArm, NewObjectExpression,
     StructDeclaration, Type, UnaryOperator,
@@ -89,7 +89,7 @@ impl SimpleParserV1 {
                     let mut arg: (Intern<String>, Type) =
                         (Intern::new(String::default()), Type::Unit);
                     match self.advance().kind() {
-                        TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => {
+                        TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Identifier(s)) => {
                             arg.0 = s;
                         }
                         _ => {
@@ -133,7 +133,7 @@ impl SimpleParserV1 {
                 "unit" => Ok(Box::new(Type::Unit)),
                 _ => Ok(Box::new(Type::NonPrimitive(kw))),
             },
-            TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => {
+            TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Identifier(s)) => {
                 Ok(Box::new(Type::NonPrimitive(s)))
             }
             _ => {
@@ -176,7 +176,7 @@ impl SimpleParserV1 {
     fn parse_new_object_expression(&mut self) -> Result<NewObjectExpression, ParseError> {
         let start_pos = self.current().span();
         let name = match self.advance().kind() {
-            TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => s,
+            TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Identifier(s)) => s,
             _ => unreachable!("Unexpected token: {:?}", self.current().kind()),
         };
         self.expect(LParen)?;
@@ -199,7 +199,7 @@ impl SimpleParserV1 {
     fn parse_struct_declaration(&mut self) -> Result<StructDeclaration, ParseError> {
         let start_pos = self.current().span();
         let name = match self.advance().kind() {
-            TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => s,
+            TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Identifier(s)) => s,
             _ => unreachable!("Unexpected token: {:?}", self.current().kind()),
         };
         self.expect(LParen)?;
@@ -222,7 +222,7 @@ impl SimpleParserV1 {
     fn parse_variable_declaration(&mut self) -> Result<VariableDeclaration, ParseError> {
         let start_pos = self.current().span();
         let name = match self.advance().kind() {
-            TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => s,
+            TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Identifier(s)) => s,
             _ => unreachable!("Unexpected token: {:?}", self.current().kind()),
         };
         self.expect(Colon)?;
@@ -379,15 +379,15 @@ impl SimpleParserV1 {
     fn parse_primary(&mut self) -> Result<Box<Expression>, ParseError> {
         let start_pos = self.current().span();
         match self.current().kind() {
-            TokenKind::Literal(crate::lexer::Literal::Float(f)) => {
+            TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Float(f)) => {
                 self.advance();
                 Ok(Box::new(Expression::Literal(ast::Literal::Float(f))))
             }
-            TokenKind::Literal(crate::lexer::Literal::Int(i)) => {
+            TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Int(i)) => {
                 self.advance();
                 Ok(Box::new(Expression::Literal(ast::Literal::Integer(i))))
             }
-            TokenKind::Literal(crate::lexer::Literal::StringLiteral(s)) => {
+            TokenKind::Literal(crate::atlas_frontend::lexer::Literal::StringLiteral(s)) => {
                 self.advance();
                 Ok(Box::new(Expression::Literal(ast::Literal::String(s))))
             }
@@ -484,7 +484,7 @@ impl SimpleParserV1 {
                     unimplemented!()
                 }
             },
-            TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => {
+            TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Identifier(s)) => {
                 self.advance();
                 if self.current().kind() == LParen {
                     self.expect(LParen)?;
@@ -507,7 +507,7 @@ impl SimpleParserV1 {
                 } else if self.current().kind() == Dot {
                     self.expect(Dot)?;
                     let field = match self.advance().kind() {
-                        TokenKind::Literal(crate::lexer::Literal::Int(i)) => i,
+                        TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Int(i)) => i,
                         _ => unreachable!("Unexpected token: {:?}", self.current().kind()),
                     } as usize;
                     Ok(Box::new(Expression::FieldAccessExpression(

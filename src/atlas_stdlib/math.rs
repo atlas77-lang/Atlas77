@@ -1,7 +1,7 @@
-use atlas_memory::vm_data::VMData;
+use crate::atlas_memory::vm_data::VMData;
 use rand::{thread_rng, Rng};
 
-use crate::vm_state::VMState;
+use crate::atlas_runtime::vm_state::VMState;
 
 //abs(x: int) -> int
 pub fn abs(state: VMState) -> VMData {

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::vm_data::VMData;
+use crate::atlas_memory::vm_data::VMData;
 
 const STACK_SIZE: usize = 16 * 1024 / size_of::<VMData>();
 #[derive(Debug)]

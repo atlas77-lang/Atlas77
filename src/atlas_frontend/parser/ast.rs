@@ -3,7 +3,7 @@ use core::fmt;
 use atlas_core::prelude::{Span, Spanned};
 use internment::Intern;
 
-use crate::lexer::TokenKind;
+use crate::atlas_frontend::lexer::TokenKind;
 
 pub type AbstractSyntaxTree = Vec<Expression>;
 

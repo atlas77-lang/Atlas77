@@ -5,7 +5,7 @@ use std::{
 
 use internment::Intern;
 
-use atlas_frontend::parser::ast::FunctionExpression;
+use crate::atlas_frontend::parser::ast::FunctionExpression;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum Value {
