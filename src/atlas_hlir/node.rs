@@ -1,7 +1,7 @@
 use core::fmt;
 
-use atlas_core::prelude::{Span, Spanned};
 use crate::atlas_frontend::parser::ast::{BinaryOperator, UnaryOperator};
+use atlas_core::prelude::{Span, Spanned};
 use internment::Intern;
 
 pub type HlirTree = Vec<HlirExpr>;

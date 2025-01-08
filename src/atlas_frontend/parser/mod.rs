@@ -89,7 +89,9 @@ impl SimpleParserV1 {
                     let mut arg: (Intern<String>, Type) =
                         (Intern::new(String::default()), Type::Unit);
                     match self.advance().kind() {
-                        TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Identifier(s)) => {
+                        TokenKind::Literal(crate::atlas_frontend::lexer::Literal::Identifier(
+                            s,
+                        )) => {
                             arg.0 = s;
                         }
                         _ => {

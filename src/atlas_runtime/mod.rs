@@ -4,12 +4,12 @@ pub mod visitor;
 pub mod vm_state;
 use std::collections::HashMap;
 
-use visitor::{Program, Visitor};
 use crate::atlas_frontend::parser::ast::*;
 use crate::atlas_memory::object_map::{Memory, Object, Structure};
 use crate::atlas_memory::stack::Stack;
 use crate::atlas_memory::vm_data::VMData;
 use internment::Intern;
+use visitor::{Program, Visitor};
 
 #[derive(Debug, Clone, Default)]
 pub struct VarMap {
