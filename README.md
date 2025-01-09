@@ -11,23 +11,24 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/RedGear-Studio/Atlas77">
+  <a href="https://github.com/atlas77-lang/Atlas77">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">Best-README-Template</h3>
+  <h3 align="center">Atlas77</h3>
 
   <p align="center">
-    Functional Programming language with a strong interop with Rust
+    Functional Programming language with a strong interop with Rust,
+    designed to be a functional scripting language.
     <br />
-    <a href="https://github.com/RedGear-Studio/Atlas77"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/atlas77-lang/Atlas77"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/RedGear-Studio/Atlas77">View Demo</a>
+    <a href="https://github.com/atlas77-lang/Atlas77">Playground (inexistant)</a>
     ·
-    <a href="https://github.com/RedGear-Studio/Atlas77/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    <a href="https://github.com/atlas77-lang/Atlas77/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     ·
-    <a href="https://github.com/RedGear-Studio/Atlas77/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+    <a href="https://github.com/atlas77-lang/Atlas77/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
 
@@ -77,7 +78,8 @@ It is designed to be a high-level language with a strong focus on performance an
   ```sh
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   ```
-  Or directly from their website: [Rust](https://www.rust-lang.org/tools/install)
+
+Or directly from their website: [Rust](https://www.rust-lang.org/tools/install)
 
 ### Installation
 
@@ -159,13 +161,14 @@ _For more examples, please refer to the [examples folder](https://github.com/atl
 - [ ] Differentiation between "pure" and "impure" functions:
   - [ ] Ability to mark impure functions for side effects
 - [ ] Syntax rework for functions:
-  - Replace `let fib: (n: int) -> int = ...` with `let fib: (int) -> int = \n -> ...` to remove argument names in type definitions.
+  - [ ] Replace `let fib: (n: int) -> int = ...` with `let fib: (int) -> int = \n -> ...` to remove argument names in type definitions.
+  - [ ] Anonymous functions
   - [ ] New Abstract Syntax Tree (AST)
   - [ ] New parser
 
 
 
-See the [open issues](https://github.com/RedGear-Studio/Atlas77/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/atlas77-lang/Atlas77/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -187,8 +190,8 @@ Don't forget to give the project a star! Thanks again!
 
 ### Top contributors:
 
-<a href="https://github.com/RedGear-Studio/Atlas77/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=RedGear-Studio/Atlas77" alt="contrib.rocks image" />
+<a href="https://github.com/atlas77-lang/Atlas77/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=atlas77-lang/Atlas77" alt="contrib.rocks image" />
 </a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -209,7 +212,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 Your Name - [@Gipson62_8015](https://twitter.com/Gipson62_8015) - J.H.Gipson62@gmail.com
 
-Project Link: [https://github.com/RedGear-Studio/Atlas77](https://github.com/RedGear-Studio/Atlas77)
+Project Link: [https://github.com/atlas77-lang/Atlas77](https://github.com/atlas77-lang/Atlas77)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -218,14 +221,14 @@ Project Link: [https://github.com/RedGear-Studio/Atlas77](https://github.com/Red
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/RedGear-Studio/Atlas77.svg?style=for-the-badge
-[contributors-url]: https://github.com/RedGear-Studio/Atlas77/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/RedGear-Studio/Atlas77.svg?style=for-the-badge
-[forks-url]: https://github.com/RedGear-Studio/Atlas77/network/members
-[stars-shield]: https://img.shields.io/github/stars/RedGear-Studio/Atlas77.svg?style=for-the-badge
-[stars-url]: https://github.com/RedGear-Studio/Atlas77/stargazers
-[issues-shield]: https://img.shields.io/github/issues/RedGear-Studio/Atlas77.svg?style=for-the-badge
-[issues-url]: https://github.com/RedGear-Studio/Atlas77/issues
-[license-shield]: https://img.shields.io/github/license/RedGear-Studio/Atlas77.svg?style=for-the-badge
-[license-url]: https://github.com/RedGear-Studio/Atlas77/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/atlas77-lang/Atlas77.svg?style=for-the-badge
+[contributors-url]: https://github.com/atlas77-lang/Atlas77/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/atlas77-lang/Atlas77.svg?style=for-the-badge
+[forks-url]: https://github.com/atlas77-lang/Atlas77/network/members
+[stars-shield]: https://img.shields.io/github/stars/atlas77-lang/Atlas77.svg?style=for-the-badge
+[stars-url]: https://github.com/atlas77-lang/Atlas77/stargazers
+[issues-shield]: https://img.shields.io/github/issues/atlas77-lang/Atlas77.svg?style=for-the-badge
+[issues-url]: https://github.com/atlas77-lang/Atlas77/issues
+[license-shield]: https://img.shields.io/github/license/atlas77-lang/Atlas77.svg?style=for-the-badge
+[license-url]: https://github.com/atlas77-lang/Atlas77/blob/master/LICENSE.txt
 
