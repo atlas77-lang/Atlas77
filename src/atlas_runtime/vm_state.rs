@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use atlas_memory::{object_map::Memory, stack::Stack, vm_data::VMData};
+use crate::atlas_memory::{object_map::Memory, stack::Stack, vm_data::VMData};
 use internment::Intern;
 
 pub struct VMState<'state> {

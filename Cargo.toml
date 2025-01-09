@@ -1,13 +1,27 @@
-[workspace]
-resolver = "1"
-members = [
-    "atlas_frontend",
-    "atlas_memory",
-    "atlas_runtime"
-]
+[package]
+name = "atlas_77"
+version = "0.4.0"
+edition = "2021"
+description = "Functional programming language with strong interoperability with Rust"
+authors = ["Gipson62", "ElhamAryanpur"]
+license = "MIT"
+repository = "https://github.com/atlas77-lang/Atlas77"
 
-[profile.bench]
+[profile.release]
 opt-level = 3
+panic = "abort"
 lto = true
 codegen-units = 1
 overflow-checks = false
+debug-assertions = false
+strip = "debuginfo"
+[profile.release.package."*"]
+opt-level = 3
+codegen-units = 1
+
+[dependencies]
+internment = "0.8.4"
+clap = { version = "4.4.8", features = ["derive"] }
+rand = "0.8.5"
+atlas-core = "0.7.0-beta3"
+time = { version = "0.3.37", features = ["formatting"] }

@@ -1,0 +1,9 @@
+let main: () -> int = do
+    let fib: (a: int) -> int = 
+        match a 
+        | 0 ~> 0,
+        | 1 ~> 1,
+        \ _ ~> fib(a - 1) + fib(a - 2);
+    let anonymous_function: (a: int) -> int = fib;
+    anonymous_function(35)();
+end

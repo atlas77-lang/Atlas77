@@ -5,6 +5,8 @@ use std::{
 
 use super::object_map::ObjectIndex;
 
+/// A way to represent ``&fn`` should be better implemented honestly, as they can have all sort of the types,
+/// and you should, technically, be able to store `&extern fn` and used them as normal `&fn`
 #[derive(Clone, Copy)]
 pub union RawVMData {
     as_unit: (),

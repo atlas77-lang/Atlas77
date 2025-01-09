@@ -3,20 +3,16 @@ use core::fmt;
 use atlas_core::prelude::{Span, Spanned};
 use internment::Intern;
 
-use crate::lexer::TokenKind;
+use crate::atlas_frontend::lexer::TokenKind;
 
-pub type AbstractSyntaxTree = Vec<Box<Expression>>;
+pub type AbstractSyntaxTree = Vec<Expression>;
 
-/// Literal
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
-    /// Integer literal
     Integer(i64),
-    /// Float literal
     Float(f64),
-    /// String literal
+    Unit,
     String(Intern<String>),
-    /// Boolean literal
     Bool(bool),
     List(Vec<Expression>),
 }
@@ -26,6 +22,7 @@ impl fmt::Display for Literal {
         match self {
             Self::Integer(i) => write!(f, "{}", i),
             Self::Float(fl) => write!(f, "{}", fl),
+            Self::Unit => write!(f, "()"),
             Self::String(s) => write!(f, "{}", s),
             Self::Bool(b) => write!(f, "{}", b),
             Self::List(l) => write!(
@@ -67,13 +64,13 @@ impl fmt::Display for Statement {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Integer,
     Float,
     String,
     Bool,
-    Void,
+    Unit,
     List(Box<Type>),
     Map(Box<Type>, Box<Type>),
     Function(Vec<(Intern<String>, Type)>, Box<Type>),
@@ -87,7 +84,7 @@ impl fmt::Display for Type {
             Self::Float => write!(f, "f64"),
             Self::String => write!(f, "string"),
             Self::Bool => write!(f, "bool"),
-            Self::Void => write!(f, "void"),
+            Self::Unit => write!(f, "()"),
             Self::List(t) => write!(f, "List[{}]", t),
             Self::Map(k, v) => write!(f, "Map[{}, {}]", k, v),
             Self::Function(args, ret) => write!(
@@ -149,18 +146,18 @@ impl Spanned for VariableDeclaration {
 impl fmt::Display for VariableDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.value.is_some() {
-            write!(
+            writeln!(
                 f,
-                "let {}{}: {} = {}\n",
+                "let {}{}: {} = {}",
                 if self.mutable { "mut " } else { "" },
                 self.name,
                 self.t,
                 self.clone().value.unwrap()
             )
         } else {
-            write!(
+            writeln!(
                 f,
-                "let {}{}: {}\n",
+                "let {}{}: {}",
                 if self.mutable { "mut " } else { "" },
                 self.name,
                 self.t

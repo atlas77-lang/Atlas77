@@ -1,5 +1,8 @@
-use crate::vm_data::VMData;
+use crate::atlas_memory::vm_data::VMData;
 
+/// Probably should be renamed lmao
+///
+/// Need to find a way to make the memory shrink, grows, and garbage collect unused memory (by scanning the stack & VarMap)
 pub struct Memory {
     mem: Vec<Object>,
     pub(crate) free: ObjectIndex,
@@ -34,8 +37,10 @@ impl Memory {
         }
     }
 
-    // Need to add a way to increase `mem` size if we out of memory
-    // And a way to clean it when there's too much memory (basically shrink and grow)
+    /// Need to add a way to increase `mem` size if we out of memory
+    /// And a way to clean it when there's too much memory (basically shrink and grow)
+    ///
+    /// Result<ObjectIndex, Object> should become Result<ObjectIndex, RuntimeError> with RuntimeError::OutOfMemory(Object)
     pub fn put(&mut self, object: Object) -> Result<ObjectIndex, Object> {
         let idx = self.free;
         let v = self.get_mut(self.free);
@@ -74,6 +79,8 @@ impl Memory {
     }
 }
 
+/// List is imho badly represented, a list should be defined in the language itself as a wrapper around a static array
+///
 #[derive(Clone, Debug)]
 pub enum Object {
     String(String),
