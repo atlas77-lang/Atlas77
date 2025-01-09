@@ -6,14 +6,34 @@ use crate::{
 // println<T>(value: T) -> ()
 pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
-    println!("{}", val);
+    match val.tag {
+        VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT  => {
+            println!("{}", val)
+        },
+        VMData::TAG_STR => {
+            println!("{}", state.object_map.get(val.as_object()).string())
+        }
+        _ => {
+            println!("{}", state.object_map.get(val.as_object()))
+        }
+    }
     Ok(VMData::new_unit())
 }
 
 // print<T>(value: T) -> ()
 pub fn print(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
-    print!("{}", val);
+    match val.tag {
+        VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT  => {
+            print!("{}", val)
+        },
+        VMData::TAG_STR => {
+            print!("{}", state.object_map.get(val.as_object()).string())
+        }
+        _ => {
+            print!("{}", state.object_map.get(val.as_object()))
+        }
+    }
     Ok(VMData::new_unit())
 }
 

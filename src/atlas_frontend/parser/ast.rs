@@ -7,7 +7,6 @@ use crate::atlas_frontend::lexer::TokenKind;
 
 pub type AbstractSyntaxTree = Vec<Expression>;
 
-/// Literal
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
     Integer(i64),

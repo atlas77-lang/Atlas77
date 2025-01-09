@@ -3,8 +3,8 @@ use crate::{
     atlas_runtime::{errors::RuntimeError, vm_state::VMState},
 };
 
-// len(str: &string)
-pub fn len(state: VMState) -> Result<VMData, RuntimeError> {
+// str_len(str: &string)
+pub fn str_len(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop()?.as_object();
     let string = state.object_map.get(string_ptr).string();
     Ok(VMData::new_i64(string.len() as i64))

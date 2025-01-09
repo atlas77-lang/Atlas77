@@ -98,9 +98,18 @@ It is designed to be a high-level language with a strong focus on performance an
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+### Fibonacci Example
+```ts
+let fib: (n: int) -> int = 
+  match n
+  | 0 ~> 0
+  | 1 ~> 1
+  \ _ ~> fib(n - 1) + fib(n - 2)
 
-_For more examples, please refer to the [Documentation](https://redgear.tk/)_
+let main: () -> int = fib(10) //> 55
+```
+
+_For more examples, please refer to the [examples folder](https://github.com/atlas77-lang/Atlas77/tree/main/examples)_
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -109,7 +118,28 @@ _For more examples, please refer to the [Documentation](https://redgear.tk/)_
 <!-- ROADMAP -->
 ## Roadmap
 
-Check #61 for the current Roadmap
+### v0.3 "Foundation"
+- [v0.3](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3)
+  - [x] Variable assignments
+  - [x] Function declarations
+  - [x] Conditional expressions (if-else)
+  - [x] Recursion
+  - [x] Basic arithmetic operations
+  - [x] `do..end` blocks to allow multiple expressions
+  - [x] Basic runtime & memory system
+- [v0.3.1](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3.1)
+  - [x] Support for `string` & `List[T]` types (include indexing and concatenation)
+  - [x] Support for basic CLI
+  - [x] Support for basic stdio functions
+  - [x] Support for match expression
+
+### v0.4 "Keystone"
+- [x] [v0.4 "Keystone"](https://github.com/atlas77-lang/Atlas77/tag/v0.4)
+  - [x] Support for `struct` types
+  - [x] Improved runtime & memory system (~80% performance uplift)
+  - [x] Support for external functions (Rust interop)
+  - [x] More complete standard library using external functions
+
 
 See the [open issues](https://github.com/RedGear-Studio/Atlas77/issues) for a full list of proposed features (and known issues).
 

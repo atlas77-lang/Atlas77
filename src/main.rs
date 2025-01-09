@@ -73,7 +73,7 @@ pub(crate) fn run(path: String) {
     runtime.add_extern_fn("random", atlas_stdlib::math::random);
 
     // string
-    runtime.add_extern_fn("len", atlas_stdlib::string::len);
+    runtime.add_extern_fn("str_len", atlas_stdlib::string::str_len);
     runtime.add_extern_fn("trim", atlas_stdlib::string::trim);
     runtime.add_extern_fn("to_upper", atlas_stdlib::string::to_upper);
     runtime.add_extern_fn("to_lower", atlas_stdlib::string::to_lower);
