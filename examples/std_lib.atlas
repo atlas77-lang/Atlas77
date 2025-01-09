@@ -1,10 +1,10 @@
-extern abs(x: int) -> int;
-extern pow(base: int, exponent: int) -> int;
-extern sqrt(x: float) -> float
-extern min(a: int, b: int) -> int;
-extern max(a: int, b: int) -> int;
-extern round(x: float) -> int;
-extern random(min: int, max: int) -> int;
+@extern abs(x: int) -> int;
+@extern pow(base: int, exponent: int) -> int;
+@extern sqrt(x: float) -> float
+@extern min(a: int, b: int) -> int;
+@extern max(a: int, b: int) -> int;
+@extern round(x: float) -> int;
+@extern random(min: int, max: int) -> int;
 
 //extern map<T>(f: (T) -> T, list: List[T]) -> List[T];
 //extern filter<T>(f: (T) -> bool, list: List[T]) -> List[T];

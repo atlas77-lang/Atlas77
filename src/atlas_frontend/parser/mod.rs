@@ -25,6 +25,12 @@ pub struct SimpleParserV1 {
     eof_token: Token,
 }
 
+impl Default for SimpleParserV1 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SimpleParserV1 {
     pub fn with_file_path(&mut self, file_path: PathBuf) -> Result<(), std::io::Error> {
         self.file_path = file_path;

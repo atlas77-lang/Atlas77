@@ -1,8 +1,18 @@
 use std::fmt::Display;
 
-use crate::atlas_memory::vm_data::VMData;
+use crate::{atlas_memory::vm_data::VMData, atlas_runtime::errors::RuntimeError};
 
 const STACK_SIZE: usize = 16 * 1024 / size_of::<VMData>();
+/// The stack should be more used overall.
+///
+/// And allow features such as holding objects themselves e.g.
+/// ```rs
+/// fn push_object(&mut self, obj: &[VMData]) {}
+/// fn access(&mut self, offset: usize) -> VMData {}
+/// ```
+///
+/// The stack should also be able to create new stack frames with special rules
+/// to access data in other stack frames
 #[derive(Debug)]
 pub struct Stack {
     values: [VMData; STACK_SIZE],
@@ -14,7 +24,7 @@ impl Default for Stack {
     }
 }
 
-// TODO: this implementation should be overhauled a bit cuz it's kinda clunky
+/// TODO: this implementation should be overhauled a bit cuz it's kinda clunky
 impl Stack {
     pub fn new() -> Self {
         Self {
@@ -23,33 +33,46 @@ impl Stack {
         }
     }
 
-    pub fn push(&mut self, val: VMData) {
+    pub fn push(&mut self, val: VMData) -> Result<(), RuntimeError> {
         if self.top < STACK_SIZE {
             self.values[self.top] = val;
             self.top += 1;
+            Ok(())
         } else {
-            panic!("Stack full");
+            Err(RuntimeError::StackOverflow)
         }
     }
 
-    pub fn pop(&mut self) -> Option<VMData> {
+    pub fn pop(&mut self) -> Result<VMData, RuntimeError> {
         if self.top != 0 {
             self.top -= 1;
             let r = self.values[self.top];
-            Some(r)
+            Ok(r)
         } else {
-            None
+            Err(RuntimeError::StackUndeflow)
         }
     }
 
     #[inline(always)]
-    pub fn last(&self) -> Option<&VMData> {
+    pub fn last(&self) -> Result<&VMData, RuntimeError> {
         if self.top != 0 {
-            Some(&self.values[self.top - 1])
+            Ok(&self.values[self.top - 1])
         } else {
-            None
+            Err(RuntimeError::StackUndeflow)
         }
     }
+
+    pub fn push_object(&mut self, _obj: &[VMData]) -> Result<(), RuntimeError> {
+        unimplemented!("push_object(&mut self, obj: &[VMData])")
+    }
+
+    pub fn new_stack_frame(&mut self) {}
+
+    pub fn get(&mut self, _offset: usize) -> Result<VMData, RuntimeError> {
+        unimplemented!("get(&mut self, offset: usize)")
+    }
+
+    pub fn set(&mut self, _offset: usize) {}
 }
 
 impl Display for Stack {

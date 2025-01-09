@@ -9,6 +9,7 @@ pub type Program = Vec<Expression>;
 
 //TODO: visit() should return a Result<VMData, crate::errors::RuntimeError>
 pub trait Visitor<'visitor> {
+    type CallBack;
     // Entry point
     fn visit(&mut self, program: &'visitor Program) -> VMData;
 

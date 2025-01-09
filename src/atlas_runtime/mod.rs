@@ -2,15 +2,22 @@ pub mod errors;
 pub mod value;
 pub mod visitor;
 pub mod vm_state;
+
 use std::collections::HashMap;
 
 use crate::atlas_frontend::parser::ast::*;
-use crate::atlas_memory::object_map::{Memory, Object, Structure};
-use crate::atlas_memory::stack::Stack;
-use crate::atlas_memory::vm_data::VMData;
+use crate::atlas_memory::{
+    object_map::{Memory, Object, Structure},
+    stack::Stack,
+    vm_data::VMData,
+};
+use crate::atlas_runtime::{errors::RuntimeError, vm_state::VMState};
+
 use internment::Intern;
 use visitor::{Program, Visitor};
 
+/// VarMap should be moved to its own file and have a better implementation overall. The concept of scopes should make an appareance
+/// Also, to avoid alloc/dealloc/realloc overhead I should keep a free list of all the already existing varmap and just clean them before using them
 #[derive(Debug, Clone, Default)]
 pub struct VarMap {
     pub map: HashMap<Intern<String>, VMData>,
@@ -30,13 +37,12 @@ impl VarMap {
         value
     }
 }
-pub type CallBack = fn(vm_state::VMState) -> Result<VMData, ()>;
 
 pub struct Runtime<'run> {
-    pub varmap: Vec<VarMap>, //usize is the parent scope
+    pub varmap: Vec<VarMap>,
     pub stack: Stack,
     pub func_map: Vec<&'run FunctionExpression>,
-    pub extern_fn: Vec<(String, CallBack)>,
+    pub extern_fn: Vec<(String, <Runtime<'run> as Visitor<'run>>::CallBack)>,
     pub consts: HashMap<Intern<String>, VMData>,
     pub object_map: Memory,
     pub main_fn: usize,
@@ -45,6 +51,12 @@ pub struct Runtime<'run> {
 impl Default for Runtime<'_> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<'run> Runtime<'run> {
+    pub fn add_extern_fn(&mut self, name: &str, f: <Runtime<'run> as Visitor<'run>>::CallBack) {
+        self.extern_fn.push((name.to_string(), f));
     }
 }
 
@@ -71,9 +83,6 @@ impl Runtime<'_> {
             main_fn: 0,
         }
     }
-    pub fn add_extern_fn(&mut self, name: &str, f: CallBack) {
-        self.extern_fn.push((name.to_string(), f));
-    }
 
     fn find_variable(&self, name: Intern<String>) -> Option<&VMData> {
         if let Some(v) = self.consts.get(&Intern::new(name.to_string())) {
@@ -90,6 +99,8 @@ impl Runtime<'_> {
 }
 
 impl<'run> Visitor<'run> for Runtime<'run> {
+    type CallBack = fn(VMState) -> Result<VMData, RuntimeError>;
+
     fn visit(&mut self, program: &'run Program) -> VMData {
         for expr in program {
             if let Expression::VariableDeclaration(v) = expr {
@@ -215,7 +226,9 @@ impl<'run> Visitor<'run> for Runtime<'run> {
                 for arg in &function_call.args {
                     args.push(self.visit_expression(arg));
                 }
-                args.iter().for_each(|arg| self.stack.push(*arg));
+                args.iter().for_each(|arg| {
+                    let _ = self.stack.push(*arg);
+                });
                 let vm_state =
                     vm_state::VMState::new(&mut self.stack, &mut self.object_map, &self.consts);
                 f.1(vm_state).unwrap()

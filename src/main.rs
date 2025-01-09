@@ -1,18 +1,14 @@
 use std::{path::PathBuf, time::Instant};
 
 pub mod atlas_frontend;
-pub mod atlas_hlir;
 pub mod atlas_memory;
 pub mod atlas_runtime;
 pub mod atlas_stdlib;
 
 use atlas_frontend::parse;
-use atlas_hlir::translate;
-use atlas_memory::vm_data::VMData;
-use atlas_runtime::{visitor::Visitor, vm_state::VMState, Runtime};
+use atlas_runtime::{visitor::Visitor, Runtime};
 
 use clap::{command, Parser};
-use rand::prelude::*;
 
 #[derive(Parser)] // requires `derive` feature
 #[command(name = "Atlas 77")]
@@ -26,63 +22,6 @@ fn main() {
     let AtlasRuntimeCLI::Run { file_path } = AtlasRuntimeCLI::parse();
 
     run(file_path);
-}
-
-#[cfg(not(debug_assertions))]
-fn print(state: VMState) -> Result<VMData, ()> {
-    let val = state.stack.pop().unwrap();
-    match val.tag {
-        VMData::TAG_BOOL => {
-            println!("{}", val.as_bool());
-        }
-        VMData::TAG_CHAR => {
-            println!("{}", val.as_char());
-        }
-        VMData::TAG_FLOAT => {
-            println!("{}", val.as_f64());
-        }
-        VMData::TAG_I64 => {
-            println!("{}", val.as_i64());
-        }
-        VMData::TAG_U64 => {
-            println!("{}", val.as_u64());
-        }
-        _ => {
-            println!("{}", state.object_map.get(val.as_object()));
-        }
-    }
-    Ok(VMData::new_unit())
-}
-#[cfg(debug_assertions)]
-fn print(state: VMState) -> Result<VMData, ()> {
-    let val = state.stack.pop().unwrap();
-    match val.tag {
-        VMData::TAG_BOOL
-        | VMData::TAG_CHAR
-        | VMData::TAG_FLOAT
-        | VMData::TAG_I64
-        | VMData::TAG_U64 => println!("{}", val),
-        _ => {
-            println!("Object: {}", state.object_map.get(val.as_object()));
-        }
-    }
-    Ok(VMData::new_unit())
-}
-fn read_int(_state: VMState) -> Result<VMData, ()> {
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap();
-    let input = input.trim().parse::<i64>().unwrap();
-    Ok(VMData::new_i64(input))
-}
-
-fn random(state: VMState) -> Result<VMData, ()> {
-    let range = (
-        state.stack.pop().unwrap().as_i64(),
-        state.stack.pop().unwrap().as_i64(),
-    );
-    let mut rng = thread_rng();
-    let random = rng.gen_range(range.1..range.0);
-    Ok(VMData::new_i64(random))
 }
 
 pub(crate) fn run(path: String) {
@@ -101,13 +40,50 @@ pub(crate) fn run(path: String) {
     println!("{:?}", &program);
 
     let mut runtime = Runtime::new();
-    runtime.add_extern_fn("print", print);
-    runtime.add_extern_fn("read_int", read_int);
-    runtime.add_extern_fn("random", random);
 
-    let hlir = translate(&program);
-    #[cfg(debug_assertions)]
-    println!("{:?}", &hlir);
+    // file
+
+    runtime.add_extern_fn("read_dir", atlas_stdlib::file::read_dir);
+    runtime.add_extern_fn("read_file", atlas_stdlib::file::read_file);
+    runtime.add_extern_fn("write_file", atlas_stdlib::file::write_file);
+    runtime.add_extern_fn("file_exists", atlas_stdlib::file::file_exists);
+    runtime.add_extern_fn("remove_file", atlas_stdlib::file::remove_file);
+
+    // io
+    runtime.add_extern_fn("print", atlas_stdlib::io::print);
+    runtime.add_extern_fn("println", atlas_stdlib::io::println);
+    runtime.add_extern_fn("input", atlas_stdlib::io::input);
+
+    // list
+    runtime.add_extern_fn("len", atlas_stdlib::list::len);
+    runtime.add_extern_fn("get", atlas_stdlib::list::get);
+    runtime.add_extern_fn("set", atlas_stdlib::list::set);
+    runtime.add_extern_fn("push", atlas_stdlib::list::push);
+    runtime.add_extern_fn("pop", atlas_stdlib::list::pop);
+    runtime.add_extern_fn("remove", atlas_stdlib::list::remove);
+    runtime.add_extern_fn("slice", atlas_stdlib::list::slice);
+
+    // math
+    runtime.add_extern_fn("abs", atlas_stdlib::math::abs);
+    runtime.add_extern_fn("pow", atlas_stdlib::math::pow);
+    runtime.add_extern_fn("sqrt", atlas_stdlib::math::sqrt);
+    runtime.add_extern_fn("min", atlas_stdlib::math::min);
+    runtime.add_extern_fn("max", atlas_stdlib::math::max);
+    runtime.add_extern_fn("round", atlas_stdlib::math::round);
+    runtime.add_extern_fn("random", atlas_stdlib::math::random);
+
+    // string
+    runtime.add_extern_fn("len", atlas_stdlib::string::len);
+    runtime.add_extern_fn("trim", atlas_stdlib::string::trim);
+    runtime.add_extern_fn("to_upper", atlas_stdlib::string::to_upper);
+    runtime.add_extern_fn("to_lower", atlas_stdlib::string::to_lower);
+    runtime.add_extern_fn("split", atlas_stdlib::string::split);
+
+    // time
+    runtime.add_extern_fn("now", atlas_stdlib::time::now);
+    runtime.add_extern_fn("format_time_iso", atlas_stdlib::time::format_time_iso);
+    runtime.add_extern_fn("format_time", atlas_stdlib::time::format_time);
+    runtime.add_extern_fn("elapsed", atlas_stdlib::time::elapsed);
 
     let start = Instant::now();
     println!("{}", runtime.visit(&program));
