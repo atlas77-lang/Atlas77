@@ -122,23 +122,47 @@ _For more examples, please refer to the [examples folder](https://github.com/atl
 - [v0.3](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3)
   - [x] Variable assignments
   - [x] Function declarations
-  - [x] Conditional expressions (if-else)
+  - [x] Conditional expressions (`if-else`)
   - [x] Recursion
   - [x] Basic arithmetic operations
   - [x] `do..end` blocks to allow multiple expressions
   - [x] Basic runtime & memory system
 - [v0.3.1](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3.1)
-  - [x] Support for `string` & `List[T]` types (include indexing and concatenation)
-  - [x] Support for basic CLI
-  - [x] Support for basic stdio functions
-  - [x] Support for match expression
+  - [x] Support for `string` & `List[T]` types (including indexing and concatenation)
+  - [x] Basic CLI support
+  - [x] Basic stdio functions
+  - [x] `match` expressions
 
 ### v0.4 "Keystone"
-- [x] [v0.4 "Keystone"](https://github.com/atlas77-lang/Atlas77/tag/v0.4)
+- [v0.4 "Keystone"](https://github.com/atlas77-lang/Atlas77/tag/v0.4)
   - [x] Support for `struct` types
   - [x] Improved runtime & memory system (~80% performance uplift)
   - [x] Support for external functions (Rust interop)
-  - [x] More complete standard library using external functions
+  - [x] Expanded standard library using external functions
+
+### Upcoming Features
+- [ ] Support for `enum` types:
+  - [ ] Base enums (standard integer enums)
+  - [ ] Advanced enums (enums with associated data)
+- [ ] Support for structs with named fields
+- [ ] Type Checking:
+  - [ ] High-Level Intermediate Representation (HLIR)
+  - [ ] Defining external functions
+  - [ ] Compile-time traits (e.g., `+`, `-`, `*`, `/`, `&`)
+  - [ ] Type inference
+- [ ] New and improved runtime:
+  - [ ] Garbage collection
+  - [ ] Memoization
+  - [ ] Concurrency/parallelism by default for pure functions
+- [ ] Interoperability with other languages (e.g., C):
+  - [ ] Support for loading shared libraries
+- [ ] Differentiation between "pure" and "impure" functions:
+  - [ ] Ability to mark impure functions for side effects
+- [ ] Syntax rework for functions:
+  - Replace `let fib: (n: int) -> int = ...` with `let fib: (int) -> int = \n -> ...` to remove argument names in type definitions.
+  - [ ] New Abstract Syntax Tree (AST)
+  - [ ] New parser
+
 
 
 See the [open issues](https://github.com/RedGear-Studio/Atlas77/issues) for a full list of proposed features (and known issues).
