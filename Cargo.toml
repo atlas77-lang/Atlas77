@@ -1,11 +1,15 @@
 [package]
 name = "atlas_77"
-version = "0.4.0"
+version = "0.5.0-dev"
 edition = "2021"
 description = "Functional programming language with strong interoperability with Rust"
 authors = ["Gipson62", "ElhamAryanpur"]
 license = "MIT"
 repository = "https://github.com/atlas77-lang/Atlas77"
+keywords = ["programming", "language", "compiler", "atlas77"]
+categories = ["Compilers", "programming-languages"]
+homepage = "https://redgear.tk/"
+readme = "README.md"
 
 [profile.release]
 opt-level = 3
@@ -20,8 +24,12 @@ opt-level = 3
 codegen-units = 1
 
 [dependencies]
+# internment will be removed and replaced with a custom arena allocator
 internment = "0.8.4"
 clap = { version = "4.4.8", features = ["derive"] }
 rand = "0.8.5"
-atlas-core = "0.7.0-beta3"
+# Waiting for the "0.7.0" release
+atlas-core = "0.7.0"
 time = { version = "0.3.37", features = ["formatting"] }
+bumpalo = "3.16.0"
+serde = {version =  "1.0.217", features = ["derive"]}

@@ -1,4 +1,11 @@
-pub mod ast;
+pub mod arena;
+pub mod new_ast;
+pub mod old_ast;
+
+//temporary fix
+pub mod ast {
+    pub use super::old_ast::*;
+}
 
 use std::path::PathBuf;
 

@@ -7,9 +7,9 @@ use crate::{
 pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
     match val.tag {
-        VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT  => {
+        VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT => {
             println!("{}", val)
-        },
+        }
         VMData::TAG_STR => {
             println!("{}", state.object_map.get(val.as_object()).string())
         }
@@ -24,9 +24,9 @@ pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
 pub fn print(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
     match val.tag {
-        VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT  => {
+        VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT => {
             print!("{}", val)
-        },
+        }
         VMData::TAG_STR => {
             print!("{}", state.object_map.get(val.as_object()).string())
         }

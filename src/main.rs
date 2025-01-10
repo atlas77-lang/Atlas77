@@ -42,7 +42,6 @@ pub(crate) fn run(path: String) {
     let mut runtime = Runtime::new();
 
     // file
-
     runtime.add_extern_fn("read_dir", atlas_stdlib::file::read_dir);
     runtime.add_extern_fn("read_file", atlas_stdlib::file::read_file);
     runtime.add_extern_fn("write_file", atlas_stdlib::file::write_file);

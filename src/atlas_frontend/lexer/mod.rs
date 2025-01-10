@@ -30,10 +30,11 @@ lexer_builder! {
             ';' => Semicolon,
             '\'' => Quote,
             '?' => Interrogation,
+            '@' => CompTime,
         },
         Either {
             '=' => '=' => OpEq, OpAssign,
-            '!' => '=' =>  OpNEq, Bang,
+            '!' => '=' => OpNEq, Bang,
             '.' => '.' => DoubleDot, Dot,
             ':' => ':' => DoubleColon, Colon,
             '-' => '>' => RArrow, OpSub,
@@ -45,16 +46,33 @@ lexer_builder! {
         }
     },
     Keyword {
-        // Keywords
-        "then", "if", "else", "struct", "true", "false", "let", "import", "return", "enum", "List", "end", "do", "match", "new", "extern", "as",
-        // Types
-        "int", "uint", "float", "string", "List", "char", "unit",
+        "impure"    => KwImpure,
+        "extern"    => KwExtern,
+        "then"      => KwThen,
+        "if"        => KwIf,
+        "else"      => KwElse,
+        "struct"    => KwStruct,
+        "true"      => KwTrue,
+        "false"     => KwFalse,
+        "let"       => KwLet,
+        "include"   => KwInclude,
+        "return"    => KwReturn, //will probably be removed at one point
+        "enum"      => KwEnum,
+        "end"       => KwEnd,
+        "do"        => KwDo,
+        "i64"       => I64Ty,
+        "f64"       => F64Ty,
+        "u64"       => U64Ty,
+        "char"      => CharTy,
+        "bool"      => BoolTy,
+        "str"       => StrTy,
+        "List"      => ListTy,
     },
     Number {
         trailing {
-            "_int"   => i64  => INT,
-            "_uint"  => u64 => UINT,
-            "_float" => f64  => FLOAT
+            "_i64"  => i64  => I64,
+            "_u64"  => u64  => U64,
+            "_f64"  => f64  => F64
         },
         float: true,
         u_int: true,
