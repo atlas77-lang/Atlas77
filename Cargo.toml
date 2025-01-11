@@ -26,10 +26,12 @@ codegen-units = 1
 [dependencies]
 # internment will be removed and replaced with a custom arena allocator
 internment = "0.8.4"
-clap = { version = "4.4.8", features = ["derive"] }
+clap = { version = "4.5.26", features = ["derive"] }
 rand = "0.8.5"
 # Waiting for the "0.7.0" release
 atlas-core = "0.7.0"
 time = { version = "0.3.37", features = ["formatting"] }
 bumpalo = "3.16.0"
-serde = {version =  "1.0.217", features = ["derive"]}
+serde = { version =  "1.0.217", features = ["derive"] }
+thiserror = { version = "2.0.11" }
+miette = { version = "7.4.0", features = ["fancy"] }

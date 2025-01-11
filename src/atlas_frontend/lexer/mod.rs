@@ -60,13 +60,16 @@ lexer_builder! {
         "enum"      => KwEnum,
         "end"       => KwEnd,
         "do"        => KwDo,
+        "as"        => KwAs,
         "i64"       => I64Ty,
         "f64"       => F64Ty,
         "u64"       => U64Ty,
+        "unit"      => UnitTy,
         "char"      => CharTy,
         "bool"      => BoolTy,
         "str"       => StrTy,
         "List"      => ListTy,
+        "Map"       => MapTy,
     },
     Number {
         trailing {
@@ -78,4 +81,44 @@ lexer_builder! {
         u_int: true,
         int: true
     },
+}
+
+impl std::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.kind() {
+            TokenKind::Literal(l) => {
+                write!(f, "{:?}", l)
+            }
+            TokenKind::KwDo => {
+                write!(f, "do")
+            }
+            TokenKind::KwEnd => {
+                write!(f, "end")
+            }
+            TokenKind::KwElse => {
+                write!(f, "else")
+            }
+            TokenKind::KwEnum => {
+                write!(f, "enum")
+            }
+            TokenKind::KwExtern => {
+                write!(f, "extern")
+            }
+            _ => {
+                return write!(f, "{:?}", self.kind());
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct TokenVec(pub Vec<TokenKind>);
+
+impl std::fmt::Display for TokenVec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for token in &self.0 {
+            write!(f, "{:?} ", token)?;
+        }
+        Ok(())
+    }
 }

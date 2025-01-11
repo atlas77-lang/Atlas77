@@ -1,5 +1,7 @@
 pub mod arena;
+pub mod error;
 pub mod new_ast;
+pub mod new_mod;
 pub mod old_ast;
 
 //temporary fix
@@ -51,9 +53,9 @@ impl SimpleParserV1 {
     pub fn parse(&mut self) -> Result<AbstractSyntaxTree, ParseError> {
         let mut ast: AbstractSyntaxTree = Vec::new();
         self.advance(); //Start of Input (SoI)
-        while self.current().kind() != EoI {
-            ast.push(*self.parse_expression().expect("Failed to parse expression"));
-        }
+                        /*        while self.current().kind() != EoI {
+                            ast.push(*self.parse_expression().expect("Failed to parse expression"));
+                        }*/
         Ok(ast)
     }
     /// Creates a new empty `SimpleParserV1`
@@ -93,7 +95,7 @@ impl SimpleParserV1 {
         }
     }
 
-    fn parse_type(&mut self) -> Result<Box<Type>, ParseError> {
+    /*fn parse_type(&mut self) -> Result<Box<Type>, ParseError> {
         let tok = self.advance();
         match tok.kind() {
             LParen => {
@@ -569,5 +571,5 @@ impl SimpleParserV1 {
             }
         }
         Ok(args)
-    }
+    }*/
 }

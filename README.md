@@ -102,13 +102,13 @@ Or directly from their website: [Rust](https://www.rust-lang.org/tools/install)
 
 ### Fibonacci Example
 ```ts
-let fib: (n: int) -> int = 
+let fib: (i64) -> i64 = \ n ->
   match n
   | 0 ~> 0
   | 1 ~> 1
   \ _ ~> fib(n - 1) + fib(n - 2)
 
-let main: () -> int = fib(10) //> 55
+let main: () -> i64 = \ _ -> fib(10) //> 55
 ```
 
 _For more examples, please refer to the [examples folder](https://github.com/atlas77-lang/Atlas77/tree/main/examples)_
@@ -190,9 +190,11 @@ Don't forget to give the project a star! Thanks again!
 
 ### Top contributors:
 
-<a href="https://github.com/atlas77-lang/Atlas77/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=atlas77-lang/Atlas77" alt="contrib.rocks image" />
+<a href="https://github.com/atlas77-lang/atlas77/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=atlas77-lang/atlas77" />
 </a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

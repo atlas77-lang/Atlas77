@@ -1,6 +1,9 @@
 use std::{path::PathBuf, time::Instant};
+//#[allow(unused)]
 
 pub mod atlas_frontend;
+pub mod atlas_hir;
+pub mod atlas_macro;
 pub mod atlas_memory;
 pub mod atlas_runtime;
 pub mod atlas_stdlib;
@@ -9,6 +12,7 @@ use atlas_frontend::parse;
 use atlas_runtime::{visitor::Visitor, Runtime};
 
 use clap::{command, Parser};
+use miette::Result;
 
 #[derive(Parser)] // requires `derive` feature
 #[command(name = "Atlas 77")]
@@ -18,13 +22,13 @@ enum AtlasRuntimeCLI {
     Run { file_path: String },
 }
 
-fn main() {
+fn main() -> Result<()> {
     let AtlasRuntimeCLI::Run { file_path } = AtlasRuntimeCLI::parse();
 
-    run(file_path);
+    run(file_path)
 }
 
-pub(crate) fn run(path: String) {
+pub(crate) fn run(path: String) -> Result<()> {
     let mut path_buf = PathBuf::from(path.clone());
 
     if let Ok(current_dir) = std::env::current_dir() {
@@ -89,4 +93,5 @@ pub(crate) fn run(path: String) {
 
     let end = Instant::now();
     println!("Elapsed time: {:?}", (end - start));
+    Ok(())
 }

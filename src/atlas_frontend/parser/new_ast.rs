@@ -4,23 +4,28 @@ use serde::Serialize;
 
 use atlas_core::utils::span::*;
 
+use super::ast;
+
 /// A `Program` is the top-level node of the AST and contains all the items.
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstProgram<'ast> {
-    pub items: Vec<AstItem<'ast>>,
+    pub items: &'ast [&'ast AstItem<'ast>],
 }
 
 /// An `Item` is anything that can be declared at the top-level scope of a program.
 /// This currently means variables & structs declarations
-/// 
+///
 /// Enums & unions are also top-level items, but they are not yet supported
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub enum AstItem<'ast> {
     VariableDeclaration(AstLetExpr<'ast>),
     StructDeclaration(AstStruct<'ast>),
     ExternFunction(AstExternFunction<'ast>),
     Enum(AstEnum<'ast>),
     Union(AstUnion<'ast>),
-    Import(AstImport<'ast>),
+    Include(AstInclude<'ast>),
 }
 
 impl Spanned for AstItem<'_> {
@@ -31,54 +36,61 @@ impl Spanned for AstItem<'_> {
             AstItem::ExternFunction(v) => v.span,
             AstItem::Enum(v) => v.span,
             AstItem::Union(v) => v.span,
-            AstItem::Import(v) => v.span,
+            AstItem::Include(v) => v.span,
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstUnion<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub variants: &'ast [&'ast AstUnionVariant<'ast>],
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstUnionVariant<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub fields: &'ast [&'ast AstObjField<'ast>],
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstEnum<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub variants: &'ast [&'ast AstEnumVariant<'ast>],
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 /// Enums currently don't support associated values
 pub struct AstEnumVariant<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstStruct<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub fields: &'ast [&'ast AstObjField<'ast>],
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstObjField<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub ty: &'ast AstType<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstExternFunction<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
@@ -86,14 +98,16 @@ pub struct AstExternFunction<'ast> {
     pub ret: &'ast AstType<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstImport<'ast> {
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstInclude<'ast> {
     pub span: Span,
     pub path: &'ast str,
     pub alias: Option<&'ast AstIdentifier<'ast>>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub enum AstExpr<'ast> {
     Let(AstLetExpr<'ast>),
     Lambda(AstLambdaExpr<'ast>),
@@ -109,6 +123,7 @@ pub enum AstExpr<'ast> {
     Indexing(AstIndexingExpr<'ast>),
     FieldAccess(AstFieldAccessExpr<'ast>),
     NewObj(AstNewObjExpr<'ast>),
+    //Tuple(AstTupleExpr<'ast>),
 }
 
 impl Spanned for AstExpr<'_> {
@@ -132,55 +147,63 @@ impl Spanned for AstExpr<'_> {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstNewObjExpr<'ast> {
     pub span: Span,
     pub ty: &'ast AstType<'ast>,
     pub fields: &'ast [&'ast AstFieldInit<'ast>],
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstFieldInit<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub value: &'ast AstExpr<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstFieldAccessExpr<'ast> {
     pub span: Span,
     pub target: &'ast AstExpr<'ast>,
     pub field: &'ast AstIdentifier<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstIndexingExpr<'ast> {
     pub span: Span,
     pub target: &'ast AstExpr<'ast>,
     pub index: &'ast AstExpr<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstDoExpr<'ast> {
     pub span: Span,
     pub exprs: &'ast [&'ast AstExpr<'ast>],
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstCallExpr<'ast> {
     pub span: Span,
     pub callee: &'ast AstExpr<'ast>,
     pub args: &'ast [&'ast AstExpr<'ast>],
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstUnaryOpExpr<'ast> {
     pub span: Span,
     pub expr: &'ast AstExpr<'ast>,
-    pub op: AstUnaryOp,
+    pub op: Option<AstUnaryOp>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub enum AstUnaryOp {
     Neg,
     Not,
@@ -188,7 +211,8 @@ pub enum AstUnaryOp {
     AsRef,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstBinaryOpExpr<'ast> {
     pub span: Span,
     pub lhs: &'ast AstExpr<'ast>,
@@ -196,7 +220,8 @@ pub struct AstBinaryOpExpr<'ast> {
     pub op: AstBinaryOp,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub enum AstBinaryOp {
     Add,
     Sub,
@@ -214,7 +239,8 @@ pub enum AstBinaryOp {
     Or,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstIfElseExpr<'ast> {
     pub span: Span,
     pub condition: &'ast AstExpr<'ast>,
@@ -222,7 +248,8 @@ pub struct AstIfElseExpr<'ast> {
     pub else_expr: Option<&'ast AstExpr<'ast>>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstMatchExpr<'ast> {
     pub span: Span,
     pub expr: &'ast AstExpr<'ast>,
@@ -230,27 +257,31 @@ pub struct AstMatchExpr<'ast> {
     pub default: Option<&'ast AstExpr<'ast>>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstMatchArm<'ast> {
     pub span: Span,
     pub pattern: &'ast AstPattern<'ast>,
     pub expr: &'ast AstExpr<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstPattern<'ast> {
     pub span: Span,
     pub kind: AstPatternKind<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 // TODO: Add support for tuples, enums and structs
 pub enum AstPatternKind<'ast> {
     Identifier(&'ast AstIdentifier<'ast>),
     Literal(AstLiteral<'ast>),
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstLetExpr<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
@@ -258,79 +289,109 @@ pub struct AstLetExpr<'ast> {
     pub value: &'ast AstExpr<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstLambdaExpr<'ast> {
     pub span: Span,
     pub args: &'ast [&'ast AstIdentifier<'ast>],
     pub body: &'ast AstExpr<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstCompTimeExpr<'ast> {
     pub span: Span,
     pub expr: &'ast AstExpr<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstIdentifier<'ast> {
     pub span: Span,
     pub name: &'ast str,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub enum AstLiteral<'ast> {
     Integer(AstIntegerLiteral),
+    UnsignedIntegerer(AstUnsignedIntegerLiteral),
     Float(AstFloatLiteral),
     String(AstStringLiteral<'ast>),
     Boolean(AstBooleanLiteral),
+    List(AstListLiteral<'ast>),
 }
 
 impl Spanned for AstLiteral<'_> {
     fn span(&self) -> Span {
         match self {
             AstLiteral::Integer(l) => l.span,
+            AstLiteral::UnsignedIntegerer(l) => l.span,
             AstLiteral::Float(l) => l.span,
             AstLiteral::String(l) => l.span,
             AstLiteral::Boolean(l) => l.span,
+            AstLiteral::List(l) => l.span,
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstListLiteral<'ast> {
+    pub span: Span,
+    pub items: &'ast [&'ast AstExpr<'ast>],
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstBooleanLiteral {
     pub span: Span,
     pub value: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstStringLiteral<'ast> {
     pub span: Span,
     pub value: &'ast str,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstFloatLiteral {
     pub span: Span,
     pub value: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstUnsignedIntegerLiteral {
+    pub span: Span,
+    pub value: u64,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstIntegerLiteral {
     pub span: Span,
     pub value: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub enum AstType<'ast> {
     Unit(AstUnitType),
     Boolean(AstBooleanType),
     Integer(AstIntegerType),
     Float(AstFloatType),
-    Uint(AstUintType),
+    UnsignedIntegerer(AstUnsignedIntegerType),
     String(AstStringType),
     Named(AstNamedType<'ast>),
     Pointer(AstPointerType<'ast>),
     Function(AstFunctionType<'ast>),
+    List(AstListType<'ast>),
+    Map(AstMapType<'ast>),
+    //Tuple(AstTupleType<'ast>),
 }
 
 impl Spanned for AstType<'_> {
@@ -340,60 +401,86 @@ impl Spanned for AstType<'_> {
             AstType::Boolean(t) => t.span,
             AstType::Integer(t) => t.span,
             AstType::Float(t) => t.span,
-            AstType::Uint(t) => t.span,
+            AstType::UnsignedIntegerer(t) => t.span,
             AstType::String(t) => t.span,
             AstType::Named(t) => t.span,
             AstType::Pointer(t) => t.span,
             AstType::Function(t) => t.span,
+            AstType::List(t) => t.span,
+            AstType::Map(t) => t.span,
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstMapType<'ast> {
+    pub span: Span,
+    pub key: &'ast AstType<'ast>,
+    pub value: &'ast AstType<'ast>,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstListType<'ast> {
+    pub span: Span,
+    pub inner: &'ast AstType<'ast>,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstFunctionType<'ast> {
     pub span: Span,
     pub args: &'ast [&'ast AstType<'ast>],
     pub ret: &'ast AstType<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstPointerType<'ast> {
     pub span: Span,
     pub inner: &'ast AstType<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstStringType {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstNamedType<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstIntegerType {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstFloatType {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstUintType {
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstUnsignedIntegerType {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstBooleanType {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub struct AstUnitType {
     pub span: Span,
 }
