@@ -50,6 +50,7 @@
     </li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#goal-of-the-language">Goal of the language</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -143,6 +144,10 @@ _For more examples, please refer to the [examples folder](https://github.com/atl
   - [x] Expanded standard library using external functions
 
 ### Upcoming Features
+**All of the features noted here might just be vaulted, I don't really know where to go with the language, so I'll try to design it a bit more and maybe write a bit about my thoughts somewhere.**
+**Right now it is a functional programming language, which means it will be great for parallelism/concurrency and should overall be kind of efficient for the 1.0 version.**
+**But it doesn't really allign with the projects I want to do later on (see _Goal of the language_)**
+
 - [ ] Support for `enum` types:
   - [ ] Base enums (standard integer enums)
   - [ ] Advanced enums (enums with associated data)
@@ -172,6 +177,18 @@ See the [open issues](https://github.com/atlas77-lang/Atlas77/issues) for a full
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+
+<!-- GOAL OF THE LANGUAGE -->
+## Goal of the language
+
+- Boostrapping the compiler
+- Making a simple ECS
+- Making a simple Game Engine with Vulkan bindings (maybe OpenGL too) 
+> At least it should be possible to make on it
+- Using BlueEngine from the language (even if it's not really most efficient)
+- Either JIT or AOT compilation with Cranelift (so no VM or interpreter in the long run)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 <!-- CONTRIBUTING -->

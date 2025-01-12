@@ -4,9 +4,7 @@ use serde::Serialize;
 
 use atlas_core::utils::span::*;
 
-use super::ast;
-
-/// A `Program` is the top-level node of the AST and contains all the items.
+/// An `AstProgram` is the top-level node of the AST and contains all the items.
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone, Serialize, Copy)]
 pub struct AstProgram<'ast> {
