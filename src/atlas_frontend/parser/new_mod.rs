@@ -9,11 +9,11 @@ use super::error::{ParseError, ParseResult, UnexpectedTokenError};
 use super::new_ast::{
     AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteral, AstBooleanType, AstCallExpr, AstCompTimeExpr,
     AstDoExpr, AstEnum, AstEnumVariant, AstExpr, AstExternFunction, AstFieldAccessExpr,
-    AstFieldInit, AstFloatLiteral, AstFloatType, AstFunctionType, AstIdentifier, AstIfElseExpr,
-    AstInclude, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem, AstLambdaExpr,
-    AstLetExpr, AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr, AstObjField, AstPattern,
-    AstPatternKind, AstPointerType, AstProgram, AstStringLiteral, AstStringType, AstStruct,
-    AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant, AstUnitType,
+    AstFieldInit, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType, AstIdentifier,
+    AstIfElseExpr, AstInclude, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem,
+    AstLambdaExpr, AstLetExpr, AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr, AstObjField,
+    AstPattern, AstPatternKind, AstPointerType, AstProgram, AstStringLiteral, AstStringType,
+    AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant, AstUnitType,
     AstUnsignedIntegerType,
 };
 
@@ -100,10 +100,10 @@ impl<'ast> Parser<'ast> {
     fn parse_item(&mut self) -> ParseResult<AstItem<'ast>> {
         let start = self.current().start();
         match self.current().kind() {
-            TokenKind::KwStruct => Ok(AstItem::StructDeclaration(self.parse_struct()?)),
+            TokenKind::KwStruct => Ok(AstItem::Struct(self.parse_struct()?)),
             TokenKind::KwInclude => Ok(AstItem::Include(self.parse_include()?)),
             TokenKind::KwExtern => Ok(AstItem::ExternFunction(self.parse_extern_function()?)),
-            TokenKind::KwLet => Ok(AstItem::VariableDeclaration(self.parse_let()?)),
+            TokenKind::KwFunc => Ok(AstItem::Func(self.parse_func()?)),
             _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                 token: self.current().clone(),
                 expected: TokenVec(vec![TokenKind::Literal(Literal::Identifier(
@@ -114,6 +114,12 @@ impl<'ast> Parser<'ast> {
             })),
         }
     }
+
+    #[must_use]
+    fn parse_func(&mut self) -> ParseResult<AstFunction<'ast>> {
+        todo!("parse_func")
+    }
+
     #[must_use]
     fn parse_let(&mut self) -> ParseResult<AstLetExpr<'ast>> {
         let _ = self.advance();
@@ -558,7 +564,7 @@ mod tests {
 include "foo.atlas" as foo
 struct Foo(bar: &str, baz: f64)
 extern print(&str) -> (i64) -> (i64, &u64) -> () -> &unit
-let x: i64 = 5+5
+func main() -> i64 {}
         "#
         .to_string();
         let mut lexer = AtlasLexer::default();
@@ -574,7 +580,7 @@ let x: i64 = 5+5
             Ok(program) => {
                 for item in program.items.iter() {
                     match item {
-                        AstItem::StructDeclaration(s) => {
+                        AstItem::Struct(s) => {
                             println!(
                                 "struct {:?} ({:?})\n",
                                 s.name.name,
@@ -598,8 +604,16 @@ let x: i64 = 5+5
                                 e.ret
                             );
                         }
-                        AstItem::VariableDeclaration(v) => {
-                            println!("let {:?}: {:?} = {:?}\n", v.name.name, v.ty, v.value);
+                        AstItem::Func(f) => {
+                            println!(
+                                "func {:?} ({:?}) -> {:?}\n",
+                                f.name.name,
+                                f.args
+                                    .iter()
+                                    .map(|a| format!("{:?}", a))
+                                    .collect::<String>(),
+                                f.ret
+                            );
                         }
                         _ => {}
                     }

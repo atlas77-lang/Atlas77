@@ -1,5 +1,5 @@
 use std::{path::PathBuf, time::Instant};
-//#[allow(unused)]
+#[allow(unused)]
 
 pub mod atlas_frontend;
 pub mod atlas_hir;
@@ -15,17 +15,52 @@ use clap::{command, Parser};
 use miette::Result;
 
 #[derive(Parser)] // requires `derive` feature
-#[command(name = "Atlas 77")]
-#[command(bin_name = "atlas_77", author = "Gipson62", version("v0.5-beta"), about = "Programming language made in Rust", long_about = None)]
+#[command(name = "Atlas77")]
+#[command(
+    bin_name = "atlas_77",
+    author = "Gipson62",
+    version("v0.5-beta Phoenix"),
+    about = "Programming language made in Rust",
+    long_about = "Atlas77 is a programming language made in Rust. It is a statically typed language with a focus on [To be defined]."
+)]
 enum AtlasRuntimeCLI {
-    #[command(arg_required_else_help = true)]
+    #[command(
+        arg_required_else_help = true,
+        about = "Compile then run a local package",
+        long_about = "Compile then run a local package. The output will be written to the current directory.",
+    )]
     Run { file_path: String },
+    #[command(
+        arg_required_else_help = true,
+        about = "Compile a local package and all of its dependencies",
+        long_about = "Compile a local package and all of its dependencies. The output will be written to the current directory.",
+    )]
+    Build { file_path: String },
 }
 
 fn main() -> Result<()> {
-    let AtlasRuntimeCLI::Run { file_path } = AtlasRuntimeCLI::parse();
+    match AtlasRuntimeCLI::parse() {
+        AtlasRuntimeCLI::Run { file_path } => run(file_path),
+        AtlasRuntimeCLI::Build { file_path } => build(file_path),
+    }
+}
 
-    run(file_path)
+pub(crate) fn build(path: String) -> Result<()> {
+    let mut path_buf = PathBuf::from(path.clone());
+
+    if let Ok(current_dir) = std::env::current_dir() {
+        if !path_buf.is_absolute() {
+            path_buf = current_dir.join(path_buf);
+        }
+    } else {
+        eprintln!("Failed to get current directory");
+    }
+
+    let program = parse(path_buf.to_str().unwrap()).expect("Failed to open the file");
+
+    println!("{:?}", &program);
+
+    Ok(())
 }
 
 pub(crate) fn run(path: String) -> Result<()> {

@@ -18,9 +18,9 @@ pub struct AstProgram<'ast> {
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone, Serialize, Copy)]
 pub enum AstItem<'ast> {
-    VariableDeclaration(AstLetExpr<'ast>),
-    StructDeclaration(AstStruct<'ast>),
+    Struct(AstStruct<'ast>),
     ExternFunction(AstExternFunction<'ast>),
+    Func(AstFunction<'ast>),
     Enum(AstEnum<'ast>),
     Union(AstUnion<'ast>),
     Include(AstInclude<'ast>),
@@ -29,14 +29,24 @@ pub enum AstItem<'ast> {
 impl Spanned for AstItem<'_> {
     fn span(&self) -> Span {
         match self {
-            AstItem::VariableDeclaration(v) => v.span,
-            AstItem::StructDeclaration(v) => v.span,
+            AstItem::Struct(v) => v.span,
             AstItem::ExternFunction(v) => v.span,
+            AstItem::Func(v) => v.span,
             AstItem::Enum(v) => v.span,
             AstItem::Union(v) => v.span,
             AstItem::Include(v) => v.span,
         }
     }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstFunction<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub args: &'ast [&'ast AstObjField<'ast>],
+    pub ret: &'ast AstType<'ast>,
+    pub body: &'ast AstExpr<'ast>,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

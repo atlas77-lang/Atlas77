@@ -46,27 +46,30 @@ lexer_builder! {
         }
     },
     Keyword {
-        "impure"    => KwImpure,
+        "class"     => KwClass,
+        "public"    => KwPublic,
+        "private"   => KwPrivate,
+        //Keywords
+        "func"      => KwFunc,
         "extern"    => KwExtern,
-        "then"      => KwThen,
         "if"        => KwIf,
         "else"      => KwElse,
         "struct"    => KwStruct,
-        "true"      => KwTrue,
+        "true"      => KwTrue, //should be fixed
         "false"     => KwFalse,
         "let"       => KwLet,
         "include"   => KwInclude,
         "return"    => KwReturn, //will probably be removed at one point
         "enum"      => KwEnum,
-        "end"       => KwEnd,
-        "do"        => KwDo,
         "as"        => KwAs,
+        //Primitive Types
         "i64"       => I64Ty,
         "f64"       => F64Ty,
         "u64"       => U64Ty,
         "unit"      => UnitTy,
         "char"      => CharTy,
         "bool"      => BoolTy,
+        //Complex Types
         "str"       => StrTy,
         "List"      => ListTy,
         "Map"       => MapTy,
@@ -88,12 +91,6 @@ impl std::fmt::Display for Token {
         match self.kind() {
             TokenKind::Literal(l) => {
                 write!(f, "{:?}", l)
-            }
-            TokenKind::KwDo => {
-                write!(f, "do")
-            }
-            TokenKind::KwEnd => {
-                write!(f, "end")
             }
             TokenKind::KwElse => {
                 write!(f, "else")
