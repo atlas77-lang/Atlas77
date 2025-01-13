@@ -1,9 +1,12 @@
-let main: () -> int = do
+@include "std/io"
+@include "std/string"
+
+func main() -> i64 {
     let my_string: string = "Hello ";
     let my_string_two: string = "world!";
     let my_string_three: string = my_string + my_string_two;
     println(my_string_three);
-    let length: int = str_len(my_string_three);
+    let length: i64 = str_len(my_string_three);
     println(length);
-    0;
-end
+    return 0;
+}
