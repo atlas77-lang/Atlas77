@@ -6,6 +6,7 @@ lexer_builder! {
         symbol: true,
         keyword: true,
         string: true,
+        comment: true,
         whitespace: {
             allow_them: false,
             use_system: true,
@@ -58,7 +59,7 @@ lexer_builder! {
         "true"      => KwTrue, //should be fixed
         "false"     => KwFalse,
         "let"       => KwLet,
-        "include"   => KwInclude,
+        "import"    => KwImport,
         "return"    => KwReturn, //will probably be removed at one point
         "enum"      => KwEnum,
         "as"        => KwAs,

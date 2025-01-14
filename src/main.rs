@@ -1,6 +1,5 @@
 use std::{path::PathBuf, time::Instant};
 #[allow(unused)]
-
 pub mod atlas_frontend;
 pub mod atlas_hir;
 pub mod atlas_macro;
@@ -27,13 +26,13 @@ enum AtlasRuntimeCLI {
     #[command(
         arg_required_else_help = true,
         about = "Compile then run a local package",
-        long_about = "Compile then run a local package. The output will be written to the current directory.",
+        long_about = "Compile then run a local package. The output will be written to the current directory."
     )]
     Run { file_path: String },
     #[command(
         arg_required_else_help = true,
         about = "Compile a local package and all of its dependencies",
-        long_about = "Compile a local package and all of its dependencies. The output will be written to the current directory.",
+        long_about = "Compile a local package and all of its dependencies. The output will be written to the current directory."
     )]
     Build { file_path: String },
 }

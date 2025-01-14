@@ -1,3 +1,5 @@
+pub type RuntimeResult<T> = Result<T, RuntimeError>;
+
 #[derive(Debug, Clone, Copy)]
 pub enum RuntimeError {
     OutOfMemory,

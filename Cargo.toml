@@ -29,7 +29,7 @@ internment = "0.8.4"
 clap = { version = "4.5.26", features = ["derive"] }
 rand = "0.8.5"
 # Waiting for the "0.7.0" release
-atlas-core = "0.7.0"
+atlas-core = "0.7.1"
 time = { version = "0.3.37", features = ["formatting"] }
 bumpalo = "3.16.0"
 serde = { version =  "1.0.217", features = ["derive"] }

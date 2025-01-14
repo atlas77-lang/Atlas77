@@ -7,14 +7,14 @@ use miette::{SourceOffset, SourceSpan};
 
 use super::error::{ParseError, ParseResult, UnexpectedTokenError};
 use super::new_ast::{
-    AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteral, AstBooleanType, AstCallExpr, AstCompTimeExpr,
-    AstDoExpr, AstEnum, AstEnumVariant, AstExpr, AstExternFunction, AstFieldAccessExpr,
-    AstFieldInit, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType, AstIdentifier,
-    AstIfElseExpr, AstInclude, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem,
-    AstLambdaExpr, AstLetExpr, AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr, AstObjField,
-    AstPattern, AstPatternKind, AstPointerType, AstProgram, AstStringLiteral, AstStringType,
-    AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant, AstUnitType,
-    AstUnsignedIntegerType,
+    AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType, AstCallExpr,
+    AstCompTimeExpr, AstDoExpr, AstEnum, AstEnumVariant, AstExpr, AstExternFunction,
+    AstFieldAccessExpr, AstFieldInit, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType,
+    AstIdentifier, AstIfElseExpr, AstInclude, AstIndexingExpr, AstIntegerLiteral, AstIntegerType,
+    AstItem, AstLambdaExpr, AstLetExpr, AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr,
+    AstObjField, AstPattern, AstPatternKind, AstPointerType, AstProgram, AstStringLiteral,
+    AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant,
+    AstUnitType, AstUnsignedIntegerType,
 };
 
 use super::arena::AstArena;
@@ -30,6 +30,15 @@ pub struct Parser<'ast> {
     src: String,
 }
 
+pub(crate) fn remove_comments(toks: Vec<Token>) -> Vec<Token> {
+    toks.into_iter()
+        .filter(|t| match t.kind() {
+            TokenKind::Comments(_) => false,
+            _ => true,
+        })
+        .collect()
+}
+
 impl<'ast> Parser<'ast> {
     pub fn new(
         arena: AstArena<'ast>,
@@ -37,6 +46,7 @@ impl<'ast> Parser<'ast> {
         file_path: PathBuf,
         src: String,
     ) -> Parser<'ast> {
+        let tokens = remove_comments(tokens);
         Parser {
             arena,
             tokens,
@@ -101,9 +111,10 @@ impl<'ast> Parser<'ast> {
         let start = self.current().start();
         match self.current().kind() {
             TokenKind::KwStruct => Ok(AstItem::Struct(self.parse_struct()?)),
-            TokenKind::KwInclude => Ok(AstItem::Include(self.parse_include()?)),
+            TokenKind::KwImport => Ok(AstItem::Include(self.parse_import()?)),
             TokenKind::KwExtern => Ok(AstItem::ExternFunction(self.parse_extern_function()?)),
             TokenKind::KwFunc => Ok(AstItem::Func(self.parse_func()?)),
+            //Handling comments
             _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                 token: self.current().clone(),
                 expected: TokenVec(vec![TokenKind::Literal(Literal::Identifier(
@@ -117,7 +128,52 @@ impl<'ast> Parser<'ast> {
 
     #[must_use]
     fn parse_func(&mut self) -> ParseResult<AstFunction<'ast>> {
-        todo!("parse_func")
+        let _ = self.advance();
+        let name = self.parse_identifier()?;
+        self.expect(TokenKind::LParen)?;
+        let mut params = vec![];
+        while self.current().kind() != TokenKind::RParen {
+            params.push(self.parse_obj_field()?);
+            //Bad code imo, because programmers could just do: `func foo(bar: i32 baz: i64)` with no comma between the args
+            if self.current().kind() == TokenKind::Comma {
+                let _ = self.advance();
+            }
+        }
+        self.expect(TokenKind::RParen)?;
+        self.expect(TokenKind::RArrow)?;
+        let ret_ty = self.parse_type()?;
+        let body = self.parse_block()?;
+        let node = AstFunction {
+            span: Span::union_span(name.span, body.span),
+            name: self.arena.alloc(name),
+            args: self.arena.alloc_vec(params),
+            ret: self.arena.alloc(ret_ty),
+            body: self.arena.alloc(body),
+        };
+        Ok(node)
+    }
+
+    fn parse_block(&mut self) -> ParseResult<AstBlock<'ast>> {
+        self.expect(TokenKind::LBrace)?;
+        let mut stmts = vec![];
+        while self.current().kind() != TokenKind::RBrace {
+            stmts.push(self.parse_expr()?);
+            println!("parse_block: {:?}", self.current().kind());
+            self.expect(TokenKind::Semicolon)?;
+        }
+        self.expect(TokenKind::RBrace)?;
+
+        let node = AstBlock {
+            span: Span::union_span(stmts.first().unwrap().span(), stmts.last().unwrap().span()),
+            exprs: self.arena.alloc_vec(stmts),
+        };
+        Ok(node)
+    }
+
+    #[must_use]
+    /// This function is mostly used for clarity because calling `parse_binary` feels weird
+    pub fn parse_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+        self.parse_binary()
     }
 
     #[must_use]
@@ -252,53 +308,99 @@ impl<'ast> Parser<'ast> {
 
         let node = match tok.kind() {
             TokenKind::Literal(Literal::Bool(b)) => {
-                AstExpr::Literal(AstLiteral::Boolean(AstBooleanLiteral {
+                let node = AstExpr::Literal(AstLiteral::Boolean(AstBooleanLiteral {
                     span: tok.span(),
                     value: b,
-                }))
+                }));
+                let _ = self.advance();
+                node
             }
             TokenKind::Literal(Literal::Float(f)) => {
-                AstExpr::Literal(AstLiteral::Float(AstFloatLiteral {
+                let node = AstExpr::Literal(AstLiteral::Float(AstFloatLiteral {
                     span: tok.span(),
                     value: f,
-                }))
+                }));
+                let _ = self.advance();
+                node 
             }
             TokenKind::Literal(Literal::F64(f)) => {
-                AstExpr::Literal(AstLiteral::Float(AstFloatLiteral {
+                let node = AstExpr::Literal(AstLiteral::Float(AstFloatLiteral {
                     span: tok.span(),
                     value: f,
-                }))
+                }));
+                let _ = self.advance();
+                node
             }
             TokenKind::Literal(Literal::U64(u)) => {
-                AstExpr::Literal(AstLiteral::UnsignedIntegerer(AstUnsignedIntegerLiteral {
+                let node = AstExpr::Literal(AstLiteral::UnsignedIntegerer(AstUnsignedIntegerLiteral {
                     span: tok.span(),
                     value: u,
-                }))
+                }));
+                let _ = self.advance();
+                node
             }
             TokenKind::Literal(Literal::Int(i)) => {
-                AstExpr::Literal(AstLiteral::Integer(AstIntegerLiteral {
+                let node = AstExpr::Literal(AstLiteral::Integer(AstIntegerLiteral {
                     span: tok.span(),
                     value: i,
-                }))
+                }));
+                let _ = self.advance();
+                node
             }
             TokenKind::Literal(Literal::I64(i)) => {
-                AstExpr::Literal(AstLiteral::Integer(AstIntegerLiteral {
+                let node = AstExpr::Literal(AstLiteral::Integer(AstIntegerLiteral {
                     span: tok.span(),
                     value: i,
-                }))
+                }));
+                let _ = self.advance();
+                node
             }
             TokenKind::Literal(Literal::StringLiteral(s)) => {
-                AstExpr::Literal(AstLiteral::String(AstStringLiteral {
+                let node = AstExpr::Literal(AstLiteral::String(AstStringLiteral {
                     span: tok.span(),
                     value: self.arena.alloc(s),
-                }))
+                }));
+                let _ = self.advance();
+                node
             }
             //temporary, until the lexer is fixed
             TokenKind::KwTrue | TokenKind::KwFalse => {
-                AstExpr::Literal(AstLiteral::Boolean(AstBooleanLiteral {
+                let node = AstExpr::Literal(AstLiteral::Boolean(AstBooleanLiteral {
                     span: tok.span(),
                     value: tok.kind() == TokenKind::KwTrue,
-                }))
+                }));
+                let _ = self.advance();
+                node
+            }
+            TokenKind::Literal(Literal::Identifier(_)) => {
+                let mut node = AstExpr::Identifier(self.parse_identifier()?);
+
+                while let Some(_) = self.peek() {
+                    println!("parse_primary: {:?}", node);
+                    println!("parse_primary: {:?}", self.current().kind());
+                    match self.current().kind() {
+                        TokenKind::LParen => {
+                            node = AstExpr::Call(self.parse_fn_call(node)?);
+                            //let _ = self.advance();
+                        }
+                        TokenKind::LBracket => {
+                            node = AstExpr::Indexing(self.parse_indexing(node)?);
+                        }
+                        TokenKind::Dot => {
+                            node = AstExpr::FieldAccess(self.parse_field_access(node)?);
+                        }
+                        TokenKind::DoubleColon => {
+                            unimplemented!(
+                                "double colon path will be implemented later (i.e. std::io::print)"
+                            )
+                        }
+                        _ => {
+                            break;
+                        }
+                    }
+                }
+
+                node
             }
             _ => {
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
@@ -311,7 +413,6 @@ impl<'ast> Parser<'ast> {
                 }))
             }
         };
-        let _ = self.advance();
         Ok(node)
     }
 
@@ -340,7 +441,7 @@ impl<'ast> Parser<'ast> {
     }
 
     #[must_use]
-    fn parse_include(&mut self) -> ParseResult<AstInclude<'ast>> {
+    fn parse_import(&mut self) -> ParseResult<AstInclude<'ast>> {
         let start = self.advance();
 
         let path = match self.current().kind() {
@@ -386,16 +487,14 @@ impl<'ast> Parser<'ast> {
 
         let ident = self.parse_identifier()?;
 
-        self.expect(TokenKind::LParen)?;
+        self.expect(TokenKind::LBrace)?;
 
         let mut fields = vec![];
-        while self.current().kind() != TokenKind::RParen {
+        while self.current().kind() != TokenKind::RBrace {
             fields.push(self.parse_obj_field()?);
-            if self.current().kind() == TokenKind::Comma {
-                let _ = self.advance();
-            }
+            self.expect(TokenKind::Semicolon);
         }
-        self.expect(TokenKind::RParen)?;
+        self.expect(TokenKind::RBrace)?;
         let node = AstStruct {
             span: Span::union_span(ident.span, self.current().span()),
             name: self.arena.alloc(ident),
@@ -445,6 +544,57 @@ impl<'ast> Parser<'ast> {
             }
         };
         let _ = self.advance();
+        Ok(node)
+    }
+
+    fn parse_fn_call(&mut self, callee: AstExpr<'ast>) -> ParseResult<AstCallExpr<'ast>> {
+        self.expect(TokenKind::LParen)?;
+
+        let mut args = vec![];
+        while self.current().kind() != TokenKind::RParen {
+            args.push(self.parse_expr()?);
+            if self.current().kind() == TokenKind::Comma {
+                let _ = self.advance();
+            }
+        }
+        self.expect(TokenKind::RParen)?;
+
+        let node = AstCallExpr {
+            span: Span::union_span(callee.span(), self.current().span()),
+            callee: self.arena.alloc(callee),
+            args: self.arena.alloc_vec(args),
+        };
+        Ok(node)
+    }
+
+    fn parse_indexing(&mut self, target: AstExpr<'ast>) -> ParseResult<AstIndexingExpr<'ast>> {
+        self.expect(TokenKind::LBracket)?;
+
+        let index = self.parse_expr()?;
+
+        self.expect(TokenKind::RBracket)?;
+
+        let node = AstIndexingExpr {
+            span: Span::union_span(target.span(), self.current().span()),
+            target: self.arena.alloc(target),
+            index: self.arena.alloc(index),
+        };
+        Ok(node)
+    }
+
+    fn parse_field_access(
+        &mut self,
+        target: AstExpr<'ast>,
+    ) -> ParseResult<AstFieldAccessExpr<'ast>> {
+        self.expect(TokenKind::Dot)?;
+
+        let field = self.parse_identifier()?;
+
+        let node = AstFieldAccessExpr {
+            span: Span::union_span(target.span(), field.span),
+            target: self.arena.alloc(target),
+            field: self.arena.alloc(field),
+        };
         Ok(node)
     }
 
@@ -537,9 +687,10 @@ impl<'ast> Parser<'ast> {
             }
             _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                 token: self.current().clone(),
-                expected: TokenVec(vec![TokenKind::Literal(Literal::Identifier(
-                    "h".to_string(),
-                ))]),
+                expected: TokenVec(vec![
+                    TokenKind::Literal(Literal::Identifier("h".to_string())),
+                    token.kind(),
+                ]),
                 span: SourceSpan::new(
                     SourceOffset::from(start.start()),
                     self.current().end() - start.start(),
@@ -561,10 +712,18 @@ mod tests {
     #[test]
     fn test_parse_struct() -> Result<()> {
         let input = r#"
-include "foo.atlas" as foo
-struct Foo(bar: &str, baz: f64)
-extern print(&str) -> (i64) -> (i64, &u64) -> () -> &unit
-func main() -> i64 {}
+import "foo.atlas" as foo
+import "std/io"
+//struct fields are public by default
+struct Foo {
+    bar: &str;
+    baz: f64;
+}
+extern print(&str) -> unit
+func main() -> i64 {
+    print("Hello World");
+    index[0];
+}
         "#
         .to_string();
         let mut lexer = AtlasLexer::default();
@@ -606,13 +765,14 @@ func main() -> i64 {}
                         }
                         AstItem::Func(f) => {
                             println!(
-                                "func {:?} ({:?}) -> {:?}\n",
+                                "func {:?} ({:?}) -> {:?}\n {{\n {:?} \n}}\n",
                                 f.name.name,
                                 f.args
                                     .iter()
                                     .map(|a| format!("{:?}", a))
                                     .collect::<String>(),
-                                f.ret
+                                f.ret,
+                                f.body
                             );
                         }
                         _ => {}

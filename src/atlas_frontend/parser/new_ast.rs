@@ -46,7 +46,7 @@ pub struct AstFunction<'ast> {
     pub name: &'ast AstIdentifier<'ast>,
     pub args: &'ast [&'ast AstObjField<'ast>],
     pub ret: &'ast AstType<'ast>,
-    pub body: &'ast AstExpr<'ast>,
+    pub body: &'ast AstBlock<'ast>,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -131,6 +131,7 @@ pub enum AstExpr<'ast> {
     Indexing(AstIndexingExpr<'ast>),
     FieldAccess(AstFieldAccessExpr<'ast>),
     NewObj(AstNewObjExpr<'ast>),
+    Block(AstBlock<'ast>),
     //Tuple(AstTupleExpr<'ast>),
 }
 
@@ -151,8 +152,16 @@ impl Spanned for AstExpr<'_> {
             AstExpr::Indexing(e) => e.span,
             AstExpr::FieldAccess(e) => e.span,
             AstExpr::NewObj(e) => e.span,
+            AstExpr::Block(e) => e.span,
         }
     }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstBlock<'ast> {
+    pub span: Span,
+    pub exprs: &'ast [&'ast AstExpr<'ast>],
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
