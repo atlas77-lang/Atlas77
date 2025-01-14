@@ -1,5 +1,4 @@
 pub mod errors;
-pub mod value;
 pub mod visitor;
 pub mod vm_state;
 
@@ -24,7 +23,6 @@ use crate::atlas_memory::{
 use crate::atlas_runtime::{errors::RuntimeError, vm_state::VMState};
 
 use errors::RuntimeResult;
-use internment::Intern;
 use visitor::Visitor;
 
 /// VarMap should be moved to its own file and have a better implementation overall. The concept of scopes should make an appareance
@@ -178,6 +176,7 @@ impl<'run> Visitor<'run> for Runtime<'run> {
             AstExpr::Let(e) => self.visit_variable_declaration(e),
             AstExpr::FieldAccess(e) => self.visit_field_access_expression(e),
             AstExpr::Literal(e) => self.visit_literal(e),
+            AstExpr::Return(e) => self.visit_expression(e.value),
             _ => unimplemented!("AstExpr not implemented"),
         }
     }
@@ -189,14 +188,12 @@ impl<'run> Visitor<'run> for Runtime<'run> {
             AstLiteral::Integer(i) => VMData::new_i64(i.value),
             AstLiteral::UnsignedIntegerer(u) => VMData::new_u64(u.value),
             AstLiteral::String(s) => {
-                println!("String: {}", s.value);
                 let res = self.object_map.put(Object::String(s.value.to_string()));
                 match res {
                     Ok(i) => {
                         let ptr = VMData::new_string(i);
-                        println!("String: {}", ptr);
                         ptr
-                    },
+                    }
                     Err(_) => {
                         panic!("Out of memory for a new string");
                     }
@@ -261,7 +258,7 @@ impl<'run> Visitor<'run> for Runtime<'run> {
     fn visit_function_call(&mut self, function_call: &'run AstCallExpr) -> RuntimeResult<VMData> {
         match function_call.callee {
             AstExpr::Identifier(i) => {
-                for arg in function_call.args{
+                for arg in function_call.args {
                     let arg = self.visit_expression(arg)?;
                     self.stack.push(arg)?;
                 }

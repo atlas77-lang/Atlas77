@@ -14,9 +14,9 @@ use ast::{
     AstFieldAccessExpr, AstFieldInit, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType,
     AstIdentifier, AstIfElseExpr, AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType,
     AstItem, AstLambdaExpr, AstLetExpr, AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr,
-    AstObjField, AstPattern, AstPatternKind, AstPointerType, AstProgram, AstStringLiteral,
-    AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant,
-    AstUnitType, AstUnsignedIntegerLiteral, AstUnsignedIntegerType,
+    AstObjField, AstPattern, AstPatternKind, AstPointerType, AstProgram, AstReturnExpr,
+    AstStringLiteral, AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion,
+    AstUnionVariant, AstUnitType, AstUnsignedIntegerLiteral, AstUnsignedIntegerType,
 };
 use error::{ParseError, ParseResult, UnexpectedTokenError};
 
@@ -142,8 +142,13 @@ impl<'ast> Parser<'ast> {
             }
         }
         self.expect(TokenKind::RParen)?;
-        self.expect(TokenKind::RArrow)?;
-        let ret_ty = self.parse_type()?;
+        let mut ret_ty = AstType::Unit(AstUnitType {
+            span: Span::default(),
+        });
+        if self.current().kind() == TokenKind::RArrow {
+            let _ = self.advance();
+            ret_ty = self.parse_type()?;
+        }
         let body = self.parse_block()?;
         let node = AstFunction {
             span: Span::union_span(name.span, body.span),
@@ -402,6 +407,7 @@ impl<'ast> Parser<'ast> {
 
                 node
             }
+            TokenKind::KwReturn => AstExpr::Return(self.parse_return_expr()?),
             _ => {
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                     token: tok.clone(),
@@ -412,6 +418,16 @@ impl<'ast> Parser<'ast> {
                     src: self.src.clone(),
                 }))
             }
+        };
+        Ok(node)
+    }
+
+    fn parse_return_expr(&mut self) -> ParseResult<AstReturnExpr<'ast>> {
+        let _ = self.advance();
+        let expr = self.parse_expr()?;
+        let node = AstReturnExpr {
+            span: Span::union_span(self.current().span(), expr.span()),
+            value: self.arena.alloc(expr),
         };
         Ok(node)
     }
@@ -723,6 +739,7 @@ extern print(&str) -> unit
 func main() -> i64 {
     print("Hello World");
     index[0];
+    0;
 }
         "#
         .to_string();

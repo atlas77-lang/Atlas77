@@ -132,6 +132,7 @@ pub enum AstExpr<'ast> {
     FieldAccess(AstFieldAccessExpr<'ast>),
     NewObj(AstNewObjExpr<'ast>),
     Block(AstBlock<'ast>),
+    Return(AstReturnExpr<'ast>),
     //Tuple(AstTupleExpr<'ast>),
 }
 
@@ -153,8 +154,16 @@ impl Spanned for AstExpr<'_> {
             AstExpr::FieldAccess(e) => e.span,
             AstExpr::NewObj(e) => e.span,
             AstExpr::Block(e) => e.span,
+            AstExpr::Return(e) => e.span,
         }
     }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstReturnExpr<'ast> {
+    pub span: Span,
+    pub value: &'ast AstExpr<'ast>,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

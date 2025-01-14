@@ -1,6 +1,6 @@
 //Using the "as" keyword means you rename the whole module, instead of just having the module's functions in the current namespace.
 import "std/io"
 
-func main() -> i64 {
+func main() {
     println("Hello, World!");
 }

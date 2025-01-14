@@ -7,7 +7,7 @@ pub mod atlas_memory;
 pub mod atlas_runtime;
 pub mod atlas_stdlib;
 
-use atlas_frontend::parse;
+use atlas_frontend::{parse, parser::error::ParseResult};
 use atlas_runtime::{visitor::Visitor, Runtime};
 
 use bumpalo::Bump;
@@ -38,7 +38,7 @@ enum AtlasRuntimeCLI {
     Build { file_path: String },
 }
 
-fn main() -> Result<()> {
+fn main() -> ParseResult<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     match AtlasRuntimeCLI::parse() {
         AtlasRuntimeCLI::Run { file_path } => run(file_path),
@@ -46,7 +46,7 @@ fn main() -> Result<()> {
     }
 }
 
-pub(crate) fn build(path: String) -> Result<()> {
+pub(crate) fn build(path: String) -> ParseResult<()> {
     let mut path_buf = PathBuf::from(path.clone());
 
     if let Ok(current_dir) = std::env::current_dir() {
@@ -59,14 +59,14 @@ pub(crate) fn build(path: String) -> Result<()> {
 
     let bump = Bump::new();
 
-    let program = parse(path_buf.to_str().unwrap(), &bump).expect("Failed to open the file");
+    let program = parse(path_buf.to_str().unwrap(), &bump)?;
 
     println!("{:?}", &program);
 
     Ok(())
 }
 
-pub(crate) fn run(path: String) -> Result<()> {
+pub(crate) fn run(path: String) -> ParseResult<()> {
     let mut path_buf = PathBuf::from(path.clone());
 
     if let Ok(current_dir) = std::env::current_dir() {
@@ -79,58 +79,15 @@ pub(crate) fn run(path: String) -> Result<()> {
 
     let bump = Bump::new();
 
-    let program = parse(path_buf.to_str().unwrap(), &bump).expect("Failed to open the file");
+    let program = parse(path_buf.to_str().unwrap(), &bump)?;
     //#[cfg(debug_assertions)]
     //println!("{:?}", &program);
 
     let mut runtime = Runtime::new();
 
-    // file
-    runtime.add_extern_fn("read_dir", atlas_stdlib::file::read_dir);
-    runtime.add_extern_fn("read_file", atlas_stdlib::file::read_file);
-    runtime.add_extern_fn("write_file", atlas_stdlib::file::write_file);
-    runtime.add_extern_fn("file_exists", atlas_stdlib::file::file_exists);
-    runtime.add_extern_fn("remove_file", atlas_stdlib::file::remove_file);
-
-    // io
-    runtime.add_extern_fn("print", atlas_stdlib::io::print);
-    runtime.add_extern_fn("println", atlas_stdlib::io::println);
-    runtime.add_extern_fn("input", atlas_stdlib::io::input);
-
-    // list
-    runtime.add_extern_fn("len", atlas_stdlib::list::len);
-    runtime.add_extern_fn("get", atlas_stdlib::list::get);
-    runtime.add_extern_fn("set", atlas_stdlib::list::set);
-    runtime.add_extern_fn("push", atlas_stdlib::list::push);
-    runtime.add_extern_fn("pop", atlas_stdlib::list::pop);
-    runtime.add_extern_fn("remove", atlas_stdlib::list::remove);
-    runtime.add_extern_fn("slice", atlas_stdlib::list::slice);
-
-    // math
-    runtime.add_extern_fn("abs", atlas_stdlib::math::abs);
-    runtime.add_extern_fn("pow", atlas_stdlib::math::pow);
-    runtime.add_extern_fn("sqrt", atlas_stdlib::math::sqrt);
-    runtime.add_extern_fn("min", atlas_stdlib::math::min);
-    runtime.add_extern_fn("max", atlas_stdlib::math::max);
-    runtime.add_extern_fn("round", atlas_stdlib::math::round);
-    runtime.add_extern_fn("random", atlas_stdlib::math::random);
-
-    // string
-    runtime.add_extern_fn("str_len", atlas_stdlib::string::str_len);
-    runtime.add_extern_fn("trim", atlas_stdlib::string::trim);
-    runtime.add_extern_fn("to_upper", atlas_stdlib::string::to_upper);
-    runtime.add_extern_fn("to_lower", atlas_stdlib::string::to_lower);
-    runtime.add_extern_fn("split", atlas_stdlib::string::split);
-
-    // time
-    runtime.add_extern_fn("now", atlas_stdlib::time::now);
-    runtime.add_extern_fn("format_time_iso", atlas_stdlib::time::format_time_iso);
-    runtime.add_extern_fn("format_time", atlas_stdlib::time::format_time);
-    runtime.add_extern_fn("elapsed", atlas_stdlib::time::elapsed);
-
     let start = Instant::now();
     let res = runtime.visit(&program, "main");
-    
+
     match res {
         Ok(o) => {
             println!("{:?}", o);
