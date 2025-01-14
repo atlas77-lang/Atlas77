@@ -23,7 +23,7 @@ pub enum AstItem<'ast> {
     Func(AstFunction<'ast>),
     Enum(AstEnum<'ast>),
     Union(AstUnion<'ast>),
-    Include(AstInclude<'ast>),
+    Import(AstImport<'ast>),
 }
 
 impl Spanned for AstItem<'_> {
@@ -34,7 +34,7 @@ impl Spanned for AstItem<'_> {
             AstItem::Func(v) => v.span,
             AstItem::Enum(v) => v.span,
             AstItem::Union(v) => v.span,
-            AstItem::Include(v) => v.span,
+            AstItem::Import(v) => v.span,
         }
     }
 }
@@ -108,7 +108,7 @@ pub struct AstExternFunction<'ast> {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone, Serialize, Copy)]
-pub struct AstInclude<'ast> {
+pub struct AstImport<'ast> {
     pub span: Span,
     pub path: &'ast str,
     pub alias: Option<&'ast AstIdentifier<'ast>>,
@@ -261,8 +261,8 @@ pub enum AstBinaryOp {
 pub struct AstIfElseExpr<'ast> {
     pub span: Span,
     pub condition: &'ast AstExpr<'ast>,
-    pub then_expr: &'ast AstExpr<'ast>,
-    pub else_expr: Option<&'ast AstExpr<'ast>>,
+    pub body: &'ast AstBlock<'ast>,
+    pub else_body: Option<&'ast AstBlock<'ast>>,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -279,7 +279,7 @@ pub struct AstMatchExpr<'ast> {
 pub struct AstMatchArm<'ast> {
     pub span: Span,
     pub pattern: &'ast AstPattern<'ast>,
-    pub expr: &'ast AstExpr<'ast>,
+    pub body: &'ast AstBlock<'ast>,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

@@ -6,6 +6,16 @@ pub mod vm_state;
 use std::collections::HashMap;
 
 use crate::atlas_frontend::parser::ast::*;
+use crate::atlas_frontend::parser::ast::{
+    AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType, AstCallExpr,
+    AstCompTimeExpr, AstDoExpr, AstEnum, AstEnumVariant, AstExpr, AstExternFunction,
+    AstFieldAccessExpr, AstFieldInit, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType,
+    AstIdentifier, AstIfElseExpr, AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType,
+    AstItem, AstLambdaExpr, AstLetExpr, AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr,
+    AstObjField, AstPattern, AstPatternKind, AstPointerType, AstProgram, AstStringLiteral,
+    AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant,
+    AstUnitType, AstUnsignedIntegerLiteral, AstUnsignedIntegerType,
+};
 use crate::atlas_memory::{
     object_map::{Memory, Object, Structure},
     stack::Stack,
@@ -13,37 +23,63 @@ use crate::atlas_memory::{
 };
 use crate::atlas_runtime::{errors::RuntimeError, vm_state::VMState};
 
+use errors::RuntimeResult;
 use internment::Intern;
-use visitor::{Program, Visitor};
+use visitor::Visitor;
 
 /// VarMap should be moved to its own file and have a better implementation overall. The concept of scopes should make an appareance
 /// Also, to avoid alloc/dealloc/realloc overhead I should keep a free list of all the already existing varmap and just clean them before using them
 #[derive(Debug, Clone, Default)]
-pub struct VarMap {
-    pub map: HashMap<Intern<String>, VMData>,
+pub struct VarMap<'run> {
+    pub map: HashMap<&'run str, VMData>,
 }
 
-impl VarMap {
+pub struct FuncMap<'run> {
+    pub map: HashMap<&'run str, &'run AstFunction<'run>>,
+}
+
+impl<'run> FuncMap<'run> {
+    pub fn new() -> Self {
+        FuncMap {
+            map: HashMap::new(),
+        }
+    }
+    pub fn insert(&mut self, name: &'run str, value: &'run AstFunction<'run>) {
+        self.map.insert(name, value);
+    }
+    pub fn get(&self, name: &str) -> Option<&&'run AstFunction<'run>> {
+        let value = self.map.get(name);
+        value
+    }
+    pub fn contains_key(&self, name: &AstIdentifier) -> bool {
+        self.map.contains_key(name.name)
+    }
+}
+
+impl<'run> VarMap<'run> {
     pub fn new() -> Self {
         VarMap {
             map: HashMap::new(),
         }
     }
-    pub fn insert(&mut self, name: Intern<String>, value: VMData) {
+    pub fn insert(&mut self, name: &'run str, value: VMData) {
         self.map.insert(name, value);
     }
-    pub fn get(&self, name: &Intern<String>) -> Option<&VMData> {
+    pub fn get(&self, name: &str) -> Option<&VMData> {
         let value = self.map.get(name);
         value
+    }
+    pub fn contains_key(&self, name: &str) -> bool {
+        self.map.contains_key(name)
     }
 }
 
 pub struct Runtime<'run> {
-    pub varmap: Vec<VarMap>,
+    pub varmap: Vec<VarMap<'run>>,
     pub stack: Stack,
-    pub func_map: Vec<&'run FunctionExpression>,
+    pub func_map: FuncMap<'run>,
     pub extern_fn: Vec<(String, <Runtime<'run> as Visitor<'run>>::CallBack)>,
-    pub consts: HashMap<Intern<String>, VMData>,
+    pub consts: HashMap<&'run str, VMData>,
     pub object_map: Memory,
     pub main_fn: usize,
 }
@@ -65,18 +101,12 @@ impl Runtime<'_> {
         Runtime {
             varmap: vec![VarMap::new()],
             stack: Stack::new(),
-            func_map: Vec::new(),
+            func_map: FuncMap::new(),
             extern_fn: Vec::new(),
             consts: {
                 let mut h = HashMap::new();
-                h.insert(
-                    Intern::new("pi".to_string()),
-                    VMData::new_f64(std::f64::consts::PI),
-                );
-                h.insert(
-                    Intern::new("e".to_string()),
-                    VMData::new_f64(std::f64::consts::E),
-                );
+                h.insert("pi", VMData::new_f64(std::f64::consts::PI));
+                h.insert("e", VMData::new_f64(std::f64::consts::E));
                 h
             },
             object_map: Memory::new(4096),
@@ -84,8 +114,8 @@ impl Runtime<'_> {
         }
     }
 
-    fn find_variable(&self, name: Intern<String>) -> Option<&VMData> {
-        if let Some(v) = self.consts.get(&Intern::new(name.to_string())) {
+    fn find_variable(&self, name: &str) -> Option<&VMData> {
+        if let Some(v) = self.consts.get(name) {
             return Some(v);
         }
         if let Some(v) = self.varmap.last().unwrap().get(&name) {
@@ -101,66 +131,102 @@ impl Runtime<'_> {
 impl<'run> Visitor<'run> for Runtime<'run> {
     type CallBack = fn(VMState) -> Result<VMData, RuntimeError>;
 
-    fn visit(&mut self, program: &'run Program) -> VMData {
-        for expr in program {
-            if let Expression::VariableDeclaration(v) = expr {
-                self.visit_variable_declaration(v);
+    fn visit_block_expression(&mut self, block: &'run AstBlock) -> RuntimeResult<VMData> {
+        let mut last_expr = VMData::new_unit();
+        for expr in block.exprs {
+            last_expr = self.visit_expression(expr)?;
+        }
+        Ok(last_expr)
+    }
+    fn visit(&mut self, program: &'run AstProgram, entry_point: &str) -> RuntimeResult<VMData> {
+        for item in program.items {
+            match item {
+                AstItem::Func(f) => {
+                    self.func_map.insert(f.name.name, f);
+                }
+                AstItem::Import(i) => {
+                    //bad but it's temporary
+                    match i.path {
+                        "std/io" => {
+                            self.add_extern_fn("print", crate::atlas_stdlib::io::print);
+                            self.add_extern_fn("println", crate::atlas_stdlib::io::println);
+                            self.add_extern_fn("input", crate::atlas_stdlib::io::input);
+                        }
+                        _ => unimplemented!("Import not implemented"),
+                    }
+                }
+                _ => {}
             }
         }
 
-        self.visit_function_expression(self.func_map[self.main_fn])
-    }
-    fn visit_expression(&mut self, expression: &'run Expression) -> VMData {
-        match expression {
-            Expression::BinaryExpression(e) => self.visit_binary_expression(e),
-            Expression::DoExpression(e) => self.visit_do_expression(e),
-            Expression::FunctionCall(e) => self.visit_function_call(e),
-            Expression::FunctionExpression(e) => self.visit_function_expression(e),
-            Expression::Identifier(e) => self.visit_identifier(e),
-            Expression::IfElseNode(e) => self.visit_if_else_node(e),
-            Expression::IndexExpression(e) => self.visit_index_expression(e),
-            Expression::MatchExpression(e) => self.visit_match_expression(e),
-            Expression::UnaryExpression(e) => self.visit_unary_expression(e),
-            Expression::VariableDeclaration(e) => self.visit_variable_declaration(e),
-            Expression::NewObjectExpression(e) => self.visit_new_object_expression(e),
-            Expression::FieldAccessExpression(e) => self.visit_field_access_expression(e),
-            Expression::Literal(e) => match e {
-                Literal::Bool(b) => VMData::new_bool(*b),
-                Literal::Float(f) => VMData::new_f64(*f),
-                Literal::Integer(i) => VMData::new_i64(*i),
-                Literal::Unit => VMData::new_unit(),
-                Literal::String(s) => {
-                    let res = self.object_map.put(Object::String(s.to_string()));
-                    match res {
-                        Ok(i) => VMData::new_string(i),
-                        Err(_) => {
-                            panic!("Out of memory for a new string");
-                        }
-                    }
-                }
-                Literal::List(l) => {
-                    let mut v = Vec::new();
-                    for i in l {
-                        v.push(self.visit_expression(i));
-                    }
-                    let res = self.object_map.put(Object::List(v));
-                    match res {
-                        //TODO: Fix this (TypeID is hardcoded)
-                        Ok(i) => VMData::new_list(367, i),
-                        Err(_) => {
-                            panic!("Out of memory for a new list");
-                        }
-                    }
-                }
-            },
-            _ => unimplemented!("Expression not implemented"),
+        if let Some(f) = self.func_map.get(entry_point) {
+            self.visit_function_expression(f)
+        } else {
+            Err(RuntimeError::EntryPointNotFound(entry_point.to_string()))
         }
     }
-    fn visit_binary_expression(&mut self, expression: &'run BinaryExpression) -> VMData {
-        let lhs = self.visit_expression(&expression.left);
-        let rhs = self.visit_expression(&expression.right);
-        match expression.operator {
-            BinaryOperator::OpAdd => match (lhs.tag, rhs.tag) {
+    fn visit_expression(&mut self, expression: &'run AstExpr) -> RuntimeResult<VMData> {
+        match expression {
+            AstExpr::BinaryOp(e) => self.visit_binary_expression(e),
+            AstExpr::Block(e) => self.visit_block_expression(e),
+            AstExpr::Call(e) => self.visit_function_call(e),
+            AstExpr::Identifier(e) => self.visit_identifier(e),
+            AstExpr::IfElse(e) => self.visit_if_else_node(e),
+            AstExpr::Indexing(e) => self.visit_index_expression(e),
+            AstExpr::Match(e) => self.visit_match_expression(e),
+            AstExpr::UnaryOp(e) => self.visit_unary_expression(e),
+            AstExpr::Let(e) => self.visit_variable_declaration(e),
+            AstExpr::FieldAccess(e) => self.visit_field_access_expression(e),
+            AstExpr::Literal(e) => self.visit_literal(e),
+            _ => unimplemented!("AstExpr not implemented"),
+        }
+    }
+
+    fn visit_literal(&mut self, literal: &'run AstLiteral) -> RuntimeResult<VMData> {
+        let res = match literal {
+            AstLiteral::Boolean(b) => VMData::new_bool(b.value),
+            AstLiteral::Float(f) => VMData::new_f64(f.value),
+            AstLiteral::Integer(i) => VMData::new_i64(i.value),
+            AstLiteral::UnsignedIntegerer(u) => VMData::new_u64(u.value),
+            AstLiteral::String(s) => {
+                println!("String: {}", s.value);
+                let res = self.object_map.put(Object::String(s.value.to_string()));
+                match res {
+                    Ok(i) => {
+                        let ptr = VMData::new_string(i);
+                        println!("String: {}", ptr);
+                        ptr
+                    },
+                    Err(_) => {
+                        panic!("Out of memory for a new string");
+                    }
+                }
+            }
+            AstLiteral::List(l) => {
+                let mut v = Vec::new();
+                for i in l.items {
+                    v.push(self.visit_expression(i)?);
+                }
+                let res = self.object_map.put(Object::List(v));
+                match res {
+                    //TODO: Fix this (TypeID is hardcoded)
+                    Ok(i) => VMData::new_list(367, i),
+                    Err(_) => {
+                        panic!("Out of memory for a new list");
+                    }
+                }
+            }
+        };
+        Ok(res)
+    }
+    fn visit_binary_expression(
+        &mut self,
+        expression: &'run AstBinaryOpExpr,
+    ) -> RuntimeResult<VMData> {
+        let lhs = self.visit_expression(&expression.lhs)?;
+        let rhs = self.visit_expression(&expression.rhs)?;
+        let res = match expression.op {
+            AstBinaryOp::Add => match (lhs.tag, rhs.tag) {
                 (VMData::TAG_STR, VMData::TAG_STR) => {
                     let s1 = self.object_map.get(lhs.as_object());
                     let s2 = self.object_map.get(rhs.as_object());
@@ -174,188 +240,128 @@ impl<'run> Visitor<'run> for Runtime<'run> {
                 }
                 _ => lhs + rhs,
             },
-            BinaryOperator::OpSub => lhs - rhs,
-            BinaryOperator::OpMul => lhs * rhs,
-            BinaryOperator::OpDiv => lhs / rhs,
-            BinaryOperator::OpMod => lhs % rhs,
-            BinaryOperator::OpEq => VMData::new_bool(lhs == rhs),
-            BinaryOperator::OpNe => VMData::new_bool(lhs != rhs),
-            BinaryOperator::OpLt => VMData::new_bool(lhs < rhs),
-            BinaryOperator::OpLe => VMData::new_bool(lhs <= rhs),
-            BinaryOperator::OpGt => VMData::new_bool(lhs > rhs),
-            BinaryOperator::OpGe => VMData::new_bool(lhs >= rhs),
-            BinaryOperator::OpAnd => VMData::new_bool(lhs.as_bool() && rhs.as_bool()),
-            BinaryOperator::OpOr => VMData::new_bool(lhs.as_bool() || rhs.as_bool()),
-        }
+            AstBinaryOp::Sub => lhs - rhs,
+            AstBinaryOp::Mul => lhs * rhs,
+            AstBinaryOp::Div => lhs / rhs,
+            AstBinaryOp::Mod => lhs % rhs,
+            AstBinaryOp::Eq => VMData::new_bool(lhs == rhs),
+            AstBinaryOp::NEq => VMData::new_bool(lhs != rhs),
+            AstBinaryOp::Lt => VMData::new_bool(lhs < rhs),
+            AstBinaryOp::Lte => VMData::new_bool(lhs <= rhs),
+            AstBinaryOp::Gt => VMData::new_bool(lhs > rhs),
+            AstBinaryOp::Gte => VMData::new_bool(lhs >= rhs),
+            AstBinaryOp::And => VMData::new_bool(lhs.as_bool() && rhs.as_bool()),
+            AstBinaryOp::Or => VMData::new_bool(lhs.as_bool() || rhs.as_bool()),
+            _ => return Err(RuntimeError::InvalidOperation),
+        };
+
+        Ok(res)
     }
-    fn visit_do_expression(&mut self, do_expression: &'run DoExpression) -> VMData {
-        let mut res = VMData::new_unit();
-        for expr in &do_expression.body {
-            res = self.visit_expression(expr);
-        }
-        res
-    }
-    fn visit_function_call(&mut self, function_call: &'run FunctionCall) -> VMData {
-        let fn_ptr = self.find_variable(function_call.name);
-        if let Some(v) = fn_ptr {
-            if v.tag != VMData::TAG_FN_PTR {
-                //All the panics are temporary, will be replaced with proper error reporting
-                panic!("You can't call on type {:?}", v);
-            }
-            let func = self.func_map[v.as_fn_ptr()];
-            let mut args = Vec::new();
-            for arg in &function_call.args {
-                args.push(self.visit_expression(arg));
-            }
-            let mut new_varmap = VarMap::new();
-            for (i, arg) in func.args.iter().enumerate() {
-                new_varmap.insert(arg.0, args[i]);
-            }
-            self.varmap.push(new_varmap);
-            let res = self.visit_expression(&func.body);
-            self.varmap.pop();
-            res
-        } else {
-            let func = self
-                .extern_fn
-                .iter()
-                .find(|f| f.0 == function_call.name.as_str())
-                .cloned();
-            if let Some(f) = func {
-                let mut args = Vec::new();
-                for arg in &function_call.args {
-                    args.push(self.visit_expression(arg));
+
+    fn visit_function_call(&mut self, function_call: &'run AstCallExpr) -> RuntimeResult<VMData> {
+        match function_call.callee {
+            AstExpr::Identifier(i) => {
+                for arg in function_call.args{
+                    let arg = self.visit_expression(arg)?;
+                    self.stack.push(arg)?;
                 }
-                args.iter().for_each(|arg| {
-                    let _ = self.stack.push(*arg);
-                });
-                let vm_state =
-                    vm_state::VMState::new(&mut self.stack, &mut self.object_map, &self.consts);
-                f.1(vm_state).unwrap()
-            } else {
-                panic!("Function {} not found", function_call.name);
+                if self.func_map.contains_key(i) {
+                    let f = self.func_map.get(i.name).unwrap();
+                    self.visit_function_expression(f)
+                } else {
+                    for (name, f) in &self.extern_fn {
+                        if name == &i.name {
+                            return f(VMState {
+                                stack: &mut self.stack,
+                                object_map: &mut self.object_map,
+                                consts: &self.consts,
+                                //Only give the current varmap
+                                varmap: &self.varmap.last().unwrap(),
+                                funcmap: &self.func_map,
+                            });
+                        }
+                    }
+                    panic!("Function {} not found", i.name);
+                }
             }
+            _ => self.visit_expression(function_call.callee),
         }
     }
 
     fn visit_field_access_expression(
         &mut self,
-        field_access_expression: &'run FieldAccessExpression,
-    ) -> VMData {
-        let obj_ptr = self.find_variable(field_access_expression.name).unwrap();
-        let obj = self.object_map.get(obj_ptr.as_object());
-        match obj {
-            Object::Structure(s) => s.fields[field_access_expression.field],
-            _ => panic!("Not a structure"),
-        }
+        _field_access_expression: &'run AstFieldAccessExpr,
+    ) -> RuntimeResult<VMData> {
+        unimplemented!("Field access not implemented")
     }
 
-    fn visit_new_object_expression(
-        &mut self,
-        new_object_expression: &'run NewObjectExpression,
-    ) -> VMData {
-        let mut fields = Vec::new();
-        for expr in &new_object_expression.fields {
-            fields.push(self.visit_expression(expr));
-        }
-        let res = self.object_map.put(Object::new(Structure { fields }));
-        match res {
-            Ok(i) => VMData::new_object(300, i), //TODO: Fix this (TypeID is hardcoded)
-            Err(_) => {
-                panic!("Out of memory for a new object");
-            }
-        }
+    fn visit_function_expression(&mut self, function: &'run AstFunction) -> RuntimeResult<VMData> {
+        self.visit_block_expression(function.body)
     }
 
-    fn visit_function_expression(
-        &mut self,
-        function_expression: &'run FunctionExpression,
-    ) -> VMData {
-        self.visit_expression(&function_expression.body)
-    }
-
-    fn visit_identifier(&mut self, identifier: &'run IdentifierNode) -> VMData {
+    fn visit_identifier(&mut self, identifier: &'run AstIdentifier) -> RuntimeResult<VMData> {
         if let Some(v) = self.find_variable(identifier.name) {
-            *v
+            Ok(*v)
         } else {
-            panic!("Variable {} not found", identifier.name);
+            return Err(RuntimeError::NullReference);
         }
     }
-    fn visit_if_else_node(&mut self, if_else_node: &'run IfElseNode) -> VMData {
-        if self.visit_expression(&if_else_node.condition).as_bool() {
-            self.visit_expression(&if_else_node.if_body)
+    fn visit_if_else_node(&mut self, if_else_node: &'run AstIfElseExpr) -> RuntimeResult<VMData> {
+        if self.visit_expression(&if_else_node.condition)?.as_bool() {
+            self.visit_block_expression(&if_else_node.body)
         } else if let Some(else_body) = &if_else_node.else_body {
-            self.visit_expression(else_body)
+            self.visit_block_expression(else_body)
         } else {
-            VMData::new_unit()
+            Ok(VMData::new_unit())
         }
     }
-    fn visit_index_expression(&mut self, index_expression: &'run IndexExpression) -> VMData {
-        let list = *self.find_variable(index_expression.name).unwrap();
-        let index = self.visit_expression(&index_expression.index);
+    fn visit_index_expression(
+        &mut self,
+        index_expression: &'run AstIndexingExpr,
+    ) -> RuntimeResult<VMData> {
+        let list = self.visit_expression(index_expression.target)?;
+        let index = self.visit_expression(&index_expression.index)?;
         if list.tag > 256 {
             let list = self.object_map.get(list.as_object());
             match list {
-                Object::List(l) => l[index.as_u64() as usize],
+                Object::List(l) => Ok(l[index.as_u64() as usize]),
                 _ => panic!("Not a list"),
             }
         } else {
             panic!("Not a list");
         }
     }
-    fn visit_match_expression(&mut self, match_expression: &'run MatchExpression) -> VMData {
-        let expr = self.visit_expression(&match_expression.expr);
-        for arm in &match_expression.arms {
-            if self.visit_expression(&arm.pattern) == expr {
-                return self.visit_expression(&arm.body);
-            }
-        }
-        if let Some(d) = &match_expression.default {
-            return self.visit_expression(d);
-        }
-        panic!("No match found");
+    fn visit_match_expression(
+        &mut self,
+        match_expression: &'run AstMatchExpr,
+    ) -> RuntimeResult<VMData> {
+        todo!("Match expression not implemented")
     }
-    fn visit_unary_expression(&mut self, expression: &'run UnaryExpression) -> VMData {
-        let val = self.visit_expression(&expression.expression);
-        if let Some(op) = &expression.operator {
-            match op {
-                UnaryOperator::OpNot => VMData::new_bool(!val.as_bool()),
-                UnaryOperator::OpSub => match val.tag {
+    fn visit_unary_expression(
+        &mut self,
+        expression: &'run AstUnaryOpExpr,
+    ) -> RuntimeResult<VMData> {
+        let val = self.visit_expression(&expression.expr)?;
+        if let Some(op) = &expression.op {
+            let res = match op {
+                AstUnaryOp::Not => VMData::new_bool(!val.as_bool()),
+                AstUnaryOp::Neg => match val.tag {
                     VMData::TAG_I64 => VMData::new_i64(-val.as_i64()),
                     VMData::TAG_FLOAT => VMData::new_f64(-val.as_f64()),
                     _ => panic!("Illegal operation"),
                 },
-            }
+                AstUnaryOp::AsRef => todo!("AsRef not implemented"),
+                AstUnaryOp::Deref => todo!("Deref not implemented"),
+            };
+            Ok(res)
         } else {
-            val
+            Ok(val)
         }
     }
     fn visit_variable_declaration(
         &mut self,
-        variable_declaration: &'run VariableDeclaration,
-    ) -> VMData {
-        let mut val = VMData::new_unit();
-        if let Some(v) = &variable_declaration.value {
-            match v.as_ref() {
-                Expression::FunctionExpression(f) => {
-                    if variable_declaration.name.as_str() == "main" {
-                        self.main_fn = self.func_map.len();
-                    }
-                    self.varmap.last_mut().unwrap().insert(
-                        variable_declaration.name,
-                        VMData::new_fn_ptr(self.func_map.len()),
-                    );
-                    self.func_map.push(f);
-                }
-                _ => {
-                    val = self.visit_expression(v);
-                    self.varmap
-                        .last_mut()
-                        .unwrap()
-                        .insert(variable_declaration.name, val);
-                }
-            }
-        }
-        val
+        variable_declaration: &'run AstLetExpr,
+    ) -> RuntimeResult<VMData> {
+        todo!("Variable declaration not implemented")
     }
 }

@@ -10,6 +10,7 @@ pub mod atlas_stdlib;
 use atlas_frontend::parse;
 use atlas_runtime::{visitor::Visitor, Runtime};
 
+use bumpalo::Bump;
 use clap::{command, Parser};
 use miette::Result;
 
@@ -38,6 +39,7 @@ enum AtlasRuntimeCLI {
 }
 
 fn main() -> Result<()> {
+    std::env::set_var("RUST_BACKTRACE", "1");
     match AtlasRuntimeCLI::parse() {
         AtlasRuntimeCLI::Run { file_path } => run(file_path),
         AtlasRuntimeCLI::Build { file_path } => build(file_path),
@@ -55,7 +57,9 @@ pub(crate) fn build(path: String) -> Result<()> {
         eprintln!("Failed to get current directory");
     }
 
-    let program = parse(path_buf.to_str().unwrap()).expect("Failed to open the file");
+    let bump = Bump::new();
+
+    let program = parse(path_buf.to_str().unwrap(), &bump).expect("Failed to open the file");
 
     println!("{:?}", &program);
 
@@ -73,9 +77,11 @@ pub(crate) fn run(path: String) -> Result<()> {
         eprintln!("Failed to get current directory");
     }
 
-    let program = parse(path_buf.to_str().unwrap()).expect("Failed to open the file");
-    #[cfg(debug_assertions)]
-    println!("{:?}", &program);
+    let bump = Bump::new();
+
+    let program = parse(path_buf.to_str().unwrap(), &bump).expect("Failed to open the file");
+    //#[cfg(debug_assertions)]
+    //println!("{:?}", &program);
 
     let mut runtime = Runtime::new();
 
@@ -123,7 +129,16 @@ pub(crate) fn run(path: String) -> Result<()> {
     runtime.add_extern_fn("elapsed", atlas_stdlib::time::elapsed);
 
     let start = Instant::now();
-    println!("{}", runtime.visit(&program));
+    let res = runtime.visit(&program, "main");
+    
+    match res {
+        Ok(o) => {
+            println!("{:?}", o);
+        }
+        Err(e) => {
+            eprintln!("{}", e);
+        }
+    }
 
     let end = Instant::now();
     println!("Elapsed time: {:?}", (end - start));

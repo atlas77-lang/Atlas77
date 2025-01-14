@@ -6,6 +6,7 @@ use crate::{
 // println<T>(value: T) -> ()
 pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
+    println!("println: {}", val);
     match val.tag {
         VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT => {
             println!("{}", val)
@@ -23,6 +24,7 @@ pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
 // print<T>(value: T) -> ()
 pub fn print(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
+    println!("println: {}", val);
     match val.tag {
         VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT => {
             print!("{}", val)

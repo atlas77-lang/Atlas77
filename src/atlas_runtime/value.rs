@@ -5,8 +5,6 @@ use std::{
 
 use internment::Intern;
 
-use crate::atlas_frontend::parser::ast::FunctionExpression;
-
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum Value {
     Integer(i64),
@@ -15,7 +13,6 @@ pub enum Value {
     Bool(bool),
     List(Vec<Value>),
     Map(HashMap<String, Value>),
-    FunctionBody(FunctionExpression),
     #[default]
     Undefined,
 }

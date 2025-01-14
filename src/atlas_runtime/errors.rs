@@ -1,6 +1,6 @@
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum RuntimeError {
     OutOfMemory,
     StackOverflow,
@@ -10,6 +10,7 @@ pub enum RuntimeError {
     IndexOutOfBounds,
     InvalidOperation,
     TypeMismatchError,
+    EntryPointNotFound(String),
 }
 
 impl std::fmt::Display for RuntimeError {
@@ -24,6 +25,9 @@ impl std::fmt::Display for RuntimeError {
             IndexOutOfBounds => writeln!(f, "Index out of bounds"),
             InvalidOperation => writeln!(f, "Invalid Operation (default error)"),
             TypeMismatchError => writeln!(f, "Incorrect types bozo"),
+            EntryPointNotFound(entry_point) => {
+                writeln!(f, "Entry point {} not found", entry_point)
+            }
         }
     }
 }
