@@ -293,6 +293,11 @@ impl<'run> Visitor<'run> for Runtime<'run> {
     }
 
     fn visit_function_expression(&mut self, function: &'run AstFunction) -> RuntimeResult<VMData> {
+        let varmap = VarMap::new();
+        self.varmap.push(varmap);
+        for arg in function.args {
+            self.varmap.last_mut().unwrap().insert(arg.name.name, self.stack.pop()?);
+        }
         self.visit_block_expression(function.body)
     }
 
