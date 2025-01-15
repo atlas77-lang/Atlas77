@@ -124,6 +124,54 @@ impl Runtime<'_> {
             None
         }
     }
+    fn import_std(&mut self, lib: &str) {
+        use crate::atlas_stdlib::{file, io, list, math, string, time};
+        match lib {
+            "io" => {
+                self.add_extern_fn("print", io::print);
+                self.add_extern_fn("println", io::println);
+                self.add_extern_fn("input", io::input);
+            }
+            "time" => {
+                self.add_extern_fn("now", time::now);
+                self.add_extern_fn("format_time_iso", time::format_time_iso);
+                self.add_extern_fn("format_time", time::format_time);
+                self.add_extern_fn("elapsed", time::elapsed);
+            }
+            "string" => {
+                self.add_extern_fn("str_len", string::str_len);
+                self.add_extern_fn("trim", string::trim);
+                self.add_extern_fn("to_upper", string::to_upper);
+                self.add_extern_fn("to_lower", string::to_lower);
+                self.add_extern_fn("split", string::split);
+            }
+            "math" => {
+                self.add_extern_fn("abs", math::abs);
+                self.add_extern_fn("pow", math::pow);
+                self.add_extern_fn("sqrt", math::sqrt);
+                self.add_extern_fn("min", math::min);
+                self.add_extern_fn("max", math::max);
+                self.add_extern_fn("round", math::round);
+                self.add_extern_fn("random", math::random);
+            }
+            "list" => {
+                self.add_extern_fn("len", list::len);
+                self.add_extern_fn("get", list::get);
+                self.add_extern_fn("set", list::set);
+                self.add_extern_fn("push", list::push);
+                self.add_extern_fn("pop", list::pop);
+                self.add_extern_fn("remove", list::remove);
+                self.add_extern_fn("slice", list::slice);
+            }
+            "file" => {
+                self.add_extern_fn("read_dir", file::read_dir);
+                self.add_extern_fn("read_file", file::read_file);
+                self.add_extern_fn("write_file", file::write_file);
+                self.add_extern_fn("file_exists", file::file_exists);
+            }
+            _ => {}
+        }
+    }
 }
 
 impl<'run> Visitor<'run> for Runtime<'run> {
@@ -144,13 +192,12 @@ impl<'run> Visitor<'run> for Runtime<'run> {
                 }
                 AstItem::Import(i) => {
                     //bad but it's temporary
-                    match i.path {
-                        "std/io" => {
-                            self.add_extern_fn("print", crate::atlas_stdlib::io::print);
-                            self.add_extern_fn("println", crate::atlas_stdlib::io::println);
-                            self.add_extern_fn("input", crate::atlas_stdlib::io::input);
+                    let path = i.path.split("/").collect::<Vec<_>>();
+                    match path[0] {
+                        "std" => {
+                            self.import_std(path[1]);
                         }
-                        _ => unimplemented!("Import not implemented"),
+                        _ => eprintln!("WARNING: import not implemented for other than the standard library. You're trying to import: {}", i.path),
                     }
                 }
                 _ => {}
@@ -296,7 +343,10 @@ impl<'run> Visitor<'run> for Runtime<'run> {
         let varmap = VarMap::new();
         self.varmap.push(varmap);
         for arg in function.args {
-            self.varmap.last_mut().unwrap().insert(arg.name.name, self.stack.pop()?);
+            self.varmap
+                .last_mut()
+                .unwrap()
+                .insert(arg.name.name, self.stack.pop()?);
         }
         self.visit_block_expression(function.body)
     }
@@ -305,7 +355,7 @@ impl<'run> Visitor<'run> for Runtime<'run> {
         if let Some(v) = self.find_variable(identifier.name) {
             Ok(*v)
         } else {
-            return Err(RuntimeError::NullReference);
+            Err(RuntimeError::NullReference)
         }
     }
     fn visit_if_else_node(&mut self, if_else_node: &'run AstIfElseExpr) -> RuntimeResult<VMData> {

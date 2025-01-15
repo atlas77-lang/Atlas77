@@ -7,6 +7,9 @@ use super::{
 };
 
 //TODO: visit() should return a Result<VMData, crate::errors::RuntimeError>
+#[deprecated = r#"This trait will be removed in favor of the VM.
+It will still be used for compile time evaluation, but will be reworked.
+The rework will retarget it to the typed High-level Intermediate Representation"#]
 pub trait Visitor<'visitor> {
     type CallBack;
     // Entry point

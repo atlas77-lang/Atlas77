@@ -1,18 +1,16 @@
-use std::{path::PathBuf, time::Instant};
+use atlas_77::{atlas_codegen::Codegen, atlas_frontend::parser::arena::AstArena};
 #[allow(unused)]
-pub mod atlas_frontend;
-pub mod atlas_hir;
-pub mod atlas_macro;
-pub mod atlas_memory;
-pub mod atlas_runtime;
-pub mod atlas_stdlib;
+use atlas_77::{
+    atlas_codegen, atlas_frontend, atlas_hir, atlas_macro, atlas_memory, atlas_runtime,
+    atlas_stdlib, atlas_vm,
+};
+use std::{path::PathBuf, time::Instant};
 
-use atlas_frontend::{parse, parser::error::ParseResult};
+use atlas_frontend::parse;
 use atlas_runtime::{visitor::Visitor, Runtime};
 
 use bumpalo::Bump;
 use clap::{command, Parser};
-use miette::Result;
 
 #[derive(Parser)] // requires `derive` feature
 #[command(name = "Atlas77")]
@@ -38,15 +36,16 @@ enum AtlasRuntimeCLI {
     Build { file_path: String },
 }
 
-fn main() -> ParseResult<()> {
-    std::env::set_var("RUST_BACKTRACE", "1");
+fn main() -> miette::Result<()> {
+    //std::env::set_var("RUST_BACKTRACE", "1");
+
     match AtlasRuntimeCLI::parse() {
         AtlasRuntimeCLI::Run { file_path } => run(file_path),
         AtlasRuntimeCLI::Build { file_path } => build(file_path),
     }
 }
 
-pub(crate) fn build(path: String) -> ParseResult<()> {
+pub(crate) fn build(path: String) -> miette::Result<()> {
     let mut path_buf = PathBuf::from(path.clone());
 
     if let Ok(current_dir) = std::env::current_dir() {
@@ -63,10 +62,27 @@ pub(crate) fn build(path: String) -> ParseResult<()> {
 
     println!("{:?}", &program);
 
+    let bump = Bump::new();
+
+    let arena = AstArena::new(&bump);
+
+    let mut gen = Codegen::new(program, arena);
+
+    let res = gen.compile(program);
+    
+    match res {
+        Ok(o) => {
+            println!("{:?}", o);
+        }
+        Err(e) => {
+            eprintln!("{}", e);
+        }
+    }
+
     Ok(())
 }
 
-pub(crate) fn run(path: String) -> ParseResult<()> {
+pub(crate) fn run(path: String) -> miette::Result<()> {
     let mut path_buf = PathBuf::from(path.clone());
 
     if let Ok(current_dir) = std::env::current_dir() {

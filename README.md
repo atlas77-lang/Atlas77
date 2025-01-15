@@ -62,8 +62,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Atlas77 is a functional programming language with a strong interop with Rust.
-It is designed to be a high-level language with a strong focus on performance and safety. 
+Atlas77 is an experimental statically typed programming language with a strong interop with Rust.
+It will run on a custom VM. I'll implement a JIT compiler using Cranelift later on. (There will be an AOT compiler too)
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -145,6 +145,8 @@ _For more examples, please refer to the [examples folder](https://github.com/atl
 
 ### v0.5 Phoenix Release Timeline
 The v0.5 is a complete rewrite of Atlas77, it aligns better with the end goal of the language (see _Goal of the language_).
+Up until the ``v0.5-alpha4``, the compiler will trust you when it comes to types.
+
 #### v0.5-alpha1: Core Foundations
 - Functions: Define and call functions.
 - Variables: Immutable and mutable variables.

@@ -308,6 +308,7 @@ impl<'ast> Parser<'ast> {
         };
         Ok(node)
     }
+
     #[must_use]
     fn parse_primary(&mut self) -> ParseResult<AstExpr<'ast>> {
         let tok = self.current();
@@ -408,6 +409,7 @@ impl<'ast> Parser<'ast> {
                 node
             }
             TokenKind::KwReturn => AstExpr::Return(self.parse_return_expr()?),
+            TokenKind::KwIf => AstExpr::IfElse(self.parse_if_expr()?),
             _ => {
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                     token: tok.clone(),
@@ -422,6 +424,33 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
+    #[must_use]
+    fn parse_if_expr(&mut self) -> ParseResult<AstIfElseExpr<'ast>> {
+        let start = self.advance();
+        let condition = self.parse_expr()?;
+        let if_body = self.parse_block()?;
+        let else_body = if self.current().kind() == TokenKind::KwElse {
+            let _ = self.advance();
+            let else_body = self.parse_block()?;
+            Some(else_body)
+        } else {
+            None
+        };
+
+        let node = AstIfElseExpr {
+            span: Span::union_span(start.span(), if_body.span),
+            condition: self.arena.alloc(condition),
+            body: self.arena.alloc(if_body),
+            else_body: if let Some(e) = else_body {
+                Some(self.arena.alloc(e))
+            } else {
+                None
+            },
+        };
+        Ok(node)
+    }
+
+    #[must_use]
     fn parse_return_expr(&mut self) -> ParseResult<AstReturnExpr<'ast>> {
         let _ = self.advance();
         let expr = self.parse_expr()?;
@@ -563,6 +592,7 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
+    #[must_use]
     fn parse_fn_call(&mut self, callee: AstExpr<'ast>) -> ParseResult<AstCallExpr<'ast>> {
         self.expect(TokenKind::LParen)?;
 
@@ -583,6 +613,7 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
+    #[must_use]
     fn parse_indexing(&mut self, target: AstExpr<'ast>) -> ParseResult<AstIndexingExpr<'ast>> {
         self.expect(TokenKind::LBracket)?;
 
@@ -598,6 +629,7 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
+    #[must_use]
     fn parse_field_access(
         &mut self,
         target: AstExpr<'ast>,
