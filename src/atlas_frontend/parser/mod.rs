@@ -9,14 +9,7 @@ use atlas_core::prelude::{Span, Spanned};
 use miette::{SourceOffset, SourceSpan};
 
 use ast::{
-    AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType, AstCallExpr,
-    AstCompTimeExpr, AstDoExpr, AstEnum, AstEnumVariant, AstExpr, AstExternFunction,
-    AstFieldAccessExpr, AstFieldInit, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType,
-    AstIdentifier, AstIfElseExpr, AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType,
-    AstItem, AstLambdaExpr, AstLetExpr, AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr,
-    AstObjField, AstPattern, AstPatternKind, AstPointerType, AstProgram, AstReturnExpr,
-    AstStringLiteral, AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion,
-    AstUnionVariant, AstUnitType, AstUnsignedIntegerLiteral, AstUnsignedIntegerType,
+    AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType, AstCallExpr, AstCompTimeExpr, AstDoExpr, AstEnum, AstEnumVariant, AstExpr, AstExternFunction, AstFieldAccessExpr, AstFieldInit, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType, AstIdentifier, AstIfElseExpr, AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem, AstLambdaExpr, AstLetExpr, AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr, AstObjField, AstPattern, AstPatternKind, AstPointerType, AstProgram, AstReturnExpr, AstStatement, AstStringLiteral, AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant, AstUnitType, AstUnsignedIntegerLiteral, AstUnsignedIntegerType
 };
 use error::{ParseError, ParseResult, UnexpectedTokenError};
 
@@ -164,21 +157,29 @@ impl<'ast> Parser<'ast> {
         self.expect(TokenKind::LBrace)?;
         let mut stmts = vec![];
         while self.current().kind() != TokenKind::RBrace {
-            stmts.push(self.parse_expr()?);
-            self.expect(TokenKind::Semicolon)?;
+            stmts.push(self.parse_stmt()?);
         }
         self.expect(TokenKind::RBrace)?;
 
         let node = AstBlock {
             span: Span::union_span(stmts.first().unwrap().span(), stmts.last().unwrap().span()),
-            exprs: self.arena.alloc_vec(stmts),
+            stmts: self.arena.alloc_vec(stmts),
         };
         Ok(node)
     }
 
+    fn parse_stmt(&mut self) -> ParseResult<AstStatement<'ast>> {
+        let start = self.current();
+        match start.kind() {
+            TokenKind::KwLet => {}
+            _ => {}
+        }
+        unimplemented!()
+    }
+
     #[must_use]
     /// This function is mostly used for clarity because calling `parse_binary` feels weird
-    pub fn parse_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    fn parse_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
         self.parse_binary()
     }
 

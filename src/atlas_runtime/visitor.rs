@@ -1,7 +1,9 @@
 use crate::{atlas_frontend::parser::ast::AstLiteral, atlas_memory::vm_data::VMData};
 
-use super::{
-    errors::RuntimeResult, AstBinaryOpExpr, AstBlock, AstCallExpr, AstExpr, AstFieldAccessExpr,
+use crate::atlas_vm::errors::RuntimeResult;
+
+use crate::atlas_frontend::parser::ast::{
+    AstBinaryOpExpr, AstBlock, AstCallExpr, AstExpr, AstFieldAccessExpr,
     AstFunction, AstIdentifier, AstIfElseExpr, AstIndexingExpr, AstLetExpr, AstMatchExpr,
     AstProgram, AstUnaryOpExpr,
 };

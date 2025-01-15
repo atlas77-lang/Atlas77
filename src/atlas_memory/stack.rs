@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{atlas_memory::vm_data::VMData, atlas_runtime::errors::RuntimeError};
+use crate::{atlas_memory::vm_data::VMData, atlas_vm::errors::RuntimeError};
 
 const STACK_SIZE: usize = 16 * 1024 / size_of::<VMData>();
 /// The stack should be more used overall.

@@ -7,7 +7,7 @@ use atlas_77::{atlas_codegen::Codegen, atlas_frontend::parser::arena::AstArena};
 use std::{path::PathBuf, time::Instant};
 
 use atlas_frontend::parse;
-use atlas_runtime::{visitor::Visitor, Runtime};
+
 
 use bumpalo::Bump;
 use clap::{command, Parser};
@@ -106,22 +106,14 @@ pub(crate) fn run(path: String) -> miette::Result<()> {
     let bump = Bump::new();
 
     let program = parse(path_buf.to_str().unwrap(), &bump)?;
-    //#[cfg(debug_assertions)]
-    //println!("{:?}", &program);
 
-    let mut runtime = Runtime::new();
+    
+    #[cfg(debug_assertions)]
+    println!("{:?}", &program);
 
     let start = Instant::now();
-    let res = runtime.visit(&program, "main");
 
-    match res {
-        Ok(o) => {
-            println!("{:?}", o);
-        }
-        Err(e) => {
-            eprintln!("{}", e);
-        }
-    }
+
 
     let end = Instant::now();
     println!("Elapsed time: {:?}", (end - start));

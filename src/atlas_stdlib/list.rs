@@ -1,6 +1,6 @@
 use crate::{
     atlas_memory::{object_map::Object, vm_data::VMData},
-    atlas_runtime::{errors::RuntimeError, vm_state::VMState},
+    atlas_vm::{errors::RuntimeError, vm_state::VMState},
 };
 
 // map/for_each/filter/reduce/find won't be coming in this version of the sdlib as it requires fn pointers and closures

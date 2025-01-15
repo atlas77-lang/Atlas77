@@ -1,6 +1,6 @@
 use crate::{
     atlas_memory::{object_map::Object, vm_data::VMData},
-    atlas_runtime::{errors::RuntimeError, vm_state::VMState},
+    atlas_vm::{errors::RuntimeError, vm_state::VMState},
 };
 
 // List[string] will have a tag of 257 (0-255 are reserved for the compiler)

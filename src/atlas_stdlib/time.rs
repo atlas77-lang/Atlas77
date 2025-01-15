@@ -6,7 +6,7 @@ use crate::{
         object_map::{Object, Structure},
         vm_data::VMData,
     },
-    atlas_runtime::{errors::RuntimeError, vm_state::VMState},
+    atlas_vm::{errors::RuntimeError, vm_state::VMState},
 };
 
 use time::{format_description, OffsetDateTime};

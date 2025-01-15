@@ -74,7 +74,7 @@ pub struct Program<'vm> {
     pub entry_point: &'vm str,
 }
 
-impl<'vm> Index <usize> for Program<'vm> {
+impl<'vm> Index<usize> for Program<'vm> {
     type Output = Instruction<'vm>;
 
     fn index(&self, index: usize) -> &Self::Output {

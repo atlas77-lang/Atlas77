@@ -6,8 +6,7 @@ use crate::{
     atlas_frontend::parser::{
         arena::AstArena,
         ast::{
-            AstBinaryOp, AstBlock, AstExpr, AstFunction, AstItem, AstLiteral, AstProgram,
-            AstUnaryOp,
+            AstBinaryOp, AstBlock, AstExpr, AstFunction, AstItem, AstLiteral, AstProgram, AstStatement, AstUnaryOp
         },
     },
     atlas_vm::instruction::{Instruction, Label, Program},
@@ -54,13 +53,24 @@ impl<'gen> Codegen<'gen> {
         }
         Ok(Program {
             labels: self.arena.alloc(labels),
-            entry_point: "main",
+            entry_point: "square",
         })
     }
 
     fn generate_bytecode_block(block: &AstBlock<'gen>, bytecode: &mut Vec<Instruction>) {
-        for expr in block.exprs {
-            Self::generate_bytecode_expr(expr, bytecode);
+        for stmt in block.stmts {
+            Self::generate_bytecode_stmt(stmt, bytecode);
+        }
+    }
+
+    fn generate_bytecode_stmt(stmt: &AstStatement<'gen>, bytecode: &mut Vec<Instruction>) {
+        match stmt {
+            AstStatement::Let(e) => {
+                Self::generate_bytecode_expr(e.value, bytecode);
+            }
+            _ => {
+                todo!("Implement the rest of the statements");
+            }
         }
     }
 

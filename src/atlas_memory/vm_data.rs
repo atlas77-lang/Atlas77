@@ -6,6 +6,7 @@ use std::{
 use super::object_map::ObjectIndex;
 
 #[derive(Clone, Copy)]
+//There might need to be some pointer to the stack
 pub union RawVMData {
     as_unit: (),
     as_i64: i64,

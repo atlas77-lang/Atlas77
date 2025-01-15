@@ -1,7 +1,7 @@
-use crate::{atlas_memory::vm_data::VMData, atlas_runtime::errors::RuntimeError};
+use crate::{atlas_memory::vm_data::VMData, atlas_vm::errors::RuntimeError};
 use rand::{thread_rng, Rng};
 
-use crate::atlas_runtime::vm_state::VMState;
+use crate::atlas_vm::vm_state::VMState;
 
 //abs(x: int) -> int
 pub fn abs(state: VMState) -> Result<VMData, RuntimeError> {

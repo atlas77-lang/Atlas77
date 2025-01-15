@@ -1,5 +1,3 @@
-// TODO!: Document this file
-
 use serde::Serialize;
 
 use atlas_core::utils::span::*;
@@ -116,6 +114,63 @@ pub struct AstImport<'ast> {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone, Serialize, Copy)]
+pub enum AstStatement<'ast> {
+    Let(AstLetExpr<'ast>),
+    Const(AstConstExpr<'ast>),
+    IfElse(AstIfElseExpr<'ast>),
+    Match(AstMatchExpr<'ast>),
+    InnerFunc(AstFunction<'ast>),
+    Block(AstBlock<'ast>),
+    Assign(AstAssignExpr<'ast>),
+    Call(AstCallExpr<'ast>),
+    While(AstWhileExpr<'ast>),
+    Expr(AstExpr<'ast>),
+}
+
+impl AstStatement<'_> {
+    pub fn span(&self) -> Span {
+        match self {
+            AstStatement::Let(e) => e.span,
+            AstStatement::Const(e) => e.span,
+            AstStatement::IfElse(e) => e.span,
+            AstStatement::Match(e) => e.span,
+            AstStatement::InnerFunc(e) => e.span,
+            AstStatement::Block(e) => e.span,
+            AstStatement::Assign(e) => e.span,
+            AstStatement::Call(e) => e.span,
+            AstStatement::While(e) => e.span,
+            AstStatement::Expr(e) => e.span(),
+        }
+    }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstConstExpr<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub ty: Option<&'ast AstType<'ast>>,
+    pub value: &'ast AstExpr<'ast>,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstWhileExpr<'ast> {
+    pub span: Span,
+    pub condition: &'ast AstExpr<'ast>,
+    pub body: &'ast AstBlock<'ast>,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstAssignExpr<'ast> {
+    pub span: Span,
+    pub target: &'ast AstExpr<'ast>,
+    pub value: &'ast AstExpr<'ast>,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
 pub enum AstExpr<'ast> {
     Let(AstLetExpr<'ast>),
     Lambda(AstLambdaExpr<'ast>),
@@ -170,7 +225,7 @@ pub struct AstReturnExpr<'ast> {
 #[derive(Clone, Serialize, Copy)]
 pub struct AstBlock<'ast> {
     pub span: Span,
-    pub exprs: &'ast [&'ast AstExpr<'ast>],
+    pub stmts: &'ast [&'ast AstStatement<'ast>],
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

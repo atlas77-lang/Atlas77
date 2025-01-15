@@ -1,6 +1,6 @@
 use crate::{
     atlas_memory::{object_map::Object, vm_data::VMData},
-    atlas_runtime::{errors::RuntimeError, vm_state::VMState},
+    atlas_vm::{errors::RuntimeError, vm_state::VMState},
 };
 
 // println<T>(value: T) -> ()
