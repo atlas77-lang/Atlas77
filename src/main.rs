@@ -1,9 +1,9 @@
-use atlas_77::{atlas_codegen::Codegen, atlas_frontend::parser::arena::AstArena};
 #[allow(unused)]
 use atlas_77::{
     atlas_codegen, atlas_frontend, atlas_hir, atlas_macro, atlas_memory, atlas_runtime,
     atlas_stdlib, atlas_vm,
 };
+use atlas_77::{atlas_codegen::Codegen, atlas_frontend::parser::arena::AstArena};
 use std::{path::PathBuf, time::Instant};
 
 use atlas_frontend::parse;
@@ -69,10 +69,20 @@ pub(crate) fn build(path: String) -> miette::Result<()> {
     let mut gen = Codegen::new(program, arena);
 
     let res = gen.compile(program);
-    
+
     match res {
         Ok(o) => {
-            println!("{:?}", o);
+            println!("Bytecode: {:?}", o);
+            let mut vm = atlas_vm::Atlas77VM::new(o);
+            let res = vm.run();
+            match res {
+                Ok(o) => {
+                    println!("Program executed successfully with result: {:?}", o);
+                }
+                Err(e) => {
+                    eprintln!("{}", e);
+                }
+            }
         }
         Err(e) => {
             eprintln!("{}", e);

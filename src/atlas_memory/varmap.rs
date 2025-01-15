@@ -9,7 +9,7 @@ pub struct Varmap<'run, K, V> {
     parent: Option<&'run mut Varmap<'run, K, V>>, // Parent map for nested scopes
 }
 
-impl Default for Varmap<'_, String, i64> {
+impl<K: std::cmp::Eq + std::hash::Hash + Clone, V> Default for Varmap<'_, K, V> {
     fn default() -> Self {
         Self::new(None)
     }
@@ -46,12 +46,12 @@ impl<'run, K: std::cmp::Eq + std::hash::Hash + Clone, V> Varmap<'run, K, V> {
     }
 
     /// Remove a key-value pair from the map.
-    pub fn remove(&mut self, key: &K) -> Option<V> {
-        if let Some(&index) = self.index_map.get(key) {
+    pub fn remove(&mut self, key: K) -> Option<V> {
+        if let Some(&index) = self.index_map.get(&key) {
             if let Some((_, value)) = self.storage[index].take() {
                 // Add the slot to the free list and remove the key from the index map.
                 self.free_list.push(index);
-                self.index_map.remove(key);
+                self.index_map.remove(&key);
                 return Some(value);
             }
         }
@@ -59,16 +59,16 @@ impl<'run, K: std::cmp::Eq + std::hash::Hash + Clone, V> Varmap<'run, K, V> {
     }
 
     /// Retrieve a value by key.
-    pub fn get(&self, key: &K) -> Option<&V> {
+    pub fn get(&self, key: K) -> Option<&V> {
         self.index_map
-            .get(key)
+            .get(&key)
             .and_then(|&index| self.storage[index].as_ref().map(|(_, v)| v))
             .or_else(|| self.parent.as_ref().and_then(|parent| parent.get(key)))
     }
 
     /// Retrieve a mutable reference to a value by key.
-    pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
-        if let Some(&index) = self.index_map.get(key) {
+    pub fn get_mut(&mut self, key: K) -> Option<&mut V> {
+        if let Some(&index) = self.index_map.get(&key) {
             self.storage[index].as_mut().map(|(_, v)| v)
         } else {
             self.parent.as_mut().and_then(|parent| parent.get_mut(key))
@@ -76,7 +76,7 @@ impl<'run, K: std::cmp::Eq + std::hash::Hash + Clone, V> Varmap<'run, K, V> {
     }
 
     /// Check if the map contains a key.
-    pub fn contains_key(&self, key: &K) -> bool {
-        self.index_map.contains_key(key)
+    pub fn contains_key(&self, key: K) -> bool {
+        self.index_map.contains_key(&key)
     }
 }

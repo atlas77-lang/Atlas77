@@ -1,3 +1,5 @@
+use std::ops::Index;
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Instruction<'vm> {
     PushInt(i64),
@@ -70,6 +72,21 @@ pub enum Instruction<'vm> {
 pub struct Program<'vm> {
     pub labels: &'vm [Label<'vm>],
     pub entry_point: &'vm str,
+}
+
+impl<'vm> Index <usize> for Program<'vm> {
+    type Output = Instruction<'vm>;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        let mut current_index = 0;
+        for label in self.labels {
+            if current_index + label.body.len() > index {
+                return &label.body[index - current_index];
+            }
+            current_index += label.body.len();
+        }
+        panic!("Index out of bounds");
+    }
 }
 
 impl Program<'_> {

@@ -3,7 +3,13 @@
 // No optimizations will be done.
 
 use crate::{
-    atlas_frontend::parser::{arena::AstArena, ast::{AstBinaryOp, AstBlock, AstExpr, AstFunction, AstItem, AstLiteral, AstProgram, AstUnaryOp}},
+    atlas_frontend::parser::{
+        arena::AstArena,
+        ast::{
+            AstBinaryOp, AstBlock, AstExpr, AstFunction, AstItem, AstLiteral, AstProgram,
+            AstUnaryOp,
+        },
+    },
     atlas_vm::instruction::{Instruction, Label, Program},
 };
 
@@ -31,6 +37,11 @@ impl<'gen> Codegen<'gen> {
             match item {
                 AstItem::Func(f) => {
                     let mut bytecode = Vec::new();
+                    for arg in f.args {
+                        bytecode.push(Instruction::StoreI64 {
+                            var_name: arg.name.name.to_string(),
+                        });
+                    }
                     Self::generate_bytecode_block(f.body, &mut bytecode);
                     labels.push(Label {
                         name: f.name.name,
@@ -77,17 +88,21 @@ impl<'gen> Codegen<'gen> {
                 }
             }
             AstExpr::Identifier(i) => {
-                bytecode.push(Instruction::LoadI64{ var_name: i.name.to_string() });
+                bytecode.push(Instruction::LoadI64 {
+                    var_name: i.name.to_string(),
+                });
             }
-            AstExpr::Literal(l) => {
-                match l {
-                    AstLiteral::Float(f) => bytecode.push(Instruction::PushFloat(f.value)),
-                    AstLiteral::Integer(i) => bytecode.push(Instruction::PushInt(i.value)),
-                    AstLiteral::UnsignedIntegerer(u) => bytecode.push(Instruction::PushUnsignedInt(u.value)),
-                    AstLiteral::String(s) => bytecode.push(Instruction::PushString(s.value.to_string())),
-                    _ => todo!("Implement the rest of the literals"),
+            AstExpr::Literal(l) => match l {
+                AstLiteral::Float(f) => bytecode.push(Instruction::PushFloat(f.value)),
+                AstLiteral::Integer(i) => bytecode.push(Instruction::PushInt(i.value)),
+                AstLiteral::UnsignedIntegerer(u) => {
+                    bytecode.push(Instruction::PushUnsignedInt(u.value))
                 }
-            }
+                AstLiteral::String(s) => {
+                    bytecode.push(Instruction::PushString(s.value.to_string()))
+                }
+                _ => todo!("Implement the rest of the literals"),
+            },
             AstExpr::Return(e) => {
                 Self::generate_bytecode_expr(e.value, bytecode);
                 bytecode.push(Instruction::Return);
@@ -99,5 +114,5 @@ impl<'gen> Codegen<'gen> {
                 todo!("Implement the rest of the expressions");
             }
         }
-    }    
+    }
 }
