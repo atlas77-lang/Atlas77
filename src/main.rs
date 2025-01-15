@@ -3,11 +3,14 @@ use atlas_77::{
     atlas_codegen, atlas_frontend, atlas_hir, atlas_macro, atlas_memory, atlas_runtime,
     atlas_stdlib, atlas_vm,
 };
-use atlas_77::{atlas_codegen::Codegen, atlas_frontend::parser::arena::AstArena};
+use atlas_77::{
+    atlas_codegen::Codegen,
+    atlas_frontend::parser::arena::AstArena,
+    atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass},
+};
 use std::{path::PathBuf, time::Instant};
 
 use atlas_frontend::parse;
-
 
 use bumpalo::Bump;
 use clap::{command, Parser};
@@ -38,7 +41,6 @@ enum AtlasRuntimeCLI {
 
 fn main() -> miette::Result<()> {
     //std::env::set_var("RUST_BACKTRACE", "1");
-
     match AtlasRuntimeCLI::parse() {
         AtlasRuntimeCLI::Run { file_path } => run(file_path),
         AtlasRuntimeCLI::Build { file_path } => build(file_path),
@@ -60,32 +62,47 @@ pub(crate) fn build(path: String) -> miette::Result<()> {
 
     let program = parse(path_buf.to_str().unwrap(), &bump)?;
 
+    #[cfg(debug_assertions)]
     println!("{:?}", &program);
 
-    let bump = Bump::new();
+    let hir_arena = HirArena::new();
 
-    let arena = AstArena::new(&bump);
-
-    let mut gen = Codegen::new(program, arena);
-
-    let res = gen.compile(program);
-
-    match res {
-        Ok(o) => {
-            println!("Bytecode: {:?}", o);
-            let mut vm = atlas_vm::Atlas77VM::new(o);
-            let res = vm.run();
-            match res {
-                Ok(o) => {
-                    println!("Program executed successfully with result: {:?}", o);
-                }
-                Err(e) => {
-                    eprintln!("{}", e);
-                }
-            }
+    let lower = AstSyntaxLoweringPass::new(&hir_arena, &program);
+    let hir = lower.lower();
+    match hir {
+        Ok(hir) => {
+            println!("{:?}", hir);
         }
         Err(e) => {
             eprintln!("{}", e);
+        }
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        let bump = Bump::new();
+        let arena = AstArena::new(&bump);
+
+        let mut gen = Codegen::new(program, arena);
+        let res = gen.compile(program);
+
+        match res {
+            Ok(o) => {
+                println!("Bytecode: {:?}", o);
+                let mut vm = atlas_vm::Atlas77VM::new(o);
+                let res = vm.run();
+                match res {
+                    Ok(o) => {
+                        println!("Program executed successfully with result: {:?}", o);
+                    }
+                    Err(e) => {
+                        eprintln!("{}", e);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("{}", e);
+            }
         }
     }
 
@@ -107,13 +124,10 @@ pub(crate) fn run(path: String) -> miette::Result<()> {
 
     let program = parse(path_buf.to_str().unwrap(), &bump)?;
 
-    
     #[cfg(debug_assertions)]
     println!("{:?}", &program);
 
     let start = Instant::now();
-
-
 
     let end = Instant::now();
     println!("Elapsed time: {:?}", (end - start));

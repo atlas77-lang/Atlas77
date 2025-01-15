@@ -9,7 +9,15 @@ use atlas_core::prelude::{Span, Spanned};
 use miette::{SourceOffset, SourceSpan};
 
 use ast::{
-    AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType, AstCallExpr, AstCompTimeExpr, AstDoExpr, AstEnum, AstEnumVariant, AstExpr, AstExternFunction, AstFieldAccessExpr, AstFieldInit, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType, AstIdentifier, AstIfElseExpr, AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem, AstLambdaExpr, AstLetExpr, AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr, AstObjField, AstPattern, AstPatternKind, AstPointerType, AstProgram, AstReturnExpr, AstStatement, AstStringLiteral, AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant, AstUnitType, AstUnsignedIntegerLiteral, AstUnsignedIntegerType
+    AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType,
+    AstBreakStmt, AstCallExpr, AstCompTimeExpr, AstContinueStmt, AstDoExpr, AstEnum,
+    AstEnumVariant, AstExpr, AstExternFunction, AstFieldAccessExpr, AstFieldInit, AstFloatLiteral,
+    AstFloatType, AstFunction, AstFunctionType, AstIdentifier, AstIfElseExpr, AstImport,
+    AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem, AstLambdaExpr, AstLetExpr,
+    AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr, AstObjField, AstPattern, AstPatternKind,
+    AstPointerType, AstProgram, AstReturnStmt, AstStatement, AstStringLiteral, AstStringType,
+    AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant, AstUnitType,
+    AstUnsignedIntegerLiteral, AstUnsignedIntegerType, AstWhileExpr,
 };
 use error::{ParseError, ParseResult, UnexpectedTokenError};
 
@@ -171,10 +179,67 @@ impl<'ast> Parser<'ast> {
     fn parse_stmt(&mut self) -> ParseResult<AstStatement<'ast>> {
         let start = self.current();
         match start.kind() {
-            TokenKind::KwLet => {}
-            _ => {}
+            TokenKind::KwLet => {
+                let node = AstStatement::Let(self.parse_let()?);
+                self.expect(TokenKind::Semicolon)?;
+                Ok(node)
+            }
+            TokenKind::KwIf => {
+                let node = AstStatement::IfElse(self.parse_if_expr()?);
+                Ok(node)
+            }
+            TokenKind::KwWhile => {
+                let node = AstStatement::While(self.parse_while()?);
+                Ok(node)
+            }
+            TokenKind::KwBreak => {
+                let node = self.parse_break()?;
+                Ok(AstStatement::Break(node))
+            }
+            TokenKind::KwContinue => {
+                let node = self.parse_continue()?;
+                Ok(AstStatement::Continue(node))
+            }
+            TokenKind::KwReturn => {
+                let node = AstStatement::Return(self.parse_return()?);
+                Ok(node)
+            }
+            _ => {
+                let node = self.parse_expr()?;
+                self.expect(TokenKind::Semicolon)?;
+                Ok(AstStatement::Expr(node))
+            }
         }
-        unimplemented!()
+    }
+
+    fn parse_while(&mut self) -> ParseResult<AstWhileExpr<'ast>> {
+        let start = self.advance();
+        let condition = self.parse_expr()?;
+        let body = self.parse_block()?;
+        let node = AstWhileExpr {
+            span: Span::union_span(start.span(), body.span),
+            condition: self.arena.alloc(condition),
+            body: self.arena.alloc(body),
+        };
+        Ok(node)
+    }
+
+    fn parse_continue(&mut self) -> ParseResult<AstContinueStmt> {
+        let start_span = self.current().span();
+        self.expect(TokenKind::KwContinue)?;
+        self.expect(TokenKind::Semicolon)?;
+        Ok(AstContinueStmt {
+            span: Span::union_span(start_span, self.current().span()),
+        })
+    }
+
+    fn parse_break(&mut self) -> ParseResult<AstBreakStmt> {
+        let start_span = self.current().span();
+        self.expect(TokenKind::KwBreak)?;
+        self.expect(TokenKind::Semicolon)?;
+        Ok(AstBreakStmt {
+            span: Span::union_span(start_span, self.current().span()),
+        })
     }
 
     #[must_use]
@@ -396,6 +461,10 @@ impl<'ast> Parser<'ast> {
                         TokenKind::Dot => {
                             node = AstExpr::FieldAccess(self.parse_field_access(node)?);
                         }
+                        TokenKind::OpAssign => {
+                            node = AstExpr::Assign(self.parse_assign(node)?);
+                            return Ok(node);
+                        }
                         TokenKind::DoubleColon => {
                             unimplemented!(
                                 "double colon path will be implemented later (i.e. std::io::print)"
@@ -409,7 +478,6 @@ impl<'ast> Parser<'ast> {
 
                 node
             }
-            TokenKind::KwReturn => AstExpr::Return(self.parse_return_expr()?),
             TokenKind::KwIf => AstExpr::IfElse(self.parse_if_expr()?),
             _ => {
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
@@ -452,13 +520,14 @@ impl<'ast> Parser<'ast> {
     }
 
     #[must_use]
-    fn parse_return_expr(&mut self) -> ParseResult<AstReturnExpr<'ast>> {
+    fn parse_return(&mut self) -> ParseResult<AstReturnStmt<'ast>> {
         let _ = self.advance();
         let expr = self.parse_expr()?;
-        let node = AstReturnExpr {
+        let node = AstReturnStmt {
             span: Span::union_span(self.current().span(), expr.span()),
             value: self.arena.alloc(expr),
         };
+        self.expect(TokenKind::Semicolon)?;
         Ok(node)
     }
 
@@ -538,7 +607,7 @@ impl<'ast> Parser<'ast> {
         let mut fields = vec![];
         while self.current().kind() != TokenKind::RBrace {
             fields.push(self.parse_obj_field()?);
-            self.expect(TokenKind::Semicolon);
+            self.expect(TokenKind::Semicolon)?;
         }
         self.expect(TokenKind::RBrace)?;
         let node = AstStruct {
@@ -590,6 +659,17 @@ impl<'ast> Parser<'ast> {
             }
         };
         let _ = self.advance();
+        Ok(node)
+    }
+
+    fn parse_assign(&mut self, target: AstExpr<'ast>) -> ParseResult<AstAssignExpr<'ast>> {
+        self.expect(TokenKind::OpAssign)?;
+        let value = self.parse_expr()?;
+        let node = AstAssignExpr {
+            span: Span::union_span(target.span(), value.span()),
+            target: self.arena.alloc(target),
+            value: self.arena.alloc(value),
+        };
         Ok(node)
     }
 
@@ -770,6 +850,18 @@ struct Foo {
 }
 extern print(&str) -> unit
 func main() -> i64 {
+    let test: str = "Hello World";
+    if test {
+        print(test);
+    } else {
+        print("Goodbye World");
+    }
+    while test {
+        break;
+        continue;
+        return b;
+        let a: i64 = "a";
+    }
     print("Hello World");
     index[0];
     0;

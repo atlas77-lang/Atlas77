@@ -6,6 +6,6 @@ func main() {
     hello("Hello, World!");
 }
 
-func hello(txt: &str) {
+func hello(txt: i64) {
     println(txt);
 }

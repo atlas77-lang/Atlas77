@@ -1,8 +1,6 @@
+pub mod errors;
 pub mod instruction;
 pub mod vm_state;
-pub mod errors;
-
-use std::collections::HashMap;
 
 use instruction::{Instruction, Program};
 

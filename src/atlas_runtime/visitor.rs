@@ -3,9 +3,9 @@ use crate::{atlas_frontend::parser::ast::AstLiteral, atlas_memory::vm_data::VMDa
 use crate::atlas_vm::errors::RuntimeResult;
 
 use crate::atlas_frontend::parser::ast::{
-    AstBinaryOpExpr, AstBlock, AstCallExpr, AstExpr, AstFieldAccessExpr,
-    AstFunction, AstIdentifier, AstIfElseExpr, AstIndexingExpr, AstLetExpr, AstMatchExpr,
-    AstProgram, AstUnaryOpExpr,
+    AstBinaryOpExpr, AstBlock, AstCallExpr, AstExpr, AstFieldAccessExpr, AstFunction,
+    AstIdentifier, AstIfElseExpr, AstIndexingExpr, AstLetExpr, AstMatchExpr, AstProgram,
+    AstUnaryOpExpr,
 };
 
 //TODO: visit() should return a Result<VMData, crate::errors::RuntimeError>

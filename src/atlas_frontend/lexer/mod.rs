@@ -31,7 +31,6 @@ lexer_builder! {
             ';' => Semicolon,
             '\'' => Quote,
             '?' => Interrogation,
-            '@' => CompTime,
         },
         Either {
             '=' => '=' => OpEq, OpAssign,
@@ -47,22 +46,37 @@ lexer_builder! {
         }
     },
     Keyword {
+        //Items
         "class"     => KwClass,
-        "public"    => KwPublic,
-        "private"   => KwPrivate,
-        //Keywords
         "func"      => KwFunc,
         "extern"    => KwExtern,
+        "struct"    => KwStruct,
+        "trait"     => KwTrait,
+        "enum"      => KwEnum,
+        "union"     => KwUnion,
+        "import"    => KwImport,
+        //Visibility
+        "public"    => KwPublic,
+        "private"   => KwPrivate,
+        //Control Flow
         "if"        => KwIf,
         "else"      => KwElse,
-        "struct"    => KwStruct,
+        "match"     => KwMatch,
+        //Loops
+        "while"     => KwWhile,
+        "break"     => KwBreak,
+        "continue"  => KwContinue,
+        //Return
+        "return"    => KwReturn,
+        //Variables
+        "let"       => KwLet,
+        "const"     => KwConst,
+        //Misc
+        "comptime"  => KwComptime,
+        "as"        => KwAs,
+        //Boolean
         "true"      => KwTrue, //should be fixed
         "false"     => KwFalse,
-        "let"       => KwLet,
-        "import"    => KwImport,
-        "return"    => KwReturn, //will probably be removed at one point
-        "enum"      => KwEnum,
-        "as"        => KwAs,
         //Primitive Types
         "i64"       => I64Ty,
         "f64"       => F64Ty,

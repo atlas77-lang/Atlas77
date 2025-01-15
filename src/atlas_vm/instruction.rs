@@ -1,3 +1,6 @@
+//NB: This is a dumb down version of the instruction set.
+//A more powerful version will be done for the v0.5.2 & v0.5.3
+
 use std::ops::Index;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -66,6 +69,8 @@ pub enum Instruction<'vm> {
         args: u8,
     },
     Return,
+
+    Halt,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]

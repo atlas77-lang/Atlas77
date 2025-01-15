@@ -1,7 +1,6 @@
+#[warn(missing_docs)]
 //At one point, every part of the language will be in its own crate.
 //Or at least separated between the frontend, the backend, the runtime and the standard library.
-
-#[warn(missing_docs)]
 
 /// WIP: Codegen
 pub mod atlas_codegen;

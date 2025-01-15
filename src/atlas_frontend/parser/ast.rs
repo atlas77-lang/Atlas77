@@ -121,10 +121,12 @@ pub enum AstStatement<'ast> {
     Match(AstMatchExpr<'ast>),
     InnerFunc(AstFunction<'ast>),
     Block(AstBlock<'ast>),
-    Assign(AstAssignExpr<'ast>),
     Call(AstCallExpr<'ast>),
     While(AstWhileExpr<'ast>),
     Expr(AstExpr<'ast>),
+    Break(AstBreakStmt),
+    Continue(AstContinueStmt),
+    Return(AstReturnStmt<'ast>),
 }
 
 impl AstStatement<'_> {
@@ -136,12 +138,26 @@ impl AstStatement<'_> {
             AstStatement::Match(e) => e.span,
             AstStatement::InnerFunc(e) => e.span,
             AstStatement::Block(e) => e.span,
-            AstStatement::Assign(e) => e.span,
             AstStatement::Call(e) => e.span,
             AstStatement::While(e) => e.span,
             AstStatement::Expr(e) => e.span(),
+            AstStatement::Break(e) => e.span,
+            AstStatement::Continue(e) => e.span,
+            AstStatement::Return(e) => e.span,
         }
     }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstContinueStmt {
+    pub span: Span,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize, Copy)]
+pub struct AstBreakStmt {
+    pub span: Span,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -180,14 +196,13 @@ pub enum AstExpr<'ast> {
     BinaryOp(AstBinaryOpExpr<'ast>),
     UnaryOp(AstUnaryOpExpr<'ast>),
     Call(AstCallExpr<'ast>),
-    Do(AstDoExpr<'ast>),
     Literal(AstLiteral<'ast>),
     Identifier(AstIdentifier<'ast>),
     Indexing(AstIndexingExpr<'ast>),
     FieldAccess(AstFieldAccessExpr<'ast>),
     NewObj(AstNewObjExpr<'ast>),
     Block(AstBlock<'ast>),
-    Return(AstReturnExpr<'ast>),
+    Assign(AstAssignExpr<'ast>),
     //Tuple(AstTupleExpr<'ast>),
 }
 
@@ -202,21 +217,20 @@ impl Spanned for AstExpr<'_> {
             AstExpr::BinaryOp(e) => e.span,
             AstExpr::UnaryOp(e) => e.span,
             AstExpr::Call(e) => e.span,
-            AstExpr::Do(e) => e.span,
             AstExpr::Literal(e) => e.span(),
             AstExpr::Identifier(e) => e.span,
             AstExpr::Indexing(e) => e.span,
             AstExpr::FieldAccess(e) => e.span,
             AstExpr::NewObj(e) => e.span,
             AstExpr::Block(e) => e.span,
-            AstExpr::Return(e) => e.span,
+            AstExpr::Assign(e) => e.span,
         }
     }
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone, Serialize, Copy)]
-pub struct AstReturnExpr<'ast> {
+pub struct AstReturnStmt<'ast> {
     pub span: Span,
     pub value: &'ast AstExpr<'ast>,
 }
