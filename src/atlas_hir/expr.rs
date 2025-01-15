@@ -9,11 +9,12 @@ pub enum HirExpr<'hir> {
     Assign(HirAssignExpr<'hir>),
     HirBinaryOp(HirBinaryOpExpr<'hir>),
     Call(HirFunctionCallExpr<'hir>),
-    FloatLiteral(HirFloatLiteralExpr<'hir>),
     Ident(HirIdentExpr<'hir>),
-    IntegerLiteral(HirIntegerLiteralExpr<'hir>),
     Unary(UnaryOpExpr<'hir>),
+    FloatLiteral(HirFloatLiteralExpr<'hir>),
+    IntegerLiteral(HirIntegerLiteralExpr<'hir>),
     UnsignedIntegererLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
+    StringLiteral(HirStringLiteralExpr<'hir>),
 }
 
 impl<'hir> HirExpr<'hir> {
@@ -27,6 +28,7 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::HirBinaryOp(expr) => expr.span,
             HirExpr::Call(expr) => expr.span,
             HirExpr::Assign(expr) => expr.span,
+            HirExpr::StringLiteral(expr) => expr.span,
         }
     }
     pub fn ty(&self) -> &'hir HirTy<'hir> {
@@ -39,8 +41,17 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::HirBinaryOp(expr) => expr.ty,
             HirExpr::Call(expr) => expr.ty,
             HirExpr::Assign(expr) => expr.ty,
+            HirExpr::StringLiteral(expr) => expr.ty,
         }
     }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Serialize)]
+pub struct HirStringLiteralExpr<'hir> {
+    pub value: &'hir str,
+    pub span: Span,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

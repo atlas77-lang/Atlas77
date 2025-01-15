@@ -1,19 +1,16 @@
 #[allow(unused)]
 use atlas_77::{
-    atlas_codegen, atlas_frontend, atlas_hir, atlas_macro, atlas_memory, atlas_runtime,
-    atlas_stdlib, atlas_vm,
-};
-use atlas_77::{
-    atlas_codegen::Codegen,
-    atlas_frontend::parser::arena::AstArena,
+    atlas_codegen,
+    atlas_codegen::{arena::CodeGenArena, CodeGenUnit},
+    atlas_frontend,
+    atlas_frontend::parse,
+    atlas_hir,
     atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass},
+    atlas_macro, atlas_memory, atlas_runtime, atlas_stdlib, atlas_vm,
 };
-use std::{path::PathBuf, time::Instant};
-
-use atlas_frontend::parse;
-
 use bumpalo::Bump;
 use clap::{command, Parser};
+use std::{path::PathBuf, time::Instant};
 
 #[derive(Parser)] // requires `derive` feature
 #[command(name = "Atlas77")]
@@ -72,37 +69,33 @@ pub(crate) fn build(path: String) -> miette::Result<()> {
     match hir {
         Ok(hir) => {
             println!("{:?}", hir);
+            let bump = Bump::new();
+
+            let arena = CodeGenArena::new(&bump);
+
+            let mut codegen = CodeGenUnit::new(hir, arena);
+
+            let program = codegen.compile();
+
+            match program {
+                Ok(program) => {
+                    println!(
+                        "{}",
+                        ron::ser::to_string_pretty(&program, Default::default()).unwrap_or_else(
+                            |_| {
+                                eprintln!("Failed to serialize program");
+                                "".to_string()
+                            }
+                        )
+                    );
+                }
+                Err(e) => {
+                    eprintln!("{}", e);
+                }
+            }
         }
         Err(e) => {
             eprintln!("{}", e);
-        }
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        let bump = Bump::new();
-        let arena = AstArena::new(&bump);
-
-        let mut gen = Codegen::new(program, arena);
-        let res = gen.compile(program);
-
-        match res {
-            Ok(o) => {
-                println!("Bytecode: {:?}", o);
-                let mut vm = atlas_vm::Atlas77VM::new(o);
-                let res = vm.run();
-                match res {
-                    Ok(o) => {
-                        println!("Program executed successfully with result: {:?}", o);
-                    }
-                    Err(e) => {
-                        eprintln!("{}", e);
-                    }
-                }
-            }
-            Err(e) => {
-                eprintln!("{}", e);
-            }
         }
     }
 

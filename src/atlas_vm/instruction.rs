@@ -3,7 +3,9 @@
 
 use std::ops::Index;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+use serde::Serialize;
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub enum Instruction<'vm> {
     PushInt(i64),
     PushFloat(f64),
@@ -19,11 +21,11 @@ pub enum Instruction<'vm> {
     },
     /// Store an f64 value in a variable from the stack
     StoreF64 {
-        var_name: &'vm str,
+        var_name: String,
     },
     /// Store an u64 value in a variable from the stack
     StoreU64 {
-        var_name: &'vm str,
+        var_name: String,
     },
 
     /// Load an i64 value from a variable to the stack
@@ -32,11 +34,11 @@ pub enum Instruction<'vm> {
     },
     /// Load an f64 value from a variable to the stack
     LoadF64 {
-        var_name: &'vm str,
+        var_name: String,
     },
     /// Load an u64 value from a variable to the stack
     LoadU64 {
-        var_name: &'vm str,
+        var_name: String,
     },
 
     //Math
@@ -61,7 +63,7 @@ pub enum Instruction<'vm> {
     ModU64,
 
     CallFunction {
-        name: &'vm str,
+        name: String,
         args: u8,
     },
     ExternCall {
@@ -73,9 +75,9 @@ pub enum Instruction<'vm> {
     Halt,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize)]
 pub struct Program<'vm> {
-    pub labels: &'vm [Label<'vm>],
+    pub labels: &'vm [&'vm Label<'vm>],
     pub entry_point: &'vm str,
 }
 
@@ -106,15 +108,15 @@ impl Program<'_> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize)]
 pub struct ConstantPool<'vm> {
     pub string_pool: &'vm [&'vm str],
     pub function_pool: &'vm [&'vm str],
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub struct Label<'vm> {
-    pub name: &'vm str,
+    pub name: String,
     pub position: usize,
-    pub body: &'vm [Instruction<'vm>],
+    pub body: &'vm [&'vm Instruction<'vm>],
 }

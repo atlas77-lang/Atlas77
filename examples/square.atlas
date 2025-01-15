@@ -1,3 +1,7 @@
 func square(x: i64) -> i64 {
     return x * x;
 }
+
+func main() {
+    square(5);
+}

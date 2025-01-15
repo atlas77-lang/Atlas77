@@ -13,8 +13,8 @@ use crate::{
 use super::{
     arena::HirArena,
     expr::{
-        HirBinaryOp, HirBinaryOpExpr, HirExpr, HirFunctionCallExpr, HirIdentExpr,
-        HirIntegerLiteralExpr, UnaryOp, UnaryOpExpr,
+        HirBinaryOp, HirBinaryOpExpr, HirExpr, HirFloatLiteralExpr, HirFunctionCallExpr,
+        HirIdentExpr, HirIntegerLiteralExpr, HirUnsignedIntegerLiteralExpr, UnaryOp, UnaryOpExpr,
     },
     item::{HirFunction, HirItem},
     signature::{HirFunctionParameterSignature, HirModuleSignature, HirTypeParameterItemSignature},
@@ -247,6 +247,24 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                                 value: i.value,
                                 ty: self.arena.types().get_integer64_ty(),
                             }))
+                    }
+                    AstLiteral::Float(f) => {
+                        self.arena
+                            .intern(HirExpr::FloatLiteral(HirFloatLiteralExpr {
+                                span: l.span(),
+                                value: f.value,
+                                ty: self.arena.types().get_float64_ty(),
+                            }))
+                    }
+                    AstLiteral::UnsignedIntegerer(u) => self.arena.intern(
+                        HirExpr::UnsignedIntegererLiteral(HirUnsignedIntegerLiteralExpr {
+                            span: l.span(),
+                            value: u.value,
+                            ty: self.arena.types().get_uint64_ty(),
+                        }),
+                    ),
+                    AstLiteral::String(_s) => {
+                        todo!("string_literal, {:?}", node)
                     }
                     _ => {
                         todo!("visit_expr, {:?}", node)
