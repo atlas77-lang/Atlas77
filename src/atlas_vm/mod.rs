@@ -43,14 +43,26 @@ impl<'run> Atlas77VM<'run> {
         }
         while self.pc < self.program.len() {
             let instr = self.program[self.pc].clone();
+            //println!("Current Instruction: {:?}", instr);
             self.execute_instruction(instr)?;
         }
         Ok(())
     }
-    pub fn execute_instruction(&mut self, instr: Instruction<'run>) -> RuntimeResult {
+    /// TODO: Add check for unsigned int
+    pub fn execute_instruction(&mut self, instr: Instruction) -> RuntimeResult {
         match instr {
             Instruction::PushInt(i) => {
                 let val = VMData::new_i64(i);
+                self.stack.push(val).unwrap();
+                self.pc += 1;
+            }
+            Instruction::PushFloat(f) => {
+                let val = VMData::new_f64(f);
+                self.stack.push(val).unwrap();
+                self.pc += 1;
+            }
+            Instruction::PushUnsignedInt(u) => {
+                let val = VMData::new_u64(u);
                 self.stack.push(val).unwrap();
                 self.pc += 1;
             }
@@ -68,23 +80,71 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push(res).unwrap();
                 self.pc += 1;
             }
+            Instruction::Gt => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_bool(b.as_i64() > a.as_i64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::Gte => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_bool(b.as_i64() >= a.as_i64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::Eq => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_bool(b.as_i64() == a.as_i64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::Neq => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_bool(b.as_i64() != a.as_i64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
             Instruction::JmpZ { pos } => {
                 let cond = self.stack.pop().unwrap();
                 if !cond.as_bool() {
-                    self.pc += pos + 1;
+                    self.pc += (pos + 1) as usize;
                 } else {
                     self.pc += 1;
                 }
             }
             Instruction::Jmp { pos } => {
-                self.pc += pos;
+                self.pc = (self.pc as isize + pos) as usize;
             }
             Instruction::StoreI64 { var_name } => {
                 let val = self.stack.pop().unwrap();
                 self.varmap.last_mut().unwrap().insert(var_name, val);
                 self.pc += 1;
             }
+            Instruction::StoreF64 { var_name } => {
+                let val = self.stack.pop().unwrap();
+                self.varmap.last_mut().unwrap().insert(var_name, val);
+                self.pc += 1;
+            }
+            Instruction::StoreU64 { var_name } => {
+                let val = self.stack.pop().unwrap();
+                self.varmap.last_mut().unwrap().insert(var_name, val);
+                self.pc += 1;
+            }
             Instruction::LoadI64 { var_name } => {
+                let val = self.varmap.last().unwrap().get(&var_name).unwrap();
+                self.stack.push(val.clone()).unwrap();
+                self.pc += 1;
+            }
+            Instruction::LoadF64 { var_name } => {
+                let val = self.varmap.last().unwrap().get(&var_name).unwrap();
+                self.stack.push(val.clone()).unwrap();
+                self.pc += 1;
+            }
+            Instruction::LoadU64 { var_name } => {
                 let val = self.varmap.last().unwrap().get(&var_name).unwrap();
                 self.stack.push(val.clone()).unwrap();
                 self.pc += 1;
@@ -96,10 +156,68 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push(res).unwrap();
                 self.pc += 1;
             }
+            Instruction::MulF64 => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_f64(b.as_f64() * a.as_f64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::MulU64 => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_u64(b.as_u64() * a.as_u64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::DivI64 => {
+                let a = self.stack.pop().unwrap();
+                if a == VMData::new_i64(0) {
+                    return Err("Division by zero".to_string());
+                }
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_i64(b.as_i64() / a.as_i64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::DivF64 => {
+                let a = self.stack.pop().unwrap();
+                if a == VMData::new_f64(0.0) {
+                    return Err("Division by zero".to_string());
+                }
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_f64(b.as_f64() / a.as_f64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::DivU64 => {
+                let a = self.stack.pop().unwrap();
+                if a == VMData::new_u64(0) {
+                    return Err("Division by zero".to_string());
+                }
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_u64(b.as_u64() / a.as_u64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
             Instruction::AddI64 => {
                 let a = self.stack.pop().unwrap();
                 let b = self.stack.pop().unwrap();
                 let res = VMData::new_i64(b.as_i64() + a.as_i64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::AddF64 => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_f64(b.as_f64() + a.as_f64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::AddU64 => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_u64(b.as_u64() + a.as_u64());
                 self.stack.push(res).unwrap();
                 self.pc += 1;
             }
@@ -110,6 +228,35 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push(res).unwrap();
                 self.pc += 1;
             }
+            Instruction::SubF64 => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_f64(b.as_f64() - a.as_f64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::SubU64 => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_u64(b.as_u64() - a.as_u64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::ModI64 => {
+                let a = self.stack.pop().unwrap();
+                let b = self.stack.pop().unwrap();
+                let res = VMData::new_i64(b.as_i64() % a.as_i64());
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
+            Instruction::ExternCall { name, .. } => match name.as_str() {
+                "print" => {
+                    let val = self.stack.pop().unwrap();
+                    println!("{}", val);
+                    self.pc += 1;
+                }
+                _ => unimplemented!(),
+            },
             Instruction::CallFunction { name, args } => {
                 let label = self
                     .program

@@ -1,5 +1,5 @@
 func main() -> i64 {
-    fib(40);
+    fib(20);
 }
 
 func fib(n: i64) -> i64 {

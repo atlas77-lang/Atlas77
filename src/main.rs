@@ -10,7 +10,7 @@ use atlas_77::{
 };
 use bumpalo::Bump;
 use clap::{command, Parser};
-use std::{path::PathBuf, time::Instant};
+use std::{io::Write, path::PathBuf, time::Instant};
 
 #[derive(Parser)] // requires `derive` feature
 #[command(name = "Atlas77")]
@@ -79,15 +79,10 @@ pub(crate) fn build(path: String) -> miette::Result<()> {
 
             match program {
                 Ok(program) => {
-                    println!(
-                        "{}",
-                        ron::ser::to_string_pretty(&program, Default::default()).unwrap_or_else(
-                            |_| {
-                                eprintln!("Failed to serialize program");
-                                "".to_string()
-                            }
-                        )
-                    );
+                    let output = ron::ser::to_string_pretty(&program, Default::default()).unwrap();
+                    let mut file = std::fs::File::create("output.atlasc").unwrap();
+                    file.write_all(output.as_bytes()).unwrap();
+
                     let start = Instant::now();
                     let mut vm = atlas_vm::Atlas77VM::new(program);
                     let res = vm.run();

@@ -85,7 +85,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 self.generate_bytecode_block(&i.then_branch, &mut then_body);
 
                 bytecode.push(Instruction::JmpZ {
-                    pos: then_body.len() + 1,
+                    pos: (then_body.len() + if i.else_branch.is_some() { 1 } else { 0 }) as isize,
                 });
                 bytecode.append(&mut then_body);
                 if let Some(e) = i.else_branch {
@@ -93,9 +93,36 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     self.generate_bytecode_block(e, &mut else_body);
 
                     bytecode.push(Instruction::Jmp {
-                        pos: else_body.len() + 1,
+                        pos: (else_body.len() + 1) as isize,
                     });
                     bytecode.append(&mut else_body);
+                }
+            }
+            HirStatement::While(w) => {
+                let start = bytecode.len() as isize;
+                self.generate_bytecode_expr(w.condition, bytecode);
+                let mut body = Vec::new();
+
+                self.generate_bytecode_block(&w.body, &mut body);
+                //If the condition is false jump to the end of the loop
+                bytecode.push(Instruction::JmpZ {
+                    pos: (body.len() + 1) as isize,
+                });
+                bytecode.append(&mut body);
+                //Jump back to the start of the loop
+                bytecode.push(Instruction::Jmp { pos: start - bytecode.len() as isize });
+            }
+            HirStatement::Let(l) => {
+                let mut value = Vec::new();
+                self.generate_bytecode_expr(l.value, &mut value);
+                match l.ty {
+                    HirTy::Int64(_) => {
+                        value.push(Instruction::StoreI64 {
+                            var_name: l.name.to_string(),
+                        });
+                        bytecode.append(&mut value);
+                    }
+                    _ => unimplemented!("Unsupported type for now"),
                 }
             }
             HirStatement::Expr(e) => self.generate_bytecode_expr(e.expr, bytecode),
@@ -105,6 +132,40 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
 
     fn generate_bytecode_expr(&mut self, expr: &HirExpr<'hir>, bytecode: &mut Vec<Instruction>) {
         match expr {
+            HirExpr::Assign(a) => {
+                let lhs = a.lhs.as_ref();
+                match lhs {
+                    HirExpr::Ident(i) => {
+                        self.generate_bytecode_expr(&a.rhs, bytecode);
+                        match i.ty {
+                            HirTy::Int64(_) => {
+                                bytecode.push(Instruction::StoreI64 {
+                                    var_name: i.name.to_string(),
+                                });
+                            }
+                            HirTy::Float64(_) => {
+                                bytecode.push(Instruction::StoreF64 {
+                                    var_name: i.name.to_string(),
+                                });
+                            }
+                            HirTy::UInt64(_) => {
+                                bytecode.push(Instruction::StoreU64 {
+                                    var_name: i.name.to_string(),
+                                });
+                            }
+                            HirTy::Uninitialized(_) => {
+                                bytecode.push(Instruction::StoreI64 {
+                                    var_name: i.name.to_string(),
+                                });
+                            }
+                            _ => unimplemented!("Unsupported type for now {:?}", i.ty),
+                        }
+                    }
+                    _ => {
+                        unimplemented!("Unsupported kind of assign for now");
+                    }
+                }
+            }
             HirExpr::HirBinaryOp(b) => {
                 self.generate_bytecode_expr(&b.lhs, bytecode);
                 self.generate_bytecode_expr(&b.rhs, bytecode);
@@ -157,10 +218,17 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 let callee = f.callee.as_ref();
                 match callee {
                     HirExpr::Ident(i) => {
-                        bytecode.push(Instruction::CallFunction {
-                            name: i.name.to_string(),
-                            args: f.args.len() as u8,
-                        });
+                        if i.name == "print" {
+                            bytecode.push(Instruction::ExternCall {
+                                name: i.name.to_string(),
+                                args: f.args.len() as u8,
+                            });
+                        } else {
+                            bytecode.push(Instruction::CallFunction {
+                                name: i.name.to_string(),
+                                args: f.args.len() as u8,
+                            });
+                        }
                     }
                     _ => unimplemented!("Unsupported callee for now"),
                 }
@@ -200,6 +268,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         args: Vec<&HirFunctionParameterSignature<'hir>>,
         bytecode: &mut Vec<Instruction>,
     ) {
+        let args = args.iter().rev().cloned().collect::<Vec<_>>();
         for arg in args {
             match arg.ty {
                 HirTy::Int64(_) => {

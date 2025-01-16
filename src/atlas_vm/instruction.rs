@@ -6,7 +6,7 @@ use std::ops::Index;
 use serde::Serialize;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
-pub enum Instruction<'vm> {
+pub enum Instruction {
     PushInt(i64),
     PushFloat(f64),
     PushUnsignedInt(u64),
@@ -69,13 +69,13 @@ pub enum Instruction<'vm> {
     Lt,
     Lte,
 
-    /// Unconditional jump
+    /// Relative unconditional jump
     Jmp {
-        pos: usize,
+        pos: isize,
     },
-    /// Jump if 0
+    /// Relative Jump if 0
     JmpZ {
-        pos: usize,
+        pos: isize,
     },
 
     CallFunction {
@@ -83,7 +83,7 @@ pub enum Instruction<'vm> {
         args: u8,
     },
     ExternCall {
-        name: &'vm str,
+        name: String,
         args: u8,
     },
     Return,
@@ -98,7 +98,7 @@ pub struct Program<'vm> {
 }
 
 impl<'vm> Index<usize> for Program<'vm> {
-    type Output = Instruction<'vm>;
+    type Output = Instruction;
 
     fn index(&self, index: usize) -> &Self::Output {
         let mut current_index = 0;
@@ -134,5 +134,5 @@ pub struct ConstantPool<'vm> {
 pub struct Label<'vm> {
     pub name: String,
     pub position: usize,
-    pub body: &'vm [&'vm Instruction<'vm>],
+    pub body: &'vm [&'vm Instruction],
 }

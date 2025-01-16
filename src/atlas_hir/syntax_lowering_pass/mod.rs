@@ -18,7 +18,7 @@ use super::{
     },
     item::{HirFunction, HirItem},
     signature::{HirFunctionParameterSignature, HirModuleSignature, HirTypeParameterItemSignature},
-    stmt::{HirBlock, HirExprStmt, HirIfElseStmt, HirReturn, HirStatement},
+    stmt::{HirBlock, HirExprStmt, HirIfElseStmt, HirReturn, HirStatement, HirWhileStmt},
     ty::HirTy,
     HirModule, HirModuleBody,
 };
@@ -107,6 +107,16 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
 
     fn visit_stmt(&self, node: &'ast AstStatement<'ast>) -> HirResult<&'hir HirStatement<'hir>> {
         match node {
+            AstStatement::While(w) => {
+                let condition = self.visit_expr(&w.condition)?;
+                let body = self.visit_block(&w.body)?;
+                let hir = self.arena.intern(HirStatement::While(HirWhileStmt {
+                    span: node.span(),
+                    condition,
+                    body: self.arena.intern(body),
+                }));
+                Ok(hir)
+            }
             AstStatement::Let(l) => {
                 let name = self.arena.names().get(&l.name.name);
                 let ty = match l.ty {
