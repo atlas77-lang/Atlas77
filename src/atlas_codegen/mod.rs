@@ -58,6 +58,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
 
             self.current_pos += len;
         }
+        self.program.entry_point = "main";
         self.program.labels = self.arena.alloc_vec(labels);
         Ok(self.program)
     }
@@ -77,6 +78,25 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             HirStatement::Return(e) => {
                 self.generate_bytecode_expr(e.value, bytecode);
                 bytecode.push(Instruction::Return);
+            }
+            HirStatement::IfElse(i) => {
+                self.generate_bytecode_expr(i.condition, bytecode);
+                let mut then_body = Vec::new();
+                self.generate_bytecode_block(&i.then_branch, &mut then_body);
+
+                bytecode.push(Instruction::JmpZ {
+                    pos: then_body.len() + 1,
+                });
+                bytecode.append(&mut then_body);
+                if let Some(e) = i.else_branch {
+                    let mut else_body = Vec::new();
+                    self.generate_bytecode_block(e, &mut else_body);
+
+                    bytecode.push(Instruction::Jmp {
+                        pos: else_body.len() + 1,
+                    });
+                    bytecode.append(&mut else_body);
+                }
             }
             HirStatement::Expr(e) => self.generate_bytecode_expr(e.expr, bytecode),
             _ => unimplemented!("Unsupported statement for now"),
@@ -103,6 +123,24 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     }
                     crate::atlas_hir::expr::HirBinaryOp::Mod => {
                         bytecode.push(Instruction::ModI64);
+                    }
+                    crate::atlas_hir::expr::HirBinaryOp::Eq => {
+                        bytecode.push(Instruction::Eq);
+                    }
+                    crate::atlas_hir::expr::HirBinaryOp::Neq => {
+                        bytecode.push(Instruction::Neq);
+                    }
+                    crate::atlas_hir::expr::HirBinaryOp::Gt => {
+                        bytecode.push(Instruction::Gt);
+                    }
+                    crate::atlas_hir::expr::HirBinaryOp::Gte => {
+                        bytecode.push(Instruction::Gte);
+                    }
+                    crate::atlas_hir::expr::HirBinaryOp::Lt => {
+                        bytecode.push(Instruction::Lt);
+                    }
+                    crate::atlas_hir::expr::HirBinaryOp::Lte => {
+                        bytecode.push(Instruction::Lte);
                     }
                     _ => unimplemented!("Unsupported binary operator for now"),
                 }

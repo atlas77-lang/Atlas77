@@ -88,6 +88,22 @@ pub(crate) fn build(path: String) -> miette::Result<()> {
                             }
                         )
                     );
+                    let start = Instant::now();
+                    let mut vm = atlas_vm::Atlas77VM::new(program);
+                    let res = vm.run();
+                    let end = Instant::now();
+                    match res {
+                        Ok(_) => {
+                            println!(
+                                "Program ran successfully: {} (time: {}ms)",
+                                vm.stack.pop().unwrap(),
+                                (end - start).as_millis()
+                            );
+                        }
+                        Err(e) => {
+                            eprintln!("{}", e);
+                        }
+                    }
                 }
                 Err(e) => {
                     eprintln!("{}", e);

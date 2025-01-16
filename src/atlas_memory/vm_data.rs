@@ -40,7 +40,6 @@ impl VMData {
     pub const TAG_BOOL: u64 = 10;
     pub const TAG_STR: u64 = 11;
     pub const TAG_CHAR: u64 = 12;
-    pub const TAG_FN_PTR: u64 = 13;
 
     pub fn new(tag: u64, data: RawVMData) -> Self {
         Self { tag, data }
@@ -209,7 +208,6 @@ impl std::fmt::Debug for VMData {
                 Self::TAG_I64 => "i64",
                 Self::TAG_U64 => "u64",
                 Self::TAG_CHAR => "char",
-                Self::TAG_FN_PTR => "fn_ptr",
                 _ if self.is_object() => "obj",
                 _ => "res",
             },

@@ -15,15 +15,13 @@ pub mod signature;
 pub mod stmt;
 pub mod ty;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize, Default)]
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct HirModuleBody<'hir> {
     pub functions: BTreeMap<&'hir str, HirFunction<'hir>>,
     pub imports: Vec<&'hir HirImport<'hir>>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize, Default)]
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct HirModule<'hir> {
     pub body: HirModuleBody<'hir>,
     pub signature: HirModuleSignature<'hir>,

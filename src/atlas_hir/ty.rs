@@ -3,8 +3,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use atlas_core::prelude::Span;
 use serde::Serialize;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Copy)]
 pub struct HirTyId(u64);
 
 impl HirTyId {
@@ -81,8 +80,7 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum HirTy<'hir> {
     Int64(HirIntegerTy),
     Float64(HirFloatTy),
@@ -95,39 +93,31 @@ pub enum HirTy<'hir> {
     Function(HirFunctionTy<'hir>),
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirUninitializedTy {}
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirIntegerTy {}
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirFloatTy {}
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirUnsignedIntTy {}
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirUnitTy {}
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirBooleanTy {}
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirFunctionTy<'hir> {
     pub ret_ty: &'hir HirTy<'hir>,
     pub params: Vec<HirTy<'hir>>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirNamedTy<'hir> {
     pub name: &'hir str,
     pub span: Span,

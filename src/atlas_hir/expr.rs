@@ -3,8 +3,7 @@ use serde::Serialize;
 
 use super::ty::HirTy;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum HirExpr<'hir> {
     Assign(HirAssignExpr<'hir>),
     HirBinaryOp(HirBinaryOpExpr<'hir>),
@@ -46,16 +45,14 @@ impl<'hir> HirExpr<'hir> {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirStringLiteralExpr<'hir> {
     pub value: &'hir str,
     pub span: Span,
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirAssignExpr<'hir> {
     pub span: Span,
     pub lhs: Box<HirExpr<'hir>>,
@@ -63,8 +60,7 @@ pub struct HirAssignExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirFunctionCallExpr<'hir> {
     pub span: Span,
     pub callee: Box<HirExpr<'hir>>,
@@ -75,8 +71,7 @@ pub struct HirFunctionCallExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirBinaryOpExpr<'hir> {
     pub span: Span,
     pub op: HirBinaryOp,
@@ -87,8 +82,7 @@ pub struct HirBinaryOpExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum HirBinaryOp {
     Add,
     And,
@@ -105,8 +99,7 @@ pub enum HirBinaryOp {
     Sub,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct UnaryOpExpr<'hir> {
     pub span: Span,
     pub op: Option<UnaryOp>,
@@ -115,39 +108,34 @@ pub struct UnaryOpExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum UnaryOp {
     Neg,
     Not,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirFloatLiteralExpr<'hir> {
     pub value: f64,
     pub span: Span,
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirUnsignedIntegerLiteralExpr<'hir> {
     pub value: u64,
     pub span: Span,
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirIntegerLiteralExpr<'hir> {
     pub value: i64,
     pub span: Span,
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirIdentExpr<'hir> {
     pub name: &'hir str,
     pub span: Span,

@@ -1,10 +1,61 @@
-func main() -> i64 {
-    let square: (i64) -> i64 = return_a_square();
-    return square(1);
-}
-
-func return_square() -> (i64) -> i64 {
-    return (x: i64) -> i64 {
-        return x * x;
-    };
-}
+(
+    labels: [
+        (
+            name: "fib",
+            position: 0,
+            body: [
+                StoreI64(
+                    var_name: "n",
+                ),
+                LoadI64(
+                    var_name: "n",
+                ),
+                PushInt(1),
+                Lte,
+                JmpZ(
+                    pos: 3,
+                ),
+                LoadI64(
+                    var_name: "n",
+                ),
+                Return,
+                Jmp(
+                    pos: 11,
+                ),
+                LoadI64(
+                    var_name: "n",
+                ),
+                PushInt(1),
+                SubI64,
+                CallFunction(
+                    name: "fib",
+                    args: 1,
+                ),
+                LoadI64(
+                    var_name: "n",
+                ),
+                PushInt(2),
+                SubI64,
+                CallFunction(
+                    name: "fib",
+                    args: 1,
+                ),
+                AddI64,
+                Return,
+            ],
+        ),
+        (
+            name: "main",
+            position: 18,
+            body: [
+                PushInt(2),
+                CallFunction(
+                    name: "fib",
+                    args: 1,
+                ),
+                Return,
+            ],
+        ),
+    ],
+    entry_point: "main",
+)

@@ -62,6 +62,22 @@ pub enum Instruction<'vm> {
     ModF64,
     ModU64,
 
+    Eq,
+    Neq,
+    Gt,
+    Gte,
+    Lt,
+    Lte,
+
+    /// Unconditional jump
+    Jmp {
+        pos: usize,
+    },
+    /// Jump if 0
+    JmpZ {
+        pos: usize,
+    },
+
     CallFunction {
         name: String,
         args: u8,

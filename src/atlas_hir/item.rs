@@ -3,14 +3,12 @@ use serde::Serialize;
 
 use super::{signature::HirFunctionSignature, stmt::HirBlock};
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum HirItem<'hir> {
     Function(HirFunction<'hir>),
     Import(HirImport<'hir>),
 }
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirFunction<'hir> {
     pub span: Span,
     pub name: &'hir str,
@@ -20,8 +18,7 @@ pub struct HirFunction<'hir> {
 }
 
 /// Used by the type checker to import the API Signature of a module.
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirImport<'hir> {
     pub span: Span,
     pub path: &'hir str,

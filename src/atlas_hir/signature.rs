@@ -8,13 +8,11 @@ use super::ty::HirTy;
 /// An HirModuleSignature represents the API of a module.
 ///
 /// Currently only functions exist in the language.
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize, Default)]
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct HirModuleSignature<'hir> {
     pub functions: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
 }
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirFunctionSignature<'hir> {
     pub span: Span,
     pub params: Vec<&'hir HirFunctionParameterSignature<'hir>>,
@@ -24,15 +22,13 @@ pub struct HirFunctionSignature<'hir> {
     /// The span of the return type, if it exists.
     pub return_ty_span: Option<Span>,
 }
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirTypeParameterItemSignature<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,
 }
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HirFunctionParameterSignature<'hir> {
     pub span: Span,
     pub name: &'hir str,

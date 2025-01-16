@@ -43,6 +43,10 @@ impl Stack {
         }
     }
 
+    pub fn truncate(&mut self, new_top: usize) {
+        self.top = new_top;
+    }
+
     pub fn pop(&mut self) -> Result<VMData, RuntimeError> {
         if self.top != 0 {
             self.top -= 1;
@@ -83,7 +87,7 @@ impl Display for Stack {
             {
                 let mut s = "[".to_string();
                 for i in 0..self.top - 1 {
-                    s.push_str(&format!("{:?}, ", self.values[i]))
+                    s.push_str(&format!("{}, ", self.values[i]))
                 }
                 s.push(']');
                 s

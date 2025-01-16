@@ -1,12 +1,42 @@
-func square(i32) i32:
-    STORE_I32 "num" //Load the value of the last arg (from the stakc) into the varmap with the key "num"
-    LOAD_I32 "num" //Load the value of the varmap with the key "num" into the stack
-    LOAD_I32 "num" //Load the value of the varmap with the key "num" into the stack
-    MUL_I32 //Multiply the top two values on the stack
-    RETURN //Return the top value on the stack
-    
-func main() i32:
-    PUSH_I32 5 //Push the value 5 onto the stack
-    CALL square 1 //Call the function square with 1 argument
-    PRINT_I32 //Print the top value on the stack
-    RETURN //Return the top value on the stack
+                If {
+                    ttype: _,
+                    test,
+                    body,
+                    alternative,
+                } => {
+                    let (bodyjump, alterjump) = (self.gen.generate(), self.gen.generate());
+                    self.compile_expr(test)?;
+                    self.asm.push(Asm::JUMPIFFALSE(bodyjump));
+                    let body_ast = Ast {
+                        program: body.clone(),
+                    };
+                    self.compile_program(
+                        body_ast,
+                        self.filepath.clone(),
+                        false,
+                        false,
+                        false,
+                        false,
+                    )?;
+                    self.asm.pop();
+
+                    if let Some(alternative) = alternative {
+                        self.asm.push(Asm::JMP(alterjump));
+                        self.asm.push(Asm::LABEL(bodyjump));
+                        let alt = Ast {
+                            program: alternative.clone(),
+                        };
+                        self.compile_program(
+                            alt,
+                            self.filepath.clone(),
+                            false,
+                            false,
+                            false,
+                            false,
+                        )?;
+                        self.asm.pop();
+                        self.asm.push(Asm::LABEL(alterjump));
+                    } else {
+                        self.asm.push(Asm::LABEL(bodyjump));
+                    }
+                }
