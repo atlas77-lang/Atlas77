@@ -1,7 +1,9 @@
+import "std/io"
+
 //Same program as in perfect_number.atlas but using while loops instead of recursion
 func main() {
     let sum: i64 = 0;
-    let num: i64 = 20000;
+    let num: i64 = 500;
     let i: i64 = 1;
     while i < 20000 {
         let j: i64 = 1;
@@ -13,7 +15,7 @@ func main() {
             j = j + 1;
         }
         if num == sum {
-            print(sum);
+            println(sum);
         }
         sum = 0;
         num = num - 1;

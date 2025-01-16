@@ -3,19 +3,22 @@ pub mod arena;
 
 use crate::{
     atlas_hir::{
+        error::{HirResult, UnsupportedExpr, UnsupportedStatement},
         expr::HirExpr,
         signature::HirFunctionParameterSignature,
         stmt::{HirBlock, HirStatement},
         ty::HirTy,
         HirModule,
     },
-    atlas_vm::instruction::{Instruction, Label, Program},
+    atlas_vm::instruction::{ImportedLibrary, Instruction, Label, Program},
 };
 
 use arena::CodeGenArena;
+use atlas_core::prelude::Spanned;
+use miette::{SourceOffset, SourceSpan};
 
 /// Result of codegen
-pub(crate) type CodegenResult<T> = Result<T, String>;
+pub(crate) type CodegenResult<T> = Result<T, crate::atlas_hir::error::HirError>;
 
 /// Unit of codegen
 pub(crate) struct CodeGenUnit<'hir, 'gen>
@@ -28,7 +31,10 @@ where
     current_pos: usize,
 }
 
-impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
+impl<'hir, 'gen> CodeGenUnit<'hir, 'gen>
+where
+    'gen: 'hir,
+{
     /// Create a new CodeGenUnit
     pub(crate) fn new(hir: HirModule<'hir>, arena: CodeGenArena<'gen>) -> Self {
         Self {
@@ -45,8 +51,8 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             let mut bytecode = Vec::new();
 
             let params = func.1.signature.params.clone();
-            Self::generate_bytecode_args(params, &mut bytecode);
-            Self::generate_bytecode_block(&func.1.body, &mut bytecode);
+            Self::generate_bytecode_args(params, &mut bytecode)?;
+            Self::generate_bytecode_block(&func.1.body, &mut bytecode)?;
 
             let len = bytecode.len();
 
@@ -60,25 +66,43 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         }
         self.program.entry_point = "main";
         self.program.labels = self.arena.alloc_vec(labels);
+        let libraries = self
+            .hir
+            .body
+            .imports
+            .iter()
+            .map(|l| ImportedLibrary {
+                name: l.path.to_string(),
+                is_std: true,
+            })
+            .collect::<Vec<_>>();
+        self.program.libraries = self.arena.alloc_vec(libraries);
         Ok(self.program)
     }
 
-    fn generate_bytecode_block(block: &HirBlock<'hir>, bytecode: &mut Vec<Instruction>) {
+    fn generate_bytecode_block(
+        block: &HirBlock<'hir>,
+        bytecode: &mut Vec<Instruction>,
+    ) -> HirResult<()> {
         for stmt in &block.statements {
-            Self::generate_bytecode_stmt(stmt, bytecode);
+            Self::generate_bytecode_stmt(stmt, bytecode)?;
         }
+        Ok(())
     }
 
-    fn generate_bytecode_stmt(stmt: &HirStatement<'hir>, bytecode: &mut Vec<Instruction>) {
+    fn generate_bytecode_stmt(
+        stmt: &HirStatement<'hir>,
+        bytecode: &mut Vec<Instruction>,
+    ) -> HirResult<()> {
         match stmt {
             HirStatement::Return(e) => {
-                Self::generate_bytecode_expr(e.value, bytecode);
+                Self::generate_bytecode_expr(e.value, bytecode)?;
                 bytecode.push(Instruction::Return);
             }
             HirStatement::IfElse(i) => {
-                Self::generate_bytecode_expr(i.condition, bytecode);
+                Self::generate_bytecode_expr(i.condition, bytecode)?;
                 let mut then_body = Vec::new();
-                Self::generate_bytecode_block(i.then_branch, &mut then_body);
+                Self::generate_bytecode_block(i.then_branch, &mut then_body)?;
 
                 bytecode.push(Instruction::JmpZ {
                     pos: (then_body.len() + if i.else_branch.is_some() { 1 } else { 0 }) as isize,
@@ -86,7 +110,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 bytecode.append(&mut then_body);
                 if let Some(e) = i.else_branch {
                     let mut else_body = Vec::new();
-                    Self::generate_bytecode_block(e, &mut else_body);
+                    Self::generate_bytecode_block(e, &mut else_body)?;
 
                     bytecode.push(Instruction::Jmp {
                         pos: (else_body.len() + 1) as isize,
@@ -96,10 +120,10 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             }
             HirStatement::While(w) => {
                 let start = bytecode.len() as isize;
-                Self::generate_bytecode_expr(w.condition, bytecode);
+                Self::generate_bytecode_expr(w.condition, bytecode)?;
                 let mut body = Vec::new();
 
-                Self::generate_bytecode_block(w.body, &mut body);
+                Self::generate_bytecode_block(w.body, &mut body)?;
                 //If the condition is false jump to the end of the loop
                 bytecode.push(Instruction::JmpZ {
                     pos: (body.len() + 1) as isize,
@@ -112,7 +136,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             }
             HirStatement::Let(l) => {
                 let mut value = Vec::new();
-                Self::generate_bytecode_expr(l.value, &mut value);
+                Self::generate_bytecode_expr(l.value, &mut value)?;
                 match l.ty {
                     HirTy::Int64(_) => {
                         value.push(Instruction::StoreI64 {
@@ -123,18 +147,32 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     _ => unimplemented!("Unsupported type for now"),
                 }
             }
-            HirStatement::Expr(e) => Self::generate_bytecode_expr(e.expr, bytecode),
-            _ => unimplemented!("Unsupported statement for now"),
+            HirStatement::Expr(e) => Self::generate_bytecode_expr(e.expr, bytecode)?,
+            _ => {
+                return Err(crate::atlas_hir::error::HirError::UnsupportedStatement(
+                    UnsupportedStatement {
+                        span: SourceSpan::new(
+                            SourceOffset::from(stmt.span().start()),
+                            stmt.span().end() - stmt.span().start(),
+                        ),
+                        stmt: format!("{:?}", stmt),
+                    },
+                ))
+            }
         }
+        Ok(())
     }
 
-    fn generate_bytecode_expr(expr: &HirExpr<'hir>, bytecode: &mut Vec<Instruction>) {
+    fn generate_bytecode_expr(
+        expr: &HirExpr<'hir>,
+        bytecode: &mut Vec<Instruction>,
+    ) -> HirResult<()> {
         match expr {
             HirExpr::Assign(a) => {
                 let lhs = a.lhs.as_ref();
                 match lhs {
                     HirExpr::Ident(i) => {
-                        Self::generate_bytecode_expr(&a.rhs, bytecode);
+                        Self::generate_bytecode_expr(&a.rhs, bytecode)?;
                         match i.ty {
                             HirTy::Int64(_) => {
                                 bytecode.push(Instruction::StoreI64 {
@@ -160,13 +198,21 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         }
                     }
                     _ => {
-                        unimplemented!("Unsupported kind of assign for now");
+                        return Err(crate::atlas_hir::error::HirError::UnsupportedExpr(
+                            UnsupportedExpr {
+                                span: SourceSpan::new(
+                                    SourceOffset::from(expr.span().start()),
+                                    expr.span().end() - expr.span().start(),
+                                ),
+                                expr: format!("{:?}", expr),
+                            },
+                        ));
                     }
                 }
             }
             HirExpr::HirBinaryOp(b) => {
-                Self::generate_bytecode_expr(&b.lhs, bytecode);
-                Self::generate_bytecode_expr(&b.rhs, bytecode);
+                Self::generate_bytecode_expr(&b.lhs, bytecode)?;
+                Self::generate_bytecode_expr(&b.rhs, bytecode)?;
                 match b.op {
                     crate::atlas_hir::expr::HirBinaryOp::Add => {
                         bytecode.push(Instruction::AddI64);
@@ -206,17 +252,17 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             }
             HirExpr::Unary(u) => {
                 //The operator are not yet implemented
-                Self::generate_bytecode_expr(&u.expr, bytecode);
+                Self::generate_bytecode_expr(&u.expr, bytecode)?;
             }
             //This need to be thoroughly tested
             HirExpr::Call(f) => {
                 for arg in &f.args {
-                    Self::generate_bytecode_expr(arg, bytecode);
+                    Self::generate_bytecode_expr(arg, bytecode)?;
                 }
                 let callee = f.callee.as_ref();
                 match callee {
                     HirExpr::Ident(i) => {
-                        if i.name == "print" {
+                        if i.name == "print" || i.name == "println" {
                             bytecode.push(Instruction::ExternCall {
                                 name: i.name.to_string(),
                                 args: f.args.len() as u8,
@@ -228,7 +274,17 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                             });
                         }
                     }
-                    _ => unimplemented!("Unsupported callee for now"),
+                    _ => {
+                        return Err(crate::atlas_hir::error::HirError::UnsupportedExpr(
+                            UnsupportedExpr {
+                                span: SourceSpan::new(
+                                    SourceOffset::from(expr.span().start()),
+                                    expr.span().end() - expr.span().start(),
+                                ),
+                                expr: format!("Can't call from: {:?}", expr),
+                            },
+                        ))
+                    }
                 }
             }
             HirExpr::Ident(i) => match i.ty {
@@ -257,14 +313,25 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             HirExpr::UnsignedIntegererLiteral(u) => {
                 bytecode.push(Instruction::PushUnsignedInt(u.value))
             }
-            _ => unimplemented!("Unsupported expression for now"),
+            _ => {
+                return Err(crate::atlas_hir::error::HirError::UnsupportedExpr(
+                    UnsupportedExpr {
+                        span: SourceSpan::new(
+                            SourceOffset::from(expr.span().start()),
+                            expr.span().end() - expr.span().start(),
+                        ),
+                        expr: format!("{:?}", expr),
+                    },
+                ))
+            }
         }
+        Ok(())
     }
 
     fn generate_bytecode_args(
         args: Vec<&HirFunctionParameterSignature<'hir>>,
         bytecode: &mut Vec<Instruction>,
-    ) {
+    ) -> HirResult<()> {
         let args = args.iter().rev().cloned().collect::<Vec<_>>();
         for arg in args {
             match arg.ty {
@@ -286,5 +353,6 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 _ => unimplemented!("Unsupported argument type for now"),
             }
         }
+        Ok(())
     }
 }

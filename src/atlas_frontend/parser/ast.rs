@@ -17,8 +17,8 @@ pub(crate) enum AstItem<'ast> {
     Struct(AstStruct<'ast>),
     ExternFunction(AstExternFunction<'ast>),
     Func(AstFunction<'ast>),
-    Enum(AstEnum<'ast>),
-    Union(AstUnion<'ast>),
+    _Enum(AstEnum<'ast>),
+    _Union(AstUnion<'ast>),
     Import(AstImport<'ast>),
 }
 
@@ -28,8 +28,8 @@ impl Spanned for AstItem<'_> {
             AstItem::Struct(v) => v.span,
             AstItem::ExternFunction(v) => v.span,
             AstItem::Func(v) => v.span,
-            AstItem::Enum(v) => v.span,
-            AstItem::Union(v) => v.span,
+            AstItem::_Enum(v) => v.span,
+            AstItem::_Union(v) => v.span,
             AstItem::Import(v) => v.span,
         }
     }
@@ -106,10 +106,9 @@ pub(crate) enum AstStatement<'ast> {
     Let(AstLetExpr<'ast>),
     Const(AstConstExpr<'ast>),
     IfElse(AstIfElseExpr<'ast>),
-    Match(AstMatchExpr<'ast>),
-    InnerFunc(AstFunction<'ast>),
-    Block(AstBlock<'ast>),
-    Call(AstCallExpr<'ast>),
+    _InnerFunc(AstFunction<'ast>),
+    _Block(AstBlock<'ast>),
+    _Call(AstCallExpr<'ast>),
     While(AstWhileExpr<'ast>),
     Expr(AstExpr<'ast>),
     Break(AstBreakStmt),
@@ -123,10 +122,9 @@ impl AstStatement<'_> {
             AstStatement::Let(e) => e.span,
             AstStatement::Const(e) => e.span,
             AstStatement::IfElse(e) => e.span,
-            AstStatement::Match(e) => e.span,
-            AstStatement::InnerFunc(e) => e.span,
-            AstStatement::Block(e) => e.span,
-            AstStatement::Call(e) => e.span,
+            AstStatement::_InnerFunc(e) => e.span,
+            AstStatement::_Block(e) => e.span,
+            AstStatement::_Call(e) => e.span,
             AstStatement::While(e) => e.span,
             AstStatement::Expr(e) => e.span(),
             AstStatement::Break(e) => e.span,
@@ -170,10 +168,9 @@ pub(crate) struct AstAssignExpr<'ast> {
 
 #[derive(Debug, Clone, Serialize, Copy)]
 pub(crate) enum AstExpr<'ast> {
-    Let(AstLetExpr<'ast>),
-    Lambda(AstLambdaExpr<'ast>),
-    CompTime(AstCompTimeExpr<'ast>),
-    Match(AstMatchExpr<'ast>),
+    _Let(AstLetExpr<'ast>),
+    _Lambda(AstLambdaExpr<'ast>),
+    _CompTime(AstCompTimeExpr<'ast>),
     IfElse(AstIfElseExpr<'ast>),
     BinaryOp(AstBinaryOpExpr<'ast>),
     UnaryOp(AstUnaryOpExpr<'ast>),
@@ -182,8 +179,8 @@ pub(crate) enum AstExpr<'ast> {
     Identifier(AstIdentifier<'ast>),
     Indexing(AstIndexingExpr<'ast>),
     FieldAccess(AstFieldAccessExpr<'ast>),
-    NewObj(AstNewObjExpr<'ast>),
-    Block(AstBlock<'ast>),
+    _NewObj(AstNewObjExpr<'ast>),
+    _Block(AstBlock<'ast>),
     Assign(AstAssignExpr<'ast>),
     //Tuple(AstTupleExpr<'ast>),
 }
@@ -191,10 +188,9 @@ pub(crate) enum AstExpr<'ast> {
 impl Spanned for AstExpr<'_> {
     fn span(&self) -> Span {
         match self {
-            AstExpr::Let(e) => e.span,
-            AstExpr::Lambda(e) => e.span,
-            AstExpr::CompTime(e) => e.span,
-            AstExpr::Match(e) => e.span,
+            AstExpr::_Let(e) => e.span,
+            AstExpr::_Lambda(e) => e.span,
+            AstExpr::_CompTime(e) => e.span,
             AstExpr::IfElse(e) => e.span,
             AstExpr::BinaryOp(e) => e.span,
             AstExpr::UnaryOp(e) => e.span,
@@ -203,8 +199,8 @@ impl Spanned for AstExpr<'_> {
             AstExpr::Identifier(e) => e.span,
             AstExpr::Indexing(e) => e.span,
             AstExpr::FieldAccess(e) => e.span,
-            AstExpr::NewObj(e) => e.span,
-            AstExpr::Block(e) => e.span,
+            AstExpr::_NewObj(e) => e.span,
+            AstExpr::_Block(e) => e.span,
             AstExpr::Assign(e) => e.span,
         }
     }
@@ -251,12 +247,6 @@ pub(crate) struct AstIndexingExpr<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub(crate) struct AstDoExpr<'ast> {
-    pub span: Span,
-    pub exprs: &'ast [&'ast AstExpr<'ast>],
-}
-
-#[derive(Debug, Clone, Serialize, Copy)]
 pub(crate) struct AstCallExpr<'ast> {
     pub span: Span,
     pub callee: &'ast AstExpr<'ast>,
@@ -274,8 +264,8 @@ pub(crate) struct AstUnaryOpExpr<'ast> {
 pub(crate) enum AstUnaryOp {
     Neg,
     Not,
-    Deref,
-    AsRef,
+    _Deref,
+    _AsRef,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
@@ -293,15 +283,12 @@ pub(crate) enum AstBinaryOp {
     Mul,
     Div,
     Mod,
-    Pow,
     Eq,
     NEq,
     Lt,
     Lte,
     Gt,
     Gte,
-    And,
-    Or,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
@@ -310,34 +297,6 @@ pub(crate) struct AstIfElseExpr<'ast> {
     pub condition: &'ast AstExpr<'ast>,
     pub body: &'ast AstBlock<'ast>,
     pub else_body: Option<&'ast AstBlock<'ast>>,
-}
-
-#[derive(Debug, Clone, Serialize, Copy)]
-pub(crate) struct AstMatchExpr<'ast> {
-    pub span: Span,
-    pub expr: &'ast AstExpr<'ast>,
-    pub arms: &'ast [&'ast AstMatchArm<'ast>],
-    pub default: Option<&'ast AstExpr<'ast>>,
-}
-
-#[derive(Debug, Clone, Serialize, Copy)]
-pub(crate) struct AstMatchArm<'ast> {
-    pub span: Span,
-    pub pattern: &'ast AstPattern<'ast>,
-    pub body: &'ast AstBlock<'ast>,
-}
-
-#[derive(Debug, Clone, Serialize, Copy)]
-pub(crate) struct AstPattern<'ast> {
-    pub span: Span,
-    pub kind: AstPatternKind<'ast>,
-}
-
-#[derive(Debug, Clone, Serialize, Copy)]
-// TODO: Add support for tuples, enums and structs
-pub(crate) enum AstPatternKind<'ast> {
-    Identifier(&'ast AstIdentifier<'ast>),
-    Literal(AstLiteral<'ast>),
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
@@ -374,7 +333,7 @@ pub(crate) enum AstLiteral<'ast> {
     Float(AstFloatLiteral),
     String(AstStringLiteral<'ast>),
     Boolean(AstBooleanLiteral),
-    List(AstListLiteral<'ast>),
+    _List(AstListLiteral<'ast>),
 }
 
 impl Spanned for AstLiteral<'_> {
@@ -385,7 +344,7 @@ impl Spanned for AstLiteral<'_> {
             AstLiteral::Float(l) => l.span,
             AstLiteral::String(l) => l.span,
             AstLiteral::Boolean(l) => l.span,
-            AstLiteral::List(l) => l.span,
+            AstLiteral::_List(l) => l.span,
         }
     }
 }
@@ -437,8 +396,8 @@ pub(crate) enum AstType<'ast> {
     Named(AstNamedType<'ast>),
     Pointer(AstPointerType<'ast>),
     Function(AstFunctionType<'ast>),
-    List(AstListType<'ast>),
-    Map(AstMapType<'ast>),
+    _List(AstListType<'ast>),
+    _Map(AstMapType<'ast>),
     //Tuple(AstTupleType<'ast>),
 }
 
@@ -454,8 +413,8 @@ impl Spanned for AstType<'_> {
             AstType::Named(t) => t.span,
             AstType::Pointer(t) => t.span,
             AstType::Function(t) => t.span,
-            AstType::List(t) => t.span,
-            AstType::Map(t) => t.span,
+            AstType::_List(t) => t.span,
+            AstType::_Map(t) => t.span,
         }
     }
 }

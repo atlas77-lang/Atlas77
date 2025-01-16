@@ -4,33 +4,82 @@ pub mod vm_state;
 
 use std::collections::HashMap;
 
+use errors::RuntimeError;
 use instruction::{Instruction, Program};
 
-use crate::atlas_memory::{object_map::Memory, stack::Stack, vm_data::VMData};
+use crate::{
+    atlas_memory::{object_map::Memory, stack::Stack, vm_data::VMData},
+    atlas_stdlib::{
+        file::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
+        string::STRING_FUNCTIONS, time::TIME_FUNCTIONS,
+    },
+};
 
-pub type RuntimeResult = Result<(), String>;
+pub type RuntimeResult<T> = Result<T, RuntimeError>;
+pub type CallBack = fn(vm_state::VMState) -> RuntimeResult<VMData>;
 
 pub struct Atlas77VM<'run> {
     pub program: Program<'run>,
     pub(crate) stack: Stack,
     stack_frame: Vec<(usize, usize)>, //previous pc and previous stack top
-    pub(crate) object_map: Memory,
+    pub(crate) _object_map: Memory,
     pub varmap: Vec<HashMap<String, VMData>>, //need to be changed
+    pub extern_fn: HashMap<&'run str, CallBack>,
     pub pc: usize,
 }
 
 impl<'run> Atlas77VM<'run> {
     pub fn new(program: Program<'run>) -> Self {
+        let mut extern_fn: HashMap<&str, CallBack> = HashMap::new();
+        program.libraries.iter().for_each(|lib| {
+            if lib.is_std {
+                let lib_name = lib.name.split('/').last().unwrap();
+                match lib_name {
+                    "file" => {
+                        FILE_FUNCTIONS.iter().for_each(|(name, func)| {
+                            extern_fn.insert(name, *func);
+                        });
+                    }
+                    "io" => {
+                        IO_FUNCTIONS.iter().for_each(|(name, func)| {
+                            extern_fn.insert(name, *func);
+                        });
+                    }
+                    "list" => {
+                        LIST_FUNCTIONS.iter().for_each(|(name, func)| {
+                            extern_fn.insert(name, *func);
+                        });
+                    }
+                    "math" => {
+                        MATH_FUNCTIONS.iter().for_each(|(name, func)| {
+                            extern_fn.insert(name, *func);
+                        });
+                    }
+                    "string" => {
+                        STRING_FUNCTIONS.iter().for_each(|(name, func)| {
+                            extern_fn.insert(name, *func);
+                        });
+                    }
+                    "time" => {
+                        TIME_FUNCTIONS.iter().for_each(|(name, func)| {
+                            extern_fn.insert(name, *func);
+                        });
+                    }
+                    _ => panic!("Unknown standard library"),
+                }
+            }
+        });
         Self {
             program,
             stack: Stack::new(),
             stack_frame: Vec::new(),
-            object_map: Memory::new(1024),
+            _object_map: Memory::new(1024),
             varmap: vec![HashMap::new()],
+            extern_fn,
             pc: 0,
         }
     }
-    pub fn run(&mut self) -> RuntimeResult {
+    pub fn run(&mut self) -> RuntimeResult<VMData> {
         let label = self
             .program
             .labels
@@ -39,17 +88,19 @@ impl<'run> Atlas77VM<'run> {
         if let Some(label) = label {
             self.pc = label.position;
         } else {
-            return Err("No entry point found".to_string());
+            return Err(RuntimeError::EntryPointNotFound(
+                self.program.entry_point.to_string(),
+            ));
         }
         while self.pc < self.program.len() {
             let instr = self.program[self.pc].clone();
             //println!("Current Instruction: {:?}", instr);
             self.execute_instruction(instr)?;
         }
-        Ok(())
+        self.stack.pop()
     }
     /// TODO: Add check for unsigned int
-    pub fn execute_instruction(&mut self, instr: Instruction) -> RuntimeResult {
+    pub fn execute_instruction(&mut self, instr: Instruction) -> RuntimeResult<()> {
         match instr {
             Instruction::PushInt(i) => {
                 let val = VMData::new_i64(i);
@@ -173,7 +224,7 @@ impl<'run> Atlas77VM<'run> {
             Instruction::DivI64 => {
                 let a = self.stack.pop().unwrap();
                 if a == VMData::new_i64(0) {
-                    return Err("Division by zero".to_string());
+                    return Err(RuntimeError::DivisionByZero);
                 }
                 let b = self.stack.pop().unwrap();
                 let res = VMData::new_i64(b.as_i64() / a.as_i64());
@@ -183,7 +234,7 @@ impl<'run> Atlas77VM<'run> {
             Instruction::DivF64 => {
                 let a = self.stack.pop().unwrap();
                 if a == VMData::new_f64(0.0) {
-                    return Err("Division by zero".to_string());
+                    return Err(RuntimeError::DivisionByZero);
                 }
                 let b = self.stack.pop().unwrap();
                 let res = VMData::new_f64(b.as_f64() / a.as_f64());
@@ -193,7 +244,7 @@ impl<'run> Atlas77VM<'run> {
             Instruction::DivU64 => {
                 let a = self.stack.pop().unwrap();
                 if a == VMData::new_u64(0) {
-                    return Err("Division by zero".to_string());
+                    return Err(RuntimeError::DivisionByZero);
                 }
                 let b = self.stack.pop().unwrap();
                 let res = VMData::new_u64(b.as_u64() / a.as_u64());
@@ -249,14 +300,19 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push(res).unwrap();
                 self.pc += 1;
             }
-            Instruction::ExternCall { name, .. } => match name.as_str() {
-                "print" => {
-                    let val = self.stack.pop().unwrap();
-                    println!("{}", val);
-                    self.pc += 1;
-                }
-                _ => unimplemented!(),
-            },
+            Instruction::ExternCall { name, .. } => {
+                let consts = HashMap::new();
+                let vm_state = vm_state::VMState::new(
+                    &mut self.stack,
+                    &mut self._object_map,
+                    &consts,
+                    self.varmap.last().unwrap(),
+                );
+                let extern_fn: &CallBack = self.extern_fn.get::<&str>(&name.as_str()).unwrap();
+                let res = extern_fn(vm_state)?;
+                self.stack.push(res).unwrap();
+                self.pc += 1;
+            }
             Instruction::CallFunction { name, args } => {
                 let label = self
                     .program

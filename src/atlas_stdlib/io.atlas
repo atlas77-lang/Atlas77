@@ -1,0 +1,3 @@
+extern func println(s: str);
+extern func print(s: str);
+extern func input() -> str;

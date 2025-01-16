@@ -21,6 +21,7 @@ pub(crate) struct HirFunctionSignature<'hir> {
     pub return_ty: &'hir HirTy<'hir>,
     /// The span of the return type, if it exists.
     pub return_ty_span: Option<Span>,
+    pub is_external: bool,
 }
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct HirTypeParameterItemSignature<'hir> {

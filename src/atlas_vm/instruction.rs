@@ -91,10 +91,18 @@ pub enum Instruction {
     Halt,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
+/// Read by the VM before execution to import the related functions
+pub struct ImportedLibrary {
+    pub name: String,
+    pub is_std: bool,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize)]
 pub struct Program<'vm> {
     pub labels: &'vm [&'vm Label<'vm>],
     pub entry_point: &'vm str,
+    pub libraries: &'vm [&'vm ImportedLibrary],
 }
 
 impl<'vm> Index<usize> for Program<'vm> {
@@ -129,6 +137,7 @@ impl Program<'_> {
         Self {
             labels: &[],
             entry_point: "",
+            libraries: &[],
         }
     }
 }

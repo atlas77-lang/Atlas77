@@ -1,4 +1,4 @@
-use atlas_core::prelude::Span;
+use atlas_core::prelude::{Span, Spanned};
 use serde::Serialize;
 
 use super::{expr::HirExpr, ty::HirTy};
@@ -9,7 +9,7 @@ use super::{expr::HirExpr, ty::HirTy};
 /// Only the HirBlock & HirReturn is useful
 #[derive(Debug, Clone, Serialize)]
 pub(crate) enum HirStatement<'hir> {
-    Block(HirBlock<'hir>),
+    _Block(HirBlock<'hir>),
     Return(HirReturn<'hir>),
     Expr(HirExprStmt<'hir>),
     Let(HirLetStmt<'hir>),
@@ -18,6 +18,22 @@ pub(crate) enum HirStatement<'hir> {
     Break(Span),
     Continue(Span),
 }
+
+impl Spanned for HirStatement<'_> {
+    fn span(&self) -> Span {
+        match self {
+            HirStatement::_Block(block) => block.span,
+            HirStatement::Return(ret) => ret.span,
+            HirStatement::Expr(expr) => expr.span,
+            HirStatement::Let(let_stmt) => let_stmt.span,
+            HirStatement::IfElse(if_else) => if_else.span,
+            HirStatement::While(while_stmt) => while_stmt.span,
+            HirStatement::Break(span) => *span,
+            HirStatement::Continue(span) => *span,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct HirExprStmt<'hir> {
     pub span: Span,

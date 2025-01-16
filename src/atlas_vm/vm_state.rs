@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use crate::atlas_memory::{object_map::Memory, stack::Stack, varmap::Varmap, vm_data::VMData};
+use crate::atlas_memory::{object_map::Memory, stack::Stack, vm_data::VMData};
 
 pub struct VMState<'state, 'run> {
     pub stack: &'state mut Stack,
     pub object_map: &'state mut Memory,
     pub consts: &'state HashMap<&'run str, VMData>,
-    pub varmap: &'state Varmap<'run, &'run str, VMData>,
+    pub varmap: &'state HashMap<String, VMData>,
 }
 
 impl<'state, 'run> VMState<'state, 'run> {
@@ -14,7 +14,7 @@ impl<'state, 'run> VMState<'state, 'run> {
         stack: &'state mut Stack,
         object_map: &'state mut Memory,
         consts: &'state HashMap<&'run str, VMData>,
-        varmap: &'state Varmap<'run, &'run str, VMData>,
+        varmap: &'state HashMap<String, VMData>,
     ) -> Self {
         Self {
             stack,

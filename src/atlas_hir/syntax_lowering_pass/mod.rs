@@ -1,4 +1,5 @@
 use atlas_core::prelude::{Span, Spanned};
+use miette::{SourceOffset, SourceSpan};
 
 use crate::{
     atlas_frontend::parser::ast::{
@@ -12,6 +13,7 @@ use crate::{
 
 use super::{
     arena::HirArena,
+    error::{HirResult, UnsupportedExpr, UnsupportedStatement},
     expr::{
         HirBinaryOp, HirBinaryOpExpr, HirExpr, HirFloatLiteralExpr, HirFunctionCallExpr,
         HirIdentExpr, HirIntegerLiteralExpr, HirUnsignedIntegerLiteralExpr, UnaryOp, UnaryOpExpr,
@@ -22,8 +24,6 @@ use super::{
     ty::HirTy,
     HirModule, HirModuleBody,
 };
-
-pub(crate) type HirResult<T> = Result<T, String>;
 
 pub(crate) struct AstSyntaxLoweringPass<'ast, 'hir> {
     arena: &'hir HirArena<'hir>,
@@ -71,6 +71,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                     alias: None,
                     alias_span: None,
                 });
+
                 module_body.imports.push(hir);
             }
             _ => {}
@@ -85,6 +86,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 type_params: Vec::new(),
                 return_ty: self.arena.types().get_uninitialized_ty(),
                 return_ty_span: None,
+                is_external: false,
             }),
             body: HirBlock {
                 statements: Vec::new(),
@@ -176,9 +178,15 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 }));
                 Ok(hir)
             }
-            _ => {
-                todo!("visit_stmt")
-            }
+            _ => Err(super::error::HirError::UnsupportedStatement(
+                UnsupportedStatement {
+                    span: SourceSpan::new(
+                        SourceOffset::from(node.span().start()),
+                        node.span().end() - node.span().start(),
+                    ),
+                    stmt: format!("{:?}", node),
+                },
+            )),
         }
     }
 
@@ -228,7 +236,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 let args = c
                     .args
                     .iter()
-                    .map(|arg| self.visit_expr(arg).map(|expr| expr.clone()))
+                    .map(|arg| self.visit_expr(arg).cloned())
                     .collect::<HirResult<Vec<_>>>()?;
                 let hir = self.arena.intern(HirExpr::Call(HirFunctionCallExpr {
                     span: node.span(),
@@ -273,18 +281,25 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                             ty: self.arena.types().get_uint64_ty(),
                         }),
                     ),
-                    AstLiteral::String(_s) => {
-                        todo!("string_literal, {:?}", node)
-                    }
                     _ => {
-                        todo!("visit_expr, {:?}", node)
+                        return Err(super::error::HirError::UnsupportedExpr(UnsupportedExpr {
+                            span: SourceSpan::new(
+                                SourceOffset::from(node.span().start()),
+                                node.span().end() - node.span().start(),
+                            ),
+                            expr: format!("{:?}", node),
+                        }));
                     }
                 };
                 Ok(hir)
             }
-            _ => {
-                todo!("visit_expr, {:?}", node)
-            }
+            _ => Err(super::error::HirError::UnsupportedExpr(UnsupportedExpr {
+                span: SourceSpan::new(
+                    SourceOffset::from(node.span().start()),
+                    node.span().end() - node.span().start(),
+                ),
+                expr: format!("{:?}", node),
+            })),
         }
     }
 
@@ -301,9 +316,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             AstBinaryOp::Lte => HirBinaryOp::Lte,
             AstBinaryOp::Gt => HirBinaryOp::Gt,
             AstBinaryOp::Gte => HirBinaryOp::Gte,
-            _ => {
-                todo!("visit_bin_op")
-            }
+            //Other operators will soon come
         };
         Ok(op)
     }
@@ -329,6 +342,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             type_params: type_parameters?,
             return_ty: ret_type,
             return_ty_span: Some(ret_type_span),
+            is_external: false,
         });
         let fun = HirFunction {
             span: node.span,

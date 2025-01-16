@@ -10,13 +10,11 @@ use miette::{SourceOffset, SourceSpan};
 
 use ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType,
-    AstBreakStmt, AstCallExpr, AstCompTimeExpr, AstContinueStmt, AstDoExpr, AstEnum,
-    AstEnumVariant, AstExpr, AstExternFunction, AstFieldAccessExpr, AstFieldInit, AstFloatLiteral,
-    AstFloatType, AstFunction, AstFunctionType, AstIdentifier, AstIfElseExpr, AstImport,
-    AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem, AstLambdaExpr, AstLetExpr,
-    AstLiteral, AstMatchArm, AstNamedType, AstNewObjExpr, AstObjField, AstPattern, AstPatternKind,
-    AstPointerType, AstProgram, AstReturnStmt, AstStatement, AstStringLiteral, AstStringType,
-    AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnion, AstUnionVariant, AstUnitType,
+    AstBreakStmt, AstCallExpr, AstContinueStmt, AstExpr, AstExternFunction, AstFieldAccessExpr,
+    AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType, AstIdentifier, AstIfElseExpr,
+    AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem, AstLetExpr, AstLiteral,
+    AstNamedType, AstObjField, AstPointerType, AstProgram, AstReturnStmt, AstStatement,
+    AstStringLiteral, AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
     AstUnsignedIntegerLiteral, AstUnsignedIntegerType, AstWhileExpr,
 };
 use error::{ParseError, ParseResult, UnexpectedTokenError};
@@ -28,7 +26,7 @@ pub(crate) struct Parser<'ast> {
     arena: AstArena<'ast>,
     tokens: Vec<Token>,
     //for error reporting
-    file_path: PathBuf,
+    _file_path: PathBuf,
     pos: usize,
     src: String,
 }
@@ -43,14 +41,14 @@ impl<'ast> Parser<'ast> {
     pub(crate) fn new(
         arena: AstArena<'ast>,
         tokens: Vec<Token>,
-        file_path: PathBuf,
+        _file_path: PathBuf,
         src: String,
     ) -> Parser<'ast> {
         let tokens = remove_comments(tokens);
         Parser {
             arena,
             tokens,
-            file_path,
+            _file_path,
             pos: 0,
             src,
         }
@@ -303,7 +301,7 @@ impl<'ast> Parser<'ast> {
             _ => Ok(left),
         }
     }
-
+    //Condition should be switched with parse_binary (because it's the lowest precedence)
     fn parse_condition(&mut self) -> ParseResult<AstExpr<'ast>> {
         let left = AstExpr::UnaryOp(self.parse_unary()?);
 

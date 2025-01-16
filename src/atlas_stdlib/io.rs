@@ -1,12 +1,12 @@
 use crate::{
     atlas_memory::{object_map::Object, vm_data::VMData},
-    atlas_vm::{errors::RuntimeError, vm_state::VMState},
+    atlas_vm::{errors::RuntimeError, vm_state::VMState, CallBack},
 };
 
-// println<T>(value: T) -> ()
+pub const IO_FUNCTIONS: [(&str, CallBack); 3] =
+    [("println", println), ("print", print), ("input", input)];
 pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
-    println!("println: {}", val);
     match val.tag {
         VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT => {
             println!("{}", val)
@@ -21,10 +21,8 @@ pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
     Ok(VMData::new_unit())
 }
 
-// print<T>(value: T) -> ()
 pub fn print(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
-    println!("println: {}", val);
     match val.tag {
         VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT => {
             print!("{}", val)
@@ -39,7 +37,6 @@ pub fn print(state: VMState) -> Result<VMData, RuntimeError> {
     Ok(VMData::new_unit())
 }
 
-// input() -> &string
 pub fn input(state: VMState) -> Result<VMData, RuntimeError> {
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();

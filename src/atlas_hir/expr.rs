@@ -1,4 +1,4 @@
-use atlas_core::prelude::Span;
+use atlas_core::prelude::{Span, Spanned};
 use serde::Serialize;
 
 use super::ty::HirTy;
@@ -13,7 +13,23 @@ pub(crate) enum HirExpr<'hir> {
     FloatLiteral(HirFloatLiteralExpr<'hir>),
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
     UnsignedIntegererLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
-    StringLiteral(HirStringLiteralExpr<'hir>),
+    _StringLiteral(HirStringLiteralExpr<'hir>),
+}
+
+impl Spanned for HirExpr<'_> {
+    fn span(&self) -> Span {
+        match self {
+            HirExpr::Ident(expr) => expr.span,
+            HirExpr::IntegerLiteral(expr) => expr.span,
+            HirExpr::UnsignedIntegererLiteral(expr) => expr.span,
+            HirExpr::FloatLiteral(expr) => expr.span,
+            HirExpr::Unary(expr) => expr.span,
+            HirExpr::HirBinaryOp(expr) => expr.span,
+            HirExpr::Call(expr) => expr.span,
+            HirExpr::Assign(expr) => expr.span,
+            HirExpr::_StringLiteral(expr) => expr.span,
+        }
+    }
 }
 
 impl<'hir> HirExpr<'hir> {
@@ -27,7 +43,7 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::HirBinaryOp(expr) => expr.span,
             HirExpr::Call(expr) => expr.span,
             HirExpr::Assign(expr) => expr.span,
-            HirExpr::StringLiteral(expr) => expr.span,
+            HirExpr::_StringLiteral(expr) => expr.span,
         }
     }
     pub fn ty(&self) -> &'hir HirTy<'hir> {
@@ -40,7 +56,7 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::HirBinaryOp(expr) => expr.ty,
             HirExpr::Call(expr) => expr.ty,
             HirExpr::Assign(expr) => expr.ty,
-            HirExpr::StringLiteral(expr) => expr.ty,
+            HirExpr::_StringLiteral(expr) => expr.ty,
         }
     }
 }

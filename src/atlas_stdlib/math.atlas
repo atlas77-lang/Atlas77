@@ -1,0 +1,10 @@
+extern func abs(x: i64) -> i64;
+extern func pow(x: i64, y: i64) -> i64;
+extern func min(x: i64, y: i64) -> i64;
+extern func max(x: i64, y: i64) -> i64;
+extern func round(x: f64) -> i64;
+extern func random(min: i64, max: i64) -> i64;
+
+extern func powf(x: f64, y: f64) -> f64;
+extern func minf(x: f64, y: f64) -> f64;
+extern func maxf(x: f64, y: f64) -> f64;

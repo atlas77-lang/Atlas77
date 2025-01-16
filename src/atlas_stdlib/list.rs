@@ -1,18 +1,24 @@
 use crate::{
     atlas_memory::{object_map::Object, vm_data::VMData},
-    atlas_vm::{errors::RuntimeError, vm_state::VMState},
+    atlas_vm::{errors::RuntimeError, vm_state::VMState, CallBack},
 };
 
-// map/for_each/filter/reduce/find won't be coming in this version of the sdlib as it requires fn pointers and closures
+pub const LIST_FUNCTIONS: [(&str, CallBack); 7] = [
+    ("len", len),
+    ("get", get),
+    ("set", set),
+    ("push", push),
+    ("pop", pop),
+    ("remove", remove),
+    ("slice", slice),
+];
 
-// len(list: &List[T]) -> int
 pub fn len(state: VMState) -> Result<VMData, RuntimeError> {
     let list_ptr = state.stack.pop()?.as_object();
     let list = state.object_map.get(list_ptr).list();
     Ok(VMData::new_i64(list.len() as i64))
 }
 
-// get(list: &List[T], index: int) -> T
 pub fn get(state: VMState) -> Result<VMData, RuntimeError> {
     let index = state.stack.pop()?.as_i64();
     let list_ptr = state.stack.pop()?.as_object();
@@ -20,7 +26,6 @@ pub fn get(state: VMState) -> Result<VMData, RuntimeError> {
     Ok(list[index as usize])
 }
 
-// set(list: &List[T], index: int, value: T) -> ()
 pub fn set(state: VMState) -> Result<VMData, RuntimeError> {
     let value = state.stack.pop()?;
     let index = state.stack.pop()?.as_i64();
@@ -30,7 +35,6 @@ pub fn set(state: VMState) -> Result<VMData, RuntimeError> {
     Ok(VMData::new_unit())
 }
 
-// push(list: &List[T], value: T) -> ()
 pub fn push(state: VMState) -> Result<VMData, RuntimeError> {
     let value = state.stack.pop()?;
     let list_ptr = state.stack.pop()?.as_object();
@@ -39,14 +43,12 @@ pub fn push(state: VMState) -> Result<VMData, RuntimeError> {
     Ok(VMData::new_unit())
 }
 
-// pop(list: &List[T]) -> T
 pub fn pop(state: VMState) -> Result<VMData, RuntimeError> {
     let list_ptr = state.stack.pop()?.as_object();
     let list = state.object_map.get_mut(list_ptr).list_mut();
     Ok(list.pop().unwrap())
 }
 
-// remove(list: &List[T], index: int) -> T
 pub fn remove(state: VMState) -> Result<VMData, RuntimeError> {
     let index = state.stack.pop()?.as_i64();
     let list_ptr = state.stack.pop()?.as_object();
@@ -54,7 +56,6 @@ pub fn remove(state: VMState) -> Result<VMData, RuntimeError> {
     Ok(list.remove(index as usize))
 }
 
-// slice(list: &List[T], start: int, end: int) -> &List[T]
 pub fn slice(state: VMState) -> Result<VMData, RuntimeError> {
     let end = state.stack.pop()?.as_i64();
     let start = state.stack.pop()?.as_i64();

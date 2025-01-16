@@ -4,15 +4,14 @@ use crate::atlas_vm::errors::RuntimeResult;
 
 use crate::atlas_frontend::parser::ast::{
     AstBinaryOpExpr, AstBlock, AstCallExpr, AstExpr, AstFieldAccessExpr, AstFunction,
-    AstIdentifier, AstIfElseExpr, AstIndexingExpr, AstLetExpr, AstMatchExpr, AstProgram,
-    AstUnaryOpExpr,
+    AstIdentifier, AstIfElseExpr, AstIndexingExpr, AstLetExpr, AstProgram, AstUnaryOpExpr,
 };
 
 //TODO: visit() should return a Result<VMData, crate::errors::RuntimeError>
 #[deprecated = r#"This trait will be removed in favor of the VM.
 It will still be used for compile time evaluation, but will be reworked.
 The rework will retarget it to the typed High-level Intermediate Representation"#]
-pub(crate) trait Visitor<'visitor> {
+pub(crate) trait _Visitor<'visitor> {
     type CallBack;
     // Entry point
     fn visit(&mut self, program: &'visitor AstProgram, entry_point: &str) -> RuntimeResult<VMData>;
@@ -57,8 +56,4 @@ pub(crate) trait Visitor<'visitor> {
         if_else_node: &'visitor AstIfElseExpr,
     ) -> RuntimeResult<VMData>;
     fn visit_block_expression(&mut self, block: &'visitor AstBlock) -> RuntimeResult<VMData>;
-    fn visit_match_expression(
-        &mut self,
-        match_expression: &'visitor AstMatchExpr,
-    ) -> RuntimeResult<VMData>;
 }

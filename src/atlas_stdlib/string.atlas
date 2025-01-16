@@ -1,0 +1,5 @@
+extern func str_len(s: str) -> u64;
+extern func trim(s: str) -> str;
+extern func to_upper(s: str) -> str;
+extern func to_lower(s: str) -> str;
+extern func split(s: str, sep: str) -> [str];

@@ -6,7 +6,7 @@ use super::{signature::HirFunctionSignature, stmt::HirBlock};
 #[derive(Debug, Clone, Serialize)]
 pub(crate) enum HirItem<'hir> {
     Function(HirFunction<'hir>),
-    Import(HirImport<'hir>),
+    _Import(HirImport<'hir>),
 }
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct HirFunction<'hir> {

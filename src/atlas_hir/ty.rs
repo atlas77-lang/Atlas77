@@ -65,9 +65,9 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
             HirTy::UInt64(_) => Self::compute_uint64_ty_id(),
             HirTy::Boolean(_) => Self::compute_boolean_ty_id(),
             HirTy::Unit(_) => Self::compute_unit_ty_id(),
-            HirTy::Named(ty) => HirTyId::compute_name_ty_id(ty.name),
+            HirTy::_Named(ty) => HirTyId::compute_name_ty_id(ty.name),
             HirTy::Uninitialized(_) => Self::compute_uninitialized_ty_id(),
-            HirTy::Function(f) => {
+            HirTy::_Function(f) => {
                 let parameters = f.params.iter().map(HirTyId::from).collect::<Vec<_>>();
                 let ret_ty = HirTyId::from(f.ret_ty);
                 HirTyId::compute_function_ty_id(&ret_ty, &parameters)
@@ -83,10 +83,10 @@ pub(crate) enum HirTy<'hir> {
     UInt64(HirUnsignedIntTy),
     Unit(HirUnitTy),
     Boolean(HirBooleanTy),
-    Named(HirNamedTy<'hir>),
+    _Named(HirNamedTy<'hir>),
     Uninitialized(HirUninitializedTy),
 
-    Function(HirFunctionTy<'hir>),
+    _Function(HirFunctionTy<'hir>),
 }
 
 #[derive(Debug, Clone, Serialize)]

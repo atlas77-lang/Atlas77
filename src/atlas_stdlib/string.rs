@@ -1,16 +1,22 @@
 use crate::{
     atlas_memory::{object_map::Object, vm_data::VMData},
-    atlas_vm::{errors::RuntimeError, vm_state::VMState},
+    atlas_vm::{errors::RuntimeError, vm_state::VMState, CallBack},
 };
 
-// str_len(str: &string)
+pub const STRING_FUNCTIONS: [(&str, CallBack); 5] = [
+    ("str_len", str_len),
+    ("trim", trim),
+    ("to_upper", to_upper),
+    ("to_lower", to_lower),
+    ("split", split),
+];
+
 pub fn str_len(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop()?.as_object();
     let string = state.object_map.get(string_ptr).string();
     Ok(VMData::new_i64(string.len() as i64))
 }
 
-// trim(str: &string) -> &string
 pub fn trim(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop()?.as_object();
     let string = state.object_map.get(string_ptr).string();
@@ -24,7 +30,6 @@ pub fn trim(state: VMState) -> Result<VMData, RuntimeError> {
     }
 }
 
-// to_upper(str: &string) -> &string
 pub fn to_upper(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop()?.as_object();
     let string = state.object_map.get(string_ptr).string();
@@ -38,7 +43,6 @@ pub fn to_upper(state: VMState) -> Result<VMData, RuntimeError> {
     }
 }
 
-// to_lower(str: &string) -> &string
 pub fn to_lower(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop()?.as_object();
     let string = state.object_map.get(string_ptr).string();
@@ -52,7 +56,6 @@ pub fn to_lower(state: VMState) -> Result<VMData, RuntimeError> {
     }
 }
 
-// split(str: &string, delimiter: &string) -> &List[string]
 pub fn split(state: VMState) -> Result<VMData, RuntimeError> {
     let delimiter_ptr = state.stack.pop()?.as_object();
     let string_ptr = state.stack.pop()?.as_object();

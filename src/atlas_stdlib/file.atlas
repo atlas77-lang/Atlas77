@@ -1,0 +1,5 @@
+extern func read_dir(path: str) -> [str];
+extern func read_file(path: str) -> str;
+extern func write_file(path: str, content: str);
+extern func remove_file(path: str);
+extern func file_exists(path: str) -> bool;

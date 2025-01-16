@@ -63,57 +63,38 @@ pub(crate) fn build(path: String) -> miette::Result<()> {
 
     let program = parse(path_buf.to_str().unwrap(), &bump)?;
 
-    #[cfg(debug_assertions)]
-    println!("{:?}", &program);
-
     let hir_arena = HirArena::new();
 
     let lower = AstSyntaxLoweringPass::new(&hir_arena, &program);
-    let hir = lower.lower();
-    match hir {
-        Ok(hir) => {
-            println!("{:?}", hir);
-            let bump = Bump::new();
+    let hir = lower.lower()?;
+    let bump = Bump::new();
 
-            let arena = CodeGenArena::new(&bump);
+    let arena = CodeGenArena::new(&bump);
 
-            let mut codegen = CodeGenUnit::new(hir, arena);
+    let mut codegen = CodeGenUnit::new(hir, arena);
 
-            let program = codegen.compile();
+    let program = codegen.compile()?;
 
-            match program {
-                Ok(program) => {
-                    let output = ron::ser::to_string_pretty(&program, Default::default()).unwrap();
-                    let mut file = std::fs::File::create("output.atlasc").unwrap();
-                    file.write_all(output.as_bytes()).unwrap();
+    let output = ron::ser::to_string_pretty(&program, Default::default()).unwrap();
+    let mut file = std::fs::File::create("output.atlasc").unwrap();
+    file.write_all(output.as_bytes()).unwrap();
 
-                    let start = Instant::now();
-                    let mut vm = atlas_vm::Atlas77VM::new(program);
-                    let res = vm.run();
-                    let end = Instant::now();
-                    match res {
-                        Ok(_) => {
-                            println!(
-                                "Program ran successfully: {} (time: {}ms)",
-                                vm.stack.pop().unwrap(),
-                                (end - start).as_millis()
-                            );
-                        }
-                        Err(e) => {
-                            eprintln!("{}", e);
-                        }
-                    }
-                }
-                Err(e) => {
-                    eprintln!("{}", e);
-                }
-            }
+    let start = Instant::now();
+    let mut vm = atlas_vm::Atlas77VM::new(program);
+    let res = vm.run();
+    let end = Instant::now();
+    match res {
+        Ok(_) => {
+            println!(
+                "Program ran successfully: {} (time: {}ms)",
+                vm.stack.pop().unwrap(),
+                (end - start).as_millis()
+            );
         }
         Err(e) => {
             eprintln!("{}", e);
         }
     }
-
     Ok(())
 }
 
