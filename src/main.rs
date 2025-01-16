@@ -1,12 +1,16 @@
 #[allow(unused)]
-use atlas_77::{
-    atlas_codegen,
+pub mod atlas_codegen;
+pub mod atlas_frontend;
+pub mod atlas_hir;
+pub mod atlas_macro;
+pub mod atlas_memory;
+pub mod atlas_runtime;
+pub mod atlas_stdlib;
+pub mod atlas_vm;
+use crate::{
     atlas_codegen::{arena::CodeGenArena, CodeGenUnit},
-    atlas_frontend,
     atlas_frontend::parse,
-    atlas_hir,
     atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass},
-    atlas_macro, atlas_memory, atlas_runtime, atlas_stdlib, atlas_vm,
 };
 use bumpalo::Bump;
 use clap::{command, Parser};

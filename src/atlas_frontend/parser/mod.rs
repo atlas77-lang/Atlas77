@@ -24,7 +24,7 @@ use error::{ParseError, ParseResult, UnexpectedTokenError};
 use crate::atlas_frontend::lexer::{Literal, Token, TokenKind, TokenVec};
 use arena::AstArena;
 
-pub struct Parser<'ast> {
+pub(crate) struct Parser<'ast> {
     arena: AstArena<'ast>,
     tokens: Vec<Token>,
     //for error reporting
@@ -35,15 +35,12 @@ pub struct Parser<'ast> {
 
 pub(crate) fn remove_comments(toks: Vec<Token>) -> Vec<Token> {
     toks.into_iter()
-        .filter(|t| match t.kind() {
-            TokenKind::Comments(_) => false,
-            _ => true,
-        })
+        .filter(|t| !matches!(t.kind(), TokenKind::Comments(_)))
         .collect()
 }
 
 impl<'ast> Parser<'ast> {
-    pub fn new(
+    pub(crate) fn new(
         arena: AstArena<'ast>,
         tokens: Vec<Token>,
         file_path: PathBuf,
@@ -59,17 +56,14 @@ impl<'ast> Parser<'ast> {
         }
     }
 
-    #[must_use]
     fn current(&self) -> &Token {
         &self.tokens[self.pos]
     }
 
-    #[must_use]
     fn peek(&self) -> Option<TokenKind> {
         self.tokens.get(self.pos + 1).map(|t| t.kind())
     }
 
-    #[must_use]
     /// This should maybe return a ParseResult::UnexpectedEndOfFileError
     fn advance(&mut self) -> Token {
         let tok = self.tokens.get(self.pos).cloned();
@@ -81,7 +75,6 @@ impl<'ast> Parser<'ast> {
         }
     }
 
-    #[must_use]
     fn expect(&mut self, kind: TokenKind) -> ParseResult<Token> {
         let tok = self.advance();
         if tok.kind() == kind {
@@ -96,7 +89,6 @@ impl<'ast> Parser<'ast> {
         }
     }
 
-    #[must_use]
     pub fn parse(&mut self) -> ParseResult<AstProgram<'ast>> {
         let mut items: Vec<AstItem> = Vec::new();
         let _ = self.advance(); // Skip the first token (SoI)
@@ -109,7 +101,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_item(&mut self) -> ParseResult<AstItem<'ast>> {
         let start = self.current().start();
         match self.current().kind() {
@@ -129,7 +120,6 @@ impl<'ast> Parser<'ast> {
         }
     }
 
-    #[must_use]
     fn parse_func(&mut self) -> ParseResult<AstFunction<'ast>> {
         let _ = self.advance();
         let name = self.parse_identifier()?;
@@ -242,13 +232,11 @@ impl<'ast> Parser<'ast> {
         })
     }
 
-    #[must_use]
     /// This function is mostly used for clarity because calling `parse_binary` feels weird
     fn parse_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
         self.parse_binary()
     }
 
-    #[must_use]
     fn parse_let(&mut self) -> ParseResult<AstLetExpr<'ast>> {
         let _ = self.advance();
         let name = self.parse_identifier()?;
@@ -269,7 +257,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_binary(&mut self) -> ParseResult<AstExpr<'ast>> {
         let left = self.parse_factor()?;
         match self.current().kind() {
@@ -287,13 +274,12 @@ impl<'ast> Parser<'ast> {
                     lhs: self.arena.alloc(left),
                     rhs: self.arena.alloc(right),
                 });
-                return Ok(node);
+                Ok(node)
             }
-            _ => return Ok(left),
+            _ => Ok(left),
         }
     }
 
-    #[must_use]
     fn parse_factor(&mut self) -> ParseResult<AstExpr<'ast>> {
         let left = self.parse_condition()?;
         match self.current().kind() {
@@ -312,12 +298,12 @@ impl<'ast> Parser<'ast> {
                     lhs: self.arena.alloc(left),
                     rhs: self.arena.alloc(right),
                 });
-                return Ok(node);
+                Ok(node)
             }
-            _ => return Ok(left),
+            _ => Ok(left),
         }
     }
-    #[must_use]
+
     fn parse_condition(&mut self) -> ParseResult<AstExpr<'ast>> {
         let left = AstExpr::UnaryOp(self.parse_unary()?);
 
@@ -345,13 +331,12 @@ impl<'ast> Parser<'ast> {
                     lhs: self.arena.alloc(left),
                     rhs: self.arena.alloc(right),
                 });
-                return Ok(node);
+                Ok(node)
             }
-            _ => return Ok(left),
+            _ => Ok(left),
         }
     }
 
-    #[must_use]
     fn parse_unary(&mut self) -> ParseResult<AstUnaryOpExpr<'ast>> {
         let start_pos = self.current().span();
         let op = match self.current().kind() {
@@ -375,7 +360,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_primary(&mut self) -> ParseResult<AstExpr<'ast>> {
         let tok = self.current();
 
@@ -449,7 +433,7 @@ impl<'ast> Parser<'ast> {
             TokenKind::Literal(Literal::Identifier(_)) => {
                 let mut node = AstExpr::Identifier(self.parse_identifier()?);
 
-                while let Some(_) = self.peek() {
+                while self.peek().is_some() {
                     match self.current().kind() {
                         TokenKind::LParen => {
                             node = AstExpr::Call(self.parse_fn_call(node)?);
@@ -493,7 +477,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_if_expr(&mut self) -> ParseResult<AstIfElseExpr<'ast>> {
         let start = self.advance();
         let condition = self.parse_expr()?;
@@ -519,7 +502,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_return(&mut self) -> ParseResult<AstReturnStmt<'ast>> {
         let _ = self.advance();
         let expr = self.parse_expr()?;
@@ -531,7 +513,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_extern_function(&mut self) -> ParseResult<AstExternFunction<'ast>> {
         let _ = self.advance();
         let name = self.parse_identifier()?;
@@ -555,7 +536,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_import(&mut self) -> ParseResult<AstImport<'ast>> {
         let start = self.advance();
 
@@ -596,7 +576,6 @@ impl<'ast> Parser<'ast> {
         }
     }
 
-    #[must_use]
     fn parse_struct(&mut self) -> ParseResult<AstStruct<'ast>> {
         let _ = self.advance();
 
@@ -618,7 +597,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_obj_field(&mut self) -> ParseResult<AstObjField<'ast>> {
         let name = self.parse_identifier()?;
 
@@ -635,7 +613,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_identifier(&mut self) -> ParseResult<AstIdentifier<'ast>> {
         let token = self.current();
 
@@ -673,7 +650,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_fn_call(&mut self, callee: AstExpr<'ast>) -> ParseResult<AstCallExpr<'ast>> {
         self.expect(TokenKind::LParen)?;
 
@@ -694,7 +670,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_indexing(&mut self, target: AstExpr<'ast>) -> ParseResult<AstIndexingExpr<'ast>> {
         self.expect(TokenKind::LBracket)?;
 
@@ -710,7 +685,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     fn parse_field_access(
         &mut self,
         target: AstExpr<'ast>,
@@ -727,7 +701,6 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    #[must_use]
     //Todo: add List<T>/Map<K, V>/() & function types
     fn parse_type(&mut self) -> ParseResult<AstType<'ast>> {
         let token = self.current();

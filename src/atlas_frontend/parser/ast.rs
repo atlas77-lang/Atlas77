@@ -4,7 +4,7 @@ use atlas_core::utils::span::*;
 
 /// An `AstProgram` is the top-level node of the AST and contains all the items.
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstProgram<'ast> {
+pub(crate) struct AstProgram<'ast> {
     pub items: &'ast [&'ast AstItem<'ast>],
 }
 
@@ -13,7 +13,7 @@ pub struct AstProgram<'ast> {
 ///
 /// Enums & unions are also top-level items, but they are not yet supported
 #[derive(Debug, Clone, Serialize, Copy)]
-pub enum AstItem<'ast> {
+pub(crate) enum AstItem<'ast> {
     Struct(AstStruct<'ast>),
     ExternFunction(AstExternFunction<'ast>),
     Func(AstFunction<'ast>),
@@ -36,7 +36,7 @@ impl Spanned for AstItem<'_> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstFunction<'ast> {
+pub(crate) struct AstFunction<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub args: &'ast [&'ast AstObjField<'ast>],
@@ -45,21 +45,21 @@ pub struct AstFunction<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstUnion<'ast> {
+pub(crate) struct AstUnion<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub variants: &'ast [&'ast AstUnionVariant<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstUnionVariant<'ast> {
+pub(crate) struct AstUnionVariant<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub fields: &'ast [&'ast AstObjField<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstEnum<'ast> {
+pub(crate) struct AstEnum<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub variants: &'ast [&'ast AstEnumVariant<'ast>],
@@ -67,27 +67,27 @@ pub struct AstEnum<'ast> {
 
 #[derive(Debug, Clone, Serialize, Copy)]
 /// Enums currently don't support associated values
-pub struct AstEnumVariant<'ast> {
+pub(crate) struct AstEnumVariant<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstStruct<'ast> {
+pub(crate) struct AstStruct<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub fields: &'ast [&'ast AstObjField<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstObjField<'ast> {
+pub(crate) struct AstObjField<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub ty: &'ast AstType<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstExternFunction<'ast> {
+pub(crate) struct AstExternFunction<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub args: &'ast [&'ast AstType<'ast>],
@@ -95,14 +95,14 @@ pub struct AstExternFunction<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstImport<'ast> {
+pub(crate) struct AstImport<'ast> {
     pub span: Span,
     pub path: &'ast str,
     pub alias: Option<&'ast AstIdentifier<'ast>>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub enum AstStatement<'ast> {
+pub(crate) enum AstStatement<'ast> {
     Let(AstLetExpr<'ast>),
     Const(AstConstExpr<'ast>),
     IfElse(AstIfElseExpr<'ast>),
@@ -137,17 +137,17 @@ impl AstStatement<'_> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstContinueStmt {
+pub(crate) struct AstContinueStmt {
     pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstBreakStmt {
+pub(crate) struct AstBreakStmt {
     pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstConstExpr<'ast> {
+pub(crate) struct AstConstExpr<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub ty: Option<&'ast AstType<'ast>>,
@@ -155,21 +155,21 @@ pub struct AstConstExpr<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstWhileExpr<'ast> {
+pub(crate) struct AstWhileExpr<'ast> {
     pub span: Span,
     pub condition: &'ast AstExpr<'ast>,
     pub body: &'ast AstBlock<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstAssignExpr<'ast> {
+pub(crate) struct AstAssignExpr<'ast> {
     pub span: Span,
     pub target: &'ast AstExpr<'ast>,
     pub value: &'ast AstExpr<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub enum AstExpr<'ast> {
+pub(crate) enum AstExpr<'ast> {
     Let(AstLetExpr<'ast>),
     Lambda(AstLambdaExpr<'ast>),
     CompTime(AstCompTimeExpr<'ast>),
@@ -211,67 +211,67 @@ impl Spanned for AstExpr<'_> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstReturnStmt<'ast> {
+pub(crate) struct AstReturnStmt<'ast> {
     pub span: Span,
     pub value: &'ast AstExpr<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstBlock<'ast> {
+pub(crate) struct AstBlock<'ast> {
     pub span: Span,
     pub stmts: &'ast [&'ast AstStatement<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstNewObjExpr<'ast> {
+pub(crate) struct AstNewObjExpr<'ast> {
     pub span: Span,
     pub ty: &'ast AstType<'ast>,
     pub fields: &'ast [&'ast AstFieldInit<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstFieldInit<'ast> {
+pub(crate) struct AstFieldInit<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub value: &'ast AstExpr<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstFieldAccessExpr<'ast> {
+pub(crate) struct AstFieldAccessExpr<'ast> {
     pub span: Span,
     pub target: &'ast AstExpr<'ast>,
     pub field: &'ast AstIdentifier<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstIndexingExpr<'ast> {
+pub(crate) struct AstIndexingExpr<'ast> {
     pub span: Span,
     pub target: &'ast AstExpr<'ast>,
     pub index: &'ast AstExpr<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstDoExpr<'ast> {
+pub(crate) struct AstDoExpr<'ast> {
     pub span: Span,
     pub exprs: &'ast [&'ast AstExpr<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstCallExpr<'ast> {
+pub(crate) struct AstCallExpr<'ast> {
     pub span: Span,
     pub callee: &'ast AstExpr<'ast>,
     pub args: &'ast [&'ast AstExpr<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstUnaryOpExpr<'ast> {
+pub(crate) struct AstUnaryOpExpr<'ast> {
     pub span: Span,
     pub expr: &'ast AstExpr<'ast>,
     pub op: Option<AstUnaryOp>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub enum AstUnaryOp {
+pub(crate) enum AstUnaryOp {
     Neg,
     Not,
     Deref,
@@ -279,7 +279,7 @@ pub enum AstUnaryOp {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstBinaryOpExpr<'ast> {
+pub(crate) struct AstBinaryOpExpr<'ast> {
     pub span: Span,
     pub lhs: &'ast AstExpr<'ast>,
     pub rhs: &'ast AstExpr<'ast>,
@@ -287,7 +287,7 @@ pub struct AstBinaryOpExpr<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub enum AstBinaryOp {
+pub(crate) enum AstBinaryOp {
     Add,
     Sub,
     Mul,
@@ -305,7 +305,7 @@ pub enum AstBinaryOp {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstIfElseExpr<'ast> {
+pub(crate) struct AstIfElseExpr<'ast> {
     pub span: Span,
     pub condition: &'ast AstExpr<'ast>,
     pub body: &'ast AstBlock<'ast>,
@@ -313,7 +313,7 @@ pub struct AstIfElseExpr<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstMatchExpr<'ast> {
+pub(crate) struct AstMatchExpr<'ast> {
     pub span: Span,
     pub expr: &'ast AstExpr<'ast>,
     pub arms: &'ast [&'ast AstMatchArm<'ast>],
@@ -321,27 +321,27 @@ pub struct AstMatchExpr<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstMatchArm<'ast> {
+pub(crate) struct AstMatchArm<'ast> {
     pub span: Span,
     pub pattern: &'ast AstPattern<'ast>,
     pub body: &'ast AstBlock<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstPattern<'ast> {
+pub(crate) struct AstPattern<'ast> {
     pub span: Span,
     pub kind: AstPatternKind<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
 // TODO: Add support for tuples, enums and structs
-pub enum AstPatternKind<'ast> {
+pub(crate) enum AstPatternKind<'ast> {
     Identifier(&'ast AstIdentifier<'ast>),
     Literal(AstLiteral<'ast>),
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstLetExpr<'ast> {
+pub(crate) struct AstLetExpr<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub ty: Option<&'ast AstType<'ast>>,
@@ -349,26 +349,26 @@ pub struct AstLetExpr<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstLambdaExpr<'ast> {
+pub(crate) struct AstLambdaExpr<'ast> {
     pub span: Span,
     pub args: &'ast [&'ast AstIdentifier<'ast>],
     pub body: &'ast AstExpr<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstCompTimeExpr<'ast> {
+pub(crate) struct AstCompTimeExpr<'ast> {
     pub span: Span,
     pub expr: &'ast AstExpr<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstIdentifier<'ast> {
+pub(crate) struct AstIdentifier<'ast> {
     pub span: Span,
     pub name: &'ast str,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub enum AstLiteral<'ast> {
+pub(crate) enum AstLiteral<'ast> {
     Integer(AstIntegerLiteral),
     UnsignedIntegerer(AstUnsignedIntegerLiteral),
     Float(AstFloatLiteral),
@@ -391,43 +391,43 @@ impl Spanned for AstLiteral<'_> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstListLiteral<'ast> {
+pub(crate) struct AstListLiteral<'ast> {
     pub span: Span,
     pub items: &'ast [&'ast AstExpr<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstBooleanLiteral {
+pub(crate) struct AstBooleanLiteral {
     pub span: Span,
     pub value: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstStringLiteral<'ast> {
+pub(crate) struct AstStringLiteral<'ast> {
     pub span: Span,
     pub value: &'ast str,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstFloatLiteral {
+pub(crate) struct AstFloatLiteral {
     pub span: Span,
     pub value: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstUnsignedIntegerLiteral {
+pub(crate) struct AstUnsignedIntegerLiteral {
     pub span: Span,
     pub value: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstIntegerLiteral {
+pub(crate) struct AstIntegerLiteral {
     pub span: Span,
     pub value: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub enum AstType<'ast> {
+pub(crate) enum AstType<'ast> {
     Unit(AstUnitType),
     Boolean(AstBooleanType),
     Integer(AstIntegerType),
@@ -461,63 +461,63 @@ impl Spanned for AstType<'_> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstMapType<'ast> {
+pub(crate) struct AstMapType<'ast> {
     pub span: Span,
     pub key: &'ast AstType<'ast>,
     pub value: &'ast AstType<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstListType<'ast> {
+pub(crate) struct AstListType<'ast> {
     pub span: Span,
     pub inner: &'ast AstType<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstFunctionType<'ast> {
+pub(crate) struct AstFunctionType<'ast> {
     pub span: Span,
     pub args: &'ast [&'ast AstType<'ast>],
     pub ret: &'ast AstType<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstPointerType<'ast> {
+pub(crate) struct AstPointerType<'ast> {
     pub span: Span,
     pub inner: &'ast AstType<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstStringType {
+pub(crate) struct AstStringType {
     pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstNamedType<'ast> {
+pub(crate) struct AstNamedType<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstIntegerType {
+pub(crate) struct AstIntegerType {
     pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstFloatType {
+pub(crate) struct AstFloatType {
     pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstUnsignedIntegerType {
+pub(crate) struct AstUnsignedIntegerType {
     pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstBooleanType {
+pub(crate) struct AstBooleanType {
     pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstUnitType {
+pub(crate) struct AstUnitType {
     pub span: Span,
 }

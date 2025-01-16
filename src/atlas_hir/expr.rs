@@ -4,7 +4,7 @@ use serde::Serialize;
 use super::ty::HirTy;
 
 #[derive(Debug, Clone, Serialize)]
-pub enum HirExpr<'hir> {
+pub(crate) enum HirExpr<'hir> {
     Assign(HirAssignExpr<'hir>),
     HirBinaryOp(HirBinaryOpExpr<'hir>),
     Call(HirFunctionCallExpr<'hir>),
@@ -17,7 +17,7 @@ pub enum HirExpr<'hir> {
 }
 
 impl<'hir> HirExpr<'hir> {
-    pub fn span(&self) -> Span {
+    pub(crate) fn span(&self) -> Span {
         match self {
             HirExpr::Ident(expr) => expr.span,
             HirExpr::IntegerLiteral(expr) => expr.span,
@@ -46,14 +46,14 @@ impl<'hir> HirExpr<'hir> {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirStringLiteralExpr<'hir> {
+pub(crate) struct HirStringLiteralExpr<'hir> {
     pub value: &'hir str,
     pub span: Span,
     pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirAssignExpr<'hir> {
+pub(crate) struct HirAssignExpr<'hir> {
     pub span: Span,
     pub lhs: Box<HirExpr<'hir>>,
     pub rhs: Box<HirExpr<'hir>>,
@@ -61,18 +61,18 @@ pub struct HirAssignExpr<'hir> {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirFunctionCallExpr<'hir> {
+pub(crate) struct HirFunctionCallExpr<'hir> {
     pub span: Span,
     pub callee: Box<HirExpr<'hir>>,
     pub callee_span: Span,
-    pub args: Vec<Box<HirExpr<'hir>>>,
+    pub args: Vec<HirExpr<'hir>>,
     pub args_ty: Vec<&'hir HirTy<'hir>>,
     /// Result type of the call
     pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirBinaryOpExpr<'hir> {
+pub(crate) struct HirBinaryOpExpr<'hir> {
     pub span: Span,
     pub op: HirBinaryOp,
     pub op_span: Span,
@@ -100,7 +100,7 @@ pub enum HirBinaryOp {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct UnaryOpExpr<'hir> {
+pub(crate) struct UnaryOpExpr<'hir> {
     pub span: Span,
     pub op: Option<UnaryOp>,
     pub expr: Box<HirExpr<'hir>>,
@@ -115,28 +115,28 @@ pub enum UnaryOp {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirFloatLiteralExpr<'hir> {
+pub(crate) struct HirFloatLiteralExpr<'hir> {
     pub value: f64,
     pub span: Span,
     pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirUnsignedIntegerLiteralExpr<'hir> {
+pub(crate) struct HirUnsignedIntegerLiteralExpr<'hir> {
     pub value: u64,
     pub span: Span,
     pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirIntegerLiteralExpr<'hir> {
+pub(crate) struct HirIntegerLiteralExpr<'hir> {
     pub value: i64,
     pub span: Span,
     pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirIdentExpr<'hir> {
+pub(crate) struct HirIdentExpr<'hir> {
     pub name: &'hir str,
     pub span: Span,
     pub ty: &'hir HirTy<'hir>,

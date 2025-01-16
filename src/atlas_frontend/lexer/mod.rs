@@ -117,7 +117,7 @@ impl std::fmt::Display for Token {
                 write!(f, "extern")
             }
             _ => {
-                return write!(f, "{:?}", self.kind());
+                write!(f, "{:?}", self.kind())
             }
         }
     }

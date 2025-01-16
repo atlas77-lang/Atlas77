@@ -104,7 +104,7 @@ impl<'vm> Index<usize> for Program<'vm> {
         let mut current_index = 0;
         for label in self.labels {
             if current_index + label.body.len() > index {
-                return &label.body[index - current_index];
+                return label.body[index - current_index];
             }
             current_index += label.body.len();
         }
@@ -112,9 +112,18 @@ impl<'vm> Index<usize> for Program<'vm> {
     }
 }
 
+impl Default for Program<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Program<'_> {
     pub fn len(&self) -> usize {
         self.labels.iter().map(|label| label.body.len()).sum()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
     pub fn new() -> Self {
         Self {

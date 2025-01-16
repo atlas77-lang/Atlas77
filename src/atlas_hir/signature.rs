@@ -9,11 +9,11 @@ use super::ty::HirTy;
 ///
 /// Currently only functions exist in the language.
 #[derive(Debug, Clone, Serialize, Default)]
-pub struct HirModuleSignature<'hir> {
+pub(crate) struct HirModuleSignature<'hir> {
     pub functions: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
 }
 #[derive(Debug, Clone, Serialize)]
-pub struct HirFunctionSignature<'hir> {
+pub(crate) struct HirFunctionSignature<'hir> {
     pub span: Span,
     pub params: Vec<&'hir HirFunctionParameterSignature<'hir>>,
     pub type_params: Vec<&'hir HirTypeParameterItemSignature<'hir>>,
@@ -23,13 +23,13 @@ pub struct HirFunctionSignature<'hir> {
     pub return_ty_span: Option<Span>,
 }
 #[derive(Debug, Clone, Serialize)]
-pub struct HirTypeParameterItemSignature<'hir> {
+pub(crate) struct HirTypeParameterItemSignature<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,
 }
 #[derive(Debug, Clone, Serialize)]
-pub struct HirFunctionParameterSignature<'hir> {
+pub(crate) struct HirFunctionParameterSignature<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,

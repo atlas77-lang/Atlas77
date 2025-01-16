@@ -12,9 +12,9 @@ pub type RuntimeResult = Result<(), String>;
 
 pub struct Atlas77VM<'run> {
     pub program: Program<'run>,
-    pub stack: Stack,
+    pub(crate) stack: Stack,
     stack_frame: Vec<(usize, usize)>, //previous pc and previous stack top
-    pub object_map: Memory,
+    pub(crate) object_map: Memory,
     pub varmap: Vec<HashMap<String, VMData>>, //need to be changed
     pub pc: usize,
 }
@@ -136,17 +136,17 @@ impl<'run> Atlas77VM<'run> {
             }
             Instruction::LoadI64 { var_name } => {
                 let val = self.varmap.last().unwrap().get(&var_name).unwrap();
-                self.stack.push(val.clone()).unwrap();
+                self.stack.push(*val).unwrap();
                 self.pc += 1;
             }
             Instruction::LoadF64 { var_name } => {
                 let val = self.varmap.last().unwrap().get(&var_name).unwrap();
-                self.stack.push(val.clone()).unwrap();
+                self.stack.push(*val).unwrap();
                 self.pc += 1;
             }
             Instruction::LoadU64 { var_name } => {
                 let val = self.varmap.last().unwrap().get(&var_name).unwrap();
-                self.stack.push(val.clone()).unwrap();
+                self.stack.push(*val).unwrap();
                 self.pc += 1;
             }
             Instruction::MulI64 => {

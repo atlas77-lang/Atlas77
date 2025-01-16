@@ -12,7 +12,7 @@ use crate::atlas_frontend::parser::ast::{
 #[deprecated = r#"This trait will be removed in favor of the VM.
 It will still be used for compile time evaluation, but will be reworked.
 The rework will retarget it to the typed High-level Intermediate Representation"#]
-pub trait Visitor<'visitor> {
+pub(crate) trait Visitor<'visitor> {
     type CallBack;
     // Entry point
     fn visit(&mut self, program: &'visitor AstProgram, entry_point: &str) -> RuntimeResult<VMData>;

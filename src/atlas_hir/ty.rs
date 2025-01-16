@@ -4,7 +4,7 @@ use atlas_core::prelude::Span;
 use serde::Serialize;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Copy)]
-pub struct HirTyId(u64);
+pub(crate) struct HirTyId(u64);
 
 impl HirTyId {
     pub fn compute_integer64_ty_id() -> Self {
@@ -68,11 +68,7 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
             HirTy::Named(ty) => HirTyId::compute_name_ty_id(ty.name),
             HirTy::Uninitialized(_) => Self::compute_uninitialized_ty_id(),
             HirTy::Function(f) => {
-                let parameters = f
-                    .params
-                    .iter()
-                    .map(|p| HirTyId::from(p))
-                    .collect::<Vec<_>>();
+                let parameters = f.params.iter().map(HirTyId::from).collect::<Vec<_>>();
                 let ret_ty = HirTyId::from(f.ret_ty);
                 HirTyId::compute_function_ty_id(&ret_ty, &parameters)
             }
@@ -81,7 +77,7 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub enum HirTy<'hir> {
+pub(crate) enum HirTy<'hir> {
     Int64(HirIntegerTy),
     Float64(HirFloatTy),
     UInt64(HirUnsignedIntTy),
@@ -94,31 +90,31 @@ pub enum HirTy<'hir> {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirUninitializedTy {}
+pub(crate) struct HirUninitializedTy {}
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirIntegerTy {}
+pub(crate) struct HirIntegerTy {}
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirFloatTy {}
+pub(crate) struct HirFloatTy {}
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirUnsignedIntTy {}
+pub(crate) struct HirUnsignedIntTy {}
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirUnitTy {}
+pub(crate) struct HirUnitTy {}
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirBooleanTy {}
+pub(crate) struct HirBooleanTy {}
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirFunctionTy<'hir> {
+pub(crate) struct HirFunctionTy<'hir> {
     pub ret_ty: &'hir HirTy<'hir>,
     pub params: Vec<HirTy<'hir>>,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirNamedTy<'hir> {
+pub(crate) struct HirNamedTy<'hir> {
     pub name: &'hir str,
     pub span: Span,
 }

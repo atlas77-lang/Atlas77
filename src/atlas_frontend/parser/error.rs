@@ -5,13 +5,13 @@ use crate::{atlas_frontend::lexer::Token, declare_error_type};
 
 declare_error_type! {
     #[error("Parse error: {0}")]
-    pub enum ParseError {
+    pub(crate) enum ParseError {
         UnexpectedEndOfFile(UnexpectedEndOfFileError),
         UnexpectedToken(UnexpectedTokenError),
     }
 }
 
-pub type ParseResult<T> = Result<T, ParseError>;
+pub(crate) type ParseResult<T> = Result<T, ParseError>;
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(
@@ -19,7 +19,7 @@ pub type ParseResult<T> = Result<T, ParseError>;
     help("Add more input to form a valid program")
 )]
 #[error("expected more characters after this")]
-pub struct UnexpectedEndOfFileError {
+pub(crate) struct UnexpectedEndOfFileError {
     #[label = "required more input to parse"]
     pub span: SourceSpan,
     #[source_code]
@@ -29,7 +29,7 @@ pub struct UnexpectedEndOfFileError {
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(code(syntax::unexpected_token))]
 #[error("Found unexpected token during parsing")]
-pub struct UnexpectedTokenError {
+pub(crate) struct UnexpectedTokenError {
     pub token: Token,
     pub expected: crate::atlas_frontend::lexer::TokenVec,
     #[label("was not expecting to find '{token}' in this position, expected one of: {expected}")]

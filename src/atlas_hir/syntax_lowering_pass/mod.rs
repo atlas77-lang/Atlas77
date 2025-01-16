@@ -23,21 +23,21 @@ use super::{
     HirModule, HirModuleBody,
 };
 
-pub type HirResult<T> = Result<T, String>;
+pub(crate) type HirResult<T> = Result<T, String>;
 
-pub struct AstSyntaxLoweringPass<'ast, 'hir> {
+pub(crate) struct AstSyntaxLoweringPass<'ast, 'hir> {
     arena: &'hir HirArena<'hir>,
     ast: &'ast AstProgram<'ast>,
 }
 
 impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
-    pub fn new(arena: &'hir HirArena<'hir>, ast: &'ast AstProgram) -> Self {
+    pub(crate) fn new(arena: &'hir HirArena<'hir>, ast: &'ast AstProgram) -> Self {
         Self { arena, ast }
     }
 }
 
 impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
-    pub fn lower(&self) -> HirResult<HirModule> {
+    pub(crate) fn lower(&self) -> HirResult<HirModule> {
         let mut module_body = HirModuleBody::default();
         let mut module_signature = HirModuleSignature::default();
 
@@ -50,7 +50,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             signature: module_signature,
         })
     }
-    pub fn visit_item(
+    pub(crate) fn visit_item(
         &self,
         module_body: &mut HirModuleBody<'hir>,
         module_signature: &mut HirModuleSignature<'hir>,
@@ -66,7 +66,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             AstItem::Import(i) => {
                 let hir = self.arena.intern(HirImport {
                     span: i.span,
-                    path: self.arena.names().get(&i.path),
+                    path: self.arena.names().get(i.path),
                     path_span: Span::empty(),
                     alias: None,
                     alias_span: None,
@@ -108,8 +108,8 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     fn visit_stmt(&self, node: &'ast AstStatement<'ast>) -> HirResult<&'hir HirStatement<'hir>> {
         match node {
             AstStatement::While(w) => {
-                let condition = self.visit_expr(&w.condition)?;
-                let body = self.visit_block(&w.body)?;
+                let condition = self.visit_expr(w.condition)?;
+                let body = self.visit_block(w.body)?;
                 let hir = self.arena.intern(HirStatement::While(HirWhileStmt {
                     span: node.span(),
                     condition,
@@ -118,7 +118,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 Ok(hir)
             }
             AstStatement::Let(l) => {
-                let name = self.arena.names().get(&l.name.name);
+                let name = self.arena.names().get(l.name.name);
                 let ty = match l.ty {
                     Some(ty) => self.visit_ty(ty)?,
                     None => self.arena.types().get_uninitialized_ty(),
@@ -134,12 +134,12 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 Ok(hir)
             }
             AstStatement::IfElse(i) => {
-                let condition = self.visit_expr(&i.condition)?;
-                let then_branch = self.arena.intern(self.visit_block(&i.body)?);
+                let condition = self.visit_expr(i.condition)?;
+                let then_branch = self.arena.intern(self.visit_block(i.body)?);
                 //If you don't type, the compiler will use it as an "Option<&mut HirBlock<'hir>>"
                 //Which is dumb asf
                 let else_branch: Option<&HirBlock<'hir>> = match i.else_body {
-                    Some(else_body) => Some(self.arena.intern(self.visit_block(&else_body)?)),
+                    Some(else_body) => Some(self.arena.intern(self.visit_block(else_body)?)),
                     None => None,
                 };
                 let hir = self.arena.intern(HirStatement::IfElse(HirIfElseStmt {
@@ -185,8 +185,8 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     fn visit_expr(&self, node: &'ast AstExpr<'ast>) -> HirResult<&'hir HirExpr<'hir>> {
         match node {
             AstExpr::Assign(a) => {
-                let target = self.visit_expr(&a.target)?;
-                let value = self.visit_expr(&a.value)?;
+                let target = self.visit_expr(a.target)?;
+                let value = self.visit_expr(a.value)?;
                 let hir = self.arena.intern(HirExpr::Assign(HirAssignExpr {
                     span: node.span(),
                     lhs: Box::new(target.clone()),
@@ -210,7 +210,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 Ok(hir)
             }
             AstExpr::UnaryOp(u) => {
-                let expr = self.visit_expr(&u.expr)?;
+                let expr = self.visit_expr(u.expr)?;
                 let hir = self.arena.intern(HirExpr::Unary(UnaryOpExpr {
                     span: node.span(),
                     op: match u.op {
@@ -224,11 +224,11 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 Ok(hir)
             }
             AstExpr::Call(c) => {
-                let callee = self.visit_expr(&c.callee)?;
+                let callee = self.visit_expr(c.callee)?;
                 let args = c
                     .args
-                    .into_iter()
-                    .map(|arg| self.visit_expr(arg).map(|expr| Box::new(expr.clone())))
+                    .iter()
+                    .map(|arg| self.visit_expr(arg).map(|expr| expr.clone()))
                     .collect::<HirResult<Vec<_>>>()?;
                 let hir = self.arena.intern(HirExpr::Call(HirFunctionCallExpr {
                     span: node.span(),
@@ -242,7 +242,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             }
             AstExpr::Identifier(i) => {
                 let hir = self.arena.intern(HirExpr::Ident(HirIdentExpr {
-                    name: self.arena.names().get(&i.name),
+                    name: self.arena.names().get(i.name),
                     span: i.span,
                     ty: self.arena.types().get_uninitialized_ty(),
                 }));
@@ -322,7 +322,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             .map(|arg| self.visit_func_param(arg))
             .collect::<HirResult<Vec<_>>>();
 
-        let body = self.visit_block(&node.body)?;
+        let body = self.visit_block(node.body)?;
         let signature = self.arena.intern(HirFunctionSignature {
             span: node.span,
             params: parameters?,
@@ -332,7 +332,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         });
         let fun = HirFunction {
             span: node.span,
-            name: self.arena.names().get(&node.name.name),
+            name: self.arena.names().get(node.name.name),
             name_span: node.name.span,
             signature,
             body,
@@ -344,7 +344,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         &self,
         node: &'ast AstObjField<'ast>,
     ) -> HirResult<&'hir HirFunctionParameterSignature<'hir>> {
-        let name = self.arena.names().get(&node.name.name);
+        let name = self.arena.names().get(node.name.name);
         let ty = self.visit_ty(node.ty)?;
 
         let hir = self.arena.intern(HirFunctionParameterSignature {
@@ -361,7 +361,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         &self,
         node: &'ast AstObjField<'ast>,
     ) -> HirResult<&'hir HirTypeParameterItemSignature<'hir>> {
-        let name = self.arena.names().get(&node.name.name);
+        let name = self.arena.names().get(node.name.name);
 
         let hir = self.arena.intern(HirTypeParameterItemSignature {
             span: node.span,

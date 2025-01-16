@@ -5,13 +5,13 @@ use crate::atlas_memory::vm_data::VMData;
 /// Need to find a way to make the memory shrink, grows, and garbage collect unused memory (by scanning the stack & VarMap)
 pub struct Memory {
     mem: Vec<Object>,
-    pub(crate) free: ObjectIndex,
+    pub free: ObjectIndex,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct ObjectIndex {
-    pub(crate) idx: u64,
+    pub idx: u64,
 }
 
 impl ObjectIndex {

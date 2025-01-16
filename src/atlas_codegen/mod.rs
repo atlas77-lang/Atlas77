@@ -15,10 +15,10 @@ use crate::{
 use arena::CodeGenArena;
 
 /// Result of codegen
-pub type CodegenResult<T> = Result<T, String>;
+pub(crate) type CodegenResult<T> = Result<T, String>;
 
 /// Unit of codegen
-pub struct CodeGenUnit<'hir, 'gen>
+pub(crate) struct CodeGenUnit<'hir, 'gen>
 where
     'gen: 'hir,
 {
@@ -30,7 +30,7 @@ where
 
 impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
     /// Create a new CodeGenUnit
-    pub fn new(hir: HirModule<'hir>, arena: CodeGenArena<'gen>) -> Self {
+    pub(crate) fn new(hir: HirModule<'hir>, arena: CodeGenArena<'gen>) -> Self {
         Self {
             hir,
             program: Program::new(),
@@ -39,14 +39,14 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         }
     }
     /// Take the HIR and convert it to a VM representation
-    pub fn compile(&mut self) -> CodegenResult<Program> {
+    pub(crate) fn compile(&mut self) -> CodegenResult<Program> {
         let mut labels: Vec<Label> = Vec::new();
         for func in self.hir.body.functions.clone() {
             let mut bytecode = Vec::new();
 
             let params = func.1.signature.params.clone();
-            self.generate_bytecode_args(params, &mut bytecode);
-            self.generate_bytecode_block(&func.1.body, &mut bytecode);
+            Self::generate_bytecode_args(params, &mut bytecode);
+            Self::generate_bytecode_block(&func.1.body, &mut bytecode);
 
             let len = bytecode.len();
 
@@ -63,26 +63,22 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         Ok(self.program)
     }
 
-    fn generate_bytecode_block(&mut self, block: &HirBlock<'hir>, bytecode: &mut Vec<Instruction>) {
+    fn generate_bytecode_block(block: &HirBlock<'hir>, bytecode: &mut Vec<Instruction>) {
         for stmt in &block.statements {
-            self.generate_bytecode_stmt(stmt, bytecode);
+            Self::generate_bytecode_stmt(stmt, bytecode);
         }
     }
 
-    fn generate_bytecode_stmt(
-        &mut self,
-        stmt: &HirStatement<'hir>,
-        bytecode: &mut Vec<Instruction>,
-    ) {
+    fn generate_bytecode_stmt(stmt: &HirStatement<'hir>, bytecode: &mut Vec<Instruction>) {
         match stmt {
             HirStatement::Return(e) => {
-                self.generate_bytecode_expr(e.value, bytecode);
+                Self::generate_bytecode_expr(e.value, bytecode);
                 bytecode.push(Instruction::Return);
             }
             HirStatement::IfElse(i) => {
-                self.generate_bytecode_expr(i.condition, bytecode);
+                Self::generate_bytecode_expr(i.condition, bytecode);
                 let mut then_body = Vec::new();
-                self.generate_bytecode_block(&i.then_branch, &mut then_body);
+                Self::generate_bytecode_block(i.then_branch, &mut then_body);
 
                 bytecode.push(Instruction::JmpZ {
                     pos: (then_body.len() + if i.else_branch.is_some() { 1 } else { 0 }) as isize,
@@ -90,7 +86,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 bytecode.append(&mut then_body);
                 if let Some(e) = i.else_branch {
                     let mut else_body = Vec::new();
-                    self.generate_bytecode_block(e, &mut else_body);
+                    Self::generate_bytecode_block(e, &mut else_body);
 
                     bytecode.push(Instruction::Jmp {
                         pos: (else_body.len() + 1) as isize,
@@ -100,21 +96,23 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             }
             HirStatement::While(w) => {
                 let start = bytecode.len() as isize;
-                self.generate_bytecode_expr(w.condition, bytecode);
+                Self::generate_bytecode_expr(w.condition, bytecode);
                 let mut body = Vec::new();
 
-                self.generate_bytecode_block(&w.body, &mut body);
+                Self::generate_bytecode_block(w.body, &mut body);
                 //If the condition is false jump to the end of the loop
                 bytecode.push(Instruction::JmpZ {
                     pos: (body.len() + 1) as isize,
                 });
                 bytecode.append(&mut body);
                 //Jump back to the start of the loop
-                bytecode.push(Instruction::Jmp { pos: start - bytecode.len() as isize });
+                bytecode.push(Instruction::Jmp {
+                    pos: start - bytecode.len() as isize,
+                });
             }
             HirStatement::Let(l) => {
                 let mut value = Vec::new();
-                self.generate_bytecode_expr(l.value, &mut value);
+                Self::generate_bytecode_expr(l.value, &mut value);
                 match l.ty {
                     HirTy::Int64(_) => {
                         value.push(Instruction::StoreI64 {
@@ -125,18 +123,18 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     _ => unimplemented!("Unsupported type for now"),
                 }
             }
-            HirStatement::Expr(e) => self.generate_bytecode_expr(e.expr, bytecode),
+            HirStatement::Expr(e) => Self::generate_bytecode_expr(e.expr, bytecode),
             _ => unimplemented!("Unsupported statement for now"),
         }
     }
 
-    fn generate_bytecode_expr(&mut self, expr: &HirExpr<'hir>, bytecode: &mut Vec<Instruction>) {
+    fn generate_bytecode_expr(expr: &HirExpr<'hir>, bytecode: &mut Vec<Instruction>) {
         match expr {
             HirExpr::Assign(a) => {
                 let lhs = a.lhs.as_ref();
                 match lhs {
                     HirExpr::Ident(i) => {
-                        self.generate_bytecode_expr(&a.rhs, bytecode);
+                        Self::generate_bytecode_expr(&a.rhs, bytecode);
                         match i.ty {
                             HirTy::Int64(_) => {
                                 bytecode.push(Instruction::StoreI64 {
@@ -167,8 +165,8 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 }
             }
             HirExpr::HirBinaryOp(b) => {
-                self.generate_bytecode_expr(&b.lhs, bytecode);
-                self.generate_bytecode_expr(&b.rhs, bytecode);
+                Self::generate_bytecode_expr(&b.lhs, bytecode);
+                Self::generate_bytecode_expr(&b.rhs, bytecode);
                 match b.op {
                     crate::atlas_hir::expr::HirBinaryOp::Add => {
                         bytecode.push(Instruction::AddI64);
@@ -208,12 +206,12 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             }
             HirExpr::Unary(u) => {
                 //The operator are not yet implemented
-                self.generate_bytecode_expr(&u.expr, bytecode);
+                Self::generate_bytecode_expr(&u.expr, bytecode);
             }
             //This need to be thoroughly tested
             HirExpr::Call(f) => {
                 for arg in &f.args {
-                    self.generate_bytecode_expr(arg, bytecode);
+                    Self::generate_bytecode_expr(arg, bytecode);
                 }
                 let callee = f.callee.as_ref();
                 match callee {
@@ -264,7 +262,6 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
     }
 
     fn generate_bytecode_args(
-        &mut self,
         args: Vec<&HirFunctionParameterSignature<'hir>>,
         bytecode: &mut Vec<Instruction>,
     ) {

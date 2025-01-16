@@ -1,121 +1,57 @@
 (
     labels: [
         (
-            name: "main",
+            name: "fib",
             position: 0,
             body: [
-                PushInt(0),
                 StoreI64(
-                    var_name: "sum",
+                    var_name: "n",
                 ),
-                PushInt(20000),
-                StoreI64(
-                    var_name: "num",
+                LoadI64(
+                    var_name: "n",
                 ),
                 PushInt(1),
-                StoreI64(
-                    var_name: "i",
-                ),
-                LoadI64(
-                    var_name: "i",
-                ),
-                PushInt(20000),
-                Lt,
+                Lte,
                 JmpZ(
-                    pos: 40,
-                ),
-                PushInt(1),
-                StoreI64(
-                    var_name: "j",
+                    pos: 3,
                 ),
                 LoadI64(
-                    var_name: "j",
+                    var_name: "n",
                 ),
-                LoadI64(
-                    var_name: "num",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 17,
-                ),
-                LoadI64(
-                    var_name: "num",
-                ),
-                LoadI64(
-                    var_name: "j",
-                ),
-                ModI64,
-                StoreI64(
-                    var_name: "mod",
-                ),
-                LoadI64(
-                    var_name: "mod",
-                ),
-                PushInt(0),
-                Eq,
-                JmpZ(
-                    pos: 4,
-                ),
-                LoadI64(
-                    var_name: "sum",
-                ),
-                LoadI64(
-                    var_name: "j",
-                ),
-                AddI64,
-                StoreI64(
-                    var_name: "sum",
-                ),
-                LoadI64(
-                    var_name: "j",
-                ),
-                PushInt(1),
-                AddI64,
-                StoreI64(
-                    var_name: "j",
-                ),
+                Return,
                 Jmp(
-                    pos: -20,
+                    pos: 11,
                 ),
                 LoadI64(
-                    var_name: "num",
-                ),
-                LoadI64(
-                    var_name: "sum",
-                ),
-                Eq,
-                JmpZ(
-                    pos: 2,
-                ),
-                LoadI64(
-                    var_name: "sum",
-                ),
-                ExternCall(
-                    name: "print",
-                    args: 1,
-                ),
-                PushInt(0),
-                StoreI64(
-                    var_name: "sum",
-                ),
-                LoadI64(
-                    var_name: "num",
+                    var_name: "n",
                 ),
                 PushInt(1),
                 SubI64,
-                StoreI64(
-                    var_name: "num",
+                CallFunction(
+                    name: "fib",
+                    args: 1,
                 ),
                 LoadI64(
-                    var_name: "i",
+                    var_name: "n",
                 ),
-                PushInt(1),
+                PushInt(2),
+                SubI64,
+                CallFunction(
+                    name: "fib",
+                    args: 1,
+                ),
                 AddI64,
-                StoreI64(
-                    var_name: "i",
-                ),
-                Jmp(
-                    pos: -43,
+                Return,
+            ],
+        ),
+        (
+            name: "main",
+            position: 18,
+            body: [
+                PushInt(20),
+                CallFunction(
+                    name: "fib",
+                    args: 1,
                 ),
             ],
         ),

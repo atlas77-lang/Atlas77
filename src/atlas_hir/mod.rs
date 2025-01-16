@@ -16,13 +16,13 @@ pub mod stmt;
 pub mod ty;
 
 #[derive(Debug, Clone, Serialize, Default)]
-pub struct HirModuleBody<'hir> {
+pub(crate) struct HirModuleBody<'hir> {
     pub functions: BTreeMap<&'hir str, HirFunction<'hir>>,
     pub imports: Vec<&'hir HirImport<'hir>>,
 }
 
 #[derive(Debug, Clone, Serialize, Default)]
-pub struct HirModule<'hir> {
+pub(crate) struct HirModule<'hir> {
     pub body: HirModuleBody<'hir>,
     pub signature: HirModuleSignature<'hir>,
 }

@@ -1,15 +1,15 @@
 use bumpalo::Bump;
 
-pub struct CodeGenArena<'arena> {
+pub(crate) struct CodeGenArena<'arena> {
     allocator: &'arena Bump,
 }
 
 impl<'arena> CodeGenArena<'arena> {
-    pub fn new(bump: &'arena Bump) -> Self {
+    pub(crate) fn new(bump: &'arena Bump) -> Self {
         Self { allocator: bump }
     }
 
-    pub fn alloc<T>(&self, v: T) -> &'arena mut T {
+    pub(crate) fn alloc<T>(&self, v: T) -> &'arena mut T {
         self.allocator.alloc(v)
     }
 

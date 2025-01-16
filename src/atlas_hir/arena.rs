@@ -12,7 +12,7 @@ use super::ty::{
     HirUnsignedIntTy,
 };
 
-pub struct HirArena<'arena> {
+pub(crate) struct HirArena<'arena> {
     allocator: Rc<Bump>,
     type_arena: TypeArena<'arena>,
     name_arena: HirNameArena<'arena>,
@@ -20,7 +20,7 @@ pub struct HirArena<'arena> {
 }
 
 impl<'arena> HirArena<'arena> {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let allocator = Rc::new(Bump::new());
         Self {
             type_arena: TypeArena::new(allocator.clone()),
@@ -43,20 +43,20 @@ impl<'arena> HirArena<'arena> {
     }
 }
 
-pub struct HirNameArena<'arena> {
+pub(crate) struct HirNameArena<'arena> {
     allocator: Rc<Bump>,
     intern: RefCell<HashSet<&'arena str>>,
 }
 
 impl<'arena> HirNameArena<'arena> {
-    pub fn new(allocator: Rc<Bump>) -> Self {
+    pub(crate) fn new(allocator: Rc<Bump>) -> Self {
         Self {
             allocator,
             intern: RefCell::new(HashSet::new()),
         }
     }
 
-    pub fn get(&'arena self, name: &str) -> &'arena str {
+    pub(crate) fn get(&'arena self, name: &str) -> &'arena str {
         if let Some(interned) = self.intern.borrow().get(name) {
             return interned;
         }
@@ -66,13 +66,13 @@ impl<'arena> HirNameArena<'arena> {
     }
 }
 
-pub struct TypeArena<'arena> {
+pub(crate) struct TypeArena<'arena> {
     allocator: Rc<Bump>,
     intern: RefCell<HashMap<HirTyId, &'arena HirTy<'arena>>>,
 }
 
 impl<'arena> TypeArena<'arena> {
-    pub fn new(allocator: Rc<Bump>) -> Self {
+    pub(crate) fn new(allocator: Rc<Bump>) -> Self {
         Self {
             allocator,
             intern: RefCell::new(HashMap::new()),
