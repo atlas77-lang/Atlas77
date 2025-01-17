@@ -1,3 +1,5 @@
+//Should work in Atlas v0.5.1 and later
+
 struct Vector3 {
     x: f32;
     y: f32;

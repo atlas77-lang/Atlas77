@@ -1,6 +1,6 @@
-extern func len<T>(l: [T]) -> u64;
-extern func get<T>(l: [T], i: u64) -> T;
-extern func set<T>(l: [T], i: u64, v: T) -> [T];
-extern func push<T>(l: [T], v: T) -> [T];
-extern func pop<T>(l: [T]) -> [T];
-extern func slice<T>(l: [T], start: u64, end: u64) -> [T];
+extern len<T>(l: [T]) -> u64;
+extern get<T>(l: [T], i: u64) -> T;
+extern set<T>(l: [T], i: u64, v: T) -> [T];
+extern push<T>(l: [T], v: T) -> [T];
+extern pop<T>(l: [T]) -> [T];
+extern slice<T>(l: [T], start: u64, end: u64) -> [T];

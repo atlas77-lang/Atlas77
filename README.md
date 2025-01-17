@@ -114,11 +114,11 @@ func fib(n: i64) -> i64 {
 
 func main() -> i64 {
     let n: i64 = 10;
-    println(fib(n));
+    print_int(fib(n));
 }
 ```
 
-_For more examples, please refer to the [examples folder](https://github.com/atlas77-lang/Atlas77/tree/main/examples)_
+_For more examples, please refer to the [examples folder](./examples/README.MD)_
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -260,4 +260,3 @@ Project Link: [https://github.com/atlas77-lang/Atlas77](https://github.com/atlas
 [issues-url]: https://github.com/atlas77-lang/Atlas77/issues
 [license-shield]: https://img.shields.io/github/license/atlas77-lang/Atlas77.svg?style=for-the-badge
 [license-url]: https://github.com/atlas77-lang/Atlas77/blob/master/LICENSE.txt
-

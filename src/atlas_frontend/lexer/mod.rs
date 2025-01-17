@@ -86,8 +86,6 @@ lexer_builder! {
         "bool"      => BoolTy,
         //Complex Types
         "str"       => StrTy,
-        "List"      => ListTy,
-        "Map"       => MapTy,
     },
     Number {
         trailing {

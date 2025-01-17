@@ -1,7 +1,7 @@
 import "std/io"
 
 func main() -> i64 {
-    println(square(5));
+    print_int(square(5));
 }
 
 func square(x: i64) -> i64 {

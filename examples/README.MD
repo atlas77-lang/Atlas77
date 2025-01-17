@@ -11,6 +11,10 @@ This file keeps track of all the working examples.
 | [Functions](functions.atlas) | 💭 |
 | [List](list.atlas) | 🔧 |
 | [Perfect Number](perfect_number.atlas) | ✅ |
+| [String Concatenation](string_concat.atlas) | 💭 |
+| [Struct](struct.atlas) | 💤 |
+| [Type Checking](type_check.atlas) | ✅ |
+| [While](while.atlas) | ✅ |
 
 
 ## Legend
@@ -19,5 +23,3 @@ This file keeps track of all the working examples.
 - 💭: Being thought of
 - 🔧: Being implemented
 - ✅: Working
-
-

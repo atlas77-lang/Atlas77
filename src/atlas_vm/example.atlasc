@@ -1,3 +1,0 @@
-".atlasc" will be the extension used by the Atlas77 compiler.
-It will output multiple files, one for each module in the source code.
-It will be relatively similar to the ".class" files in Java.

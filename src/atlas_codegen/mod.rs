@@ -53,7 +53,7 @@ where
             let mut bytecode = Vec::new();
 
             let params = func.1.signature.params.clone();
-            self.generate_bytecode_args(params, &mut bytecode, self.src.clone())?;
+            self.generate_bytecode_args(params, &mut bytecode)?;
             self.generate_bytecode_block(&func.1.body, &mut bytecode, self.src.clone())?;
 
             if func.0 == "main" {
@@ -362,7 +362,6 @@ where
         &self,
         args: Vec<&HirFunctionParameterSignature<'hir>>,
         bytecode: &mut Vec<Instruction>,
-        src: String,
     ) -> HirResult<()> {
         let args = args.iter().rev().cloned().collect::<Vec<_>>();
         for arg in args {

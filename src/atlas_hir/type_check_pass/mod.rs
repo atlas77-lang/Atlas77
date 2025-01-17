@@ -58,13 +58,16 @@ impl<'hir> ContextFunction<'hir> {
         let scope = self.scopes.last().unwrap();
         match scope.get(name) {
             Some(s) => Some(s),
-            //check the previous scopes
             None => {
-                if let Some(parent) = scope.parent {
-                    self.scopes[parent].get(name)
-                } else {
-                    None
+                let mut parent = scope.parent;
+                while parent.is_some() {
+                    let parent_scope = &self.scopes[parent.unwrap()];
+                    match parent_scope.get(name) {
+                        Some(s) => return Some(s),
+                        None => parent = parent_scope.parent,
+                    }
                 }
+                None
             }
         }
     }
@@ -74,7 +77,10 @@ impl<'hir> ContextFunction<'hir> {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct ContextScope<'hir> {
+    ///I should stop using HashMap everywhere. A ContextVariable should be `(depth, &'hir str)`
+    /// depth as in the scope depth
     pub variables: HashMap<&'hir str, ContextVariable<'hir>>,
     pub parent: Option<usize>,
 }
@@ -94,8 +100,9 @@ impl<'hir> ContextScope<'hir> {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct ContextVariable<'hir> {
-    pub name: &'hir str,
+    pub _name: &'hir str,
     pub name_span: Span,
     pub ty: &'hir HirTy<'hir>,
     pub ty_span: Span,
@@ -138,7 +145,7 @@ impl<'hir> TypeChecker<'hir> {
                 .insert(
                     param.name,
                     ContextVariable {
-                        name: param.name,
+                        _name: param.name,
                         name_span: param.span,
                         ty: param.ty,
                         ty_span: param.ty_span,
@@ -204,6 +211,7 @@ impl<'hir> TypeChecker<'hir> {
                         src: self.src.clone(),
                     }));
                 }
+                //there should be just "self.context.new_scope()" and "self.context.end_scope()"
                 self.context
                     .last_mut()
                     .unwrap()
@@ -284,7 +292,7 @@ impl<'hir> TypeChecker<'hir> {
                     .insert(
                         c.name,
                         ContextVariable {
-                            name: c.name,
+                            _name: c.name,
                             name_span: c.name_span,
                             ty: c.ty,
                             ty_span: c.ty_span,
@@ -320,7 +328,7 @@ impl<'hir> TypeChecker<'hir> {
                     .insert(
                         l.name,
                         ContextVariable {
-                            name: l.name,
+                            _name: l.name,
                             name_span: l.name_span,
                             ty: l.ty,
                             ty_span: l.ty_span,
@@ -418,7 +426,19 @@ impl<'hir> TypeChecker<'hir> {
                         todo!("TypeChecker::check_expr")
                     }
                 };
-                let func = *self.signature.functions.get(name).unwrap();
+                let func = match self.signature.functions.get(name) {
+                    Some(f) => *f,
+                    None => {
+                        return Err(HirError::UnknownType(UnknownTypeError {
+                            name: name.to_string(),
+                            span: SourceSpan::new(
+                                SourceOffset::from(f.span.start()),
+                                f.span.end() - f.span.start(),
+                            ),
+                            src: self.src.clone(),
+                        }))
+                    }
+                };
 
                 if func.params.len() != f.args.len() {
                     return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
@@ -479,9 +499,8 @@ impl<'hir> TypeChecker<'hir> {
                                         src: self.src.clone(),
                                     },
                                 ));
-                            } else {
-                                ctx_var
                             }
+                            ctx_var
                         }
                         None => {
                             return Err(HirError::UnknownType(UnknownTypeError {

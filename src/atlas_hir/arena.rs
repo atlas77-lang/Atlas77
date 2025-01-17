@@ -79,7 +79,7 @@ impl<'arena> TypeArena<'arena> {
         }
     }
 
-    pub fn get_type(&'arena self, id: HirTyId) -> Option<&'arena HirTy<'arena>> {
+    pub fn _get_type(&'arena self, id: HirTyId) -> Option<&'arena HirTy<'arena>> {
         self.intern.borrow().get(&id).copied()
     }
 

@@ -3,9 +3,9 @@ struct Time {
     nsec: i64;
 }
 
-extern func now() -> Time;
-extern func format_time(t: Time, fmt: str) -> str;
-extern func sleep(t: Time);
+extern now() -> Time;
+extern format_time(t: Time, fmt: str) -> str;
+extern sleep(t: Time);
 
 func format_time_iso(t: Time) -> str {
     return format_time(t, "%Y-%m-%dT%H:%M:%S");

@@ -17,6 +17,8 @@ func main() -> i64 {
 }
 ```
 
+> Do know that strings are not implemented yet, so this is just an example of how it will look like
+
 Save this code to a `.atlas` file, then run it directly with `atlas run <FILE_PATH>`
 
 ## 3. Comments
@@ -61,7 +63,7 @@ import "std/io"
 func main() -> i64 {
     let x: i64 = 5;
     x = 10;
-    print(x); // Output: 10
+    print_int(x); // Output: 10
 
     const y: i64 = 5;
     y = 10; // Error: Cannot assign to a constant variable
@@ -74,25 +76,27 @@ Atlas77 has several built-in data types, including integers, floating-point numb
 
 | Data Type | Description | State |
 | --------- | ----------- | ----- |
-| `i8`      | 8-bit signed integer | WIP |
-| `i16`     | 16-bit signed integer | WIP |
-| `i32`     | 32-bit signed integer | WIP |
-| `i64`     | 64-bit signed integer | Done |
-| `isize`   | Platform-dependent signed integer | WIP |
-| `u8`      | 8-bit unsigned integer | WIP |
-| `u16`     | 16-bit unsigned integer | WIP |
-| `u32`     | 32-bit unsigned integer | WIP |
-| `u64`     | 64-bit unsigned integer | Done |
-| `usize`   | Platform-dependent unsigned integer | WIP |
-| `f32`     | 32-bit floating-point number | WIP |
-| `f64`     | 64-bit floating-point number | Done |
-| `bool`    | Boolean value (`true` or `false`) | Done |
-| `char`    | Unicode character | WIP |
-| `str`     | String | WIP |
-| `array`   | Array | WIP |
+| `i8`      | 8-bit signed integer | 💤 |
+| `i16`     | 16-bit signed integer | 💤 |
+| `i32`     | 32-bit signed integer | 💤 |
+| `i64`     | 64-bit signed integer | ✅ |
+| `isize`   | Platform-dependent signed integer | 💤 |
+| `u8`      | 8-bit unsigned integer | 💤 |
+| `u16`     | 16-bit unsigned integer | 💤 |
+| `u32`     | 32-bit unsigned integer | 💤 |
+| `u64`     | 64-bit unsigned integer | ✅ |
+| `usize`   | Platform-dependent unsigned integer | 💤 |
+| `f32`     | 32-bit floating-point number | 💤 |
+| `f64`     | 64-bit floating-point number | ✅ |
+| `bool`    | Boolean value (`true` or `false`) | ✅ |
+| `char`    | Unicode character | 💭 |
+| `str`     | String | 💭 |
+| `array`   | Array (syntax: `[YourType]`) | 💭 |
 
-> Note: The `str` type is a sequence of Unicode characters and is immutable, later on a `String` type will be introduced as a more flexible alternative to `str` a bit like Rust's `String` & `&str`. The `array` type is a fixed-size collection of elements of the same type (e.g., `[i64; 5]`).
-
+> Note: The `str` and `array` types will be mutable and resizable. More powerful types for both Strings and Arrays will be implemented in the future (e.g., `Vec<YourType>` for arrays & `String`).
+>
+> NB: The `char` type is not implemented yet, but it will be a 32-bit Unicode character.
+>
 > NB 2: Since this is a VM-based language, all numeric types smaller than 64 bits (e.g., u8, u16, u32) are internally represented as 64-bit values for simplicity and consistency. However, they will behave as their original types, respecting their size and overflow semantics. In the future, packed types may be introduced to optimize memory usage for arrays (e.g., ``[u8]`` could be represented as ``[u8x8]``, ``[u16]`` as ``[u16x4]``, etc.). At present, the minimum memory size for numeric types is 8 bytes.
 
 
@@ -119,10 +123,10 @@ Atlas77 supports several control structures, including `if` statements, `match` 
 
 | Control Structure | Description | State |
 | ----------------- | ----------- | ----- |
-| `if` statement    | Conditional statement | Done |
-| `match` expression | Pattern matching expression | WIP |
-| `while` loop      | Loop with a condition | Done |
-| `for` loop        | Loop over a range or collection | WIP |
+| `if` statement    | Conditional statement | ✅ |
+| `match` expression | Pattern matching expression | 💤 |
+| `while` loop      | Loop with a condition | ✅ |
+| `for` loop        | Loop over a range or collection | 💤 |
 
 > Note: Nested if-else (i.e. `if {} else if {} else {}`) isn't supported yet.
 
@@ -161,3 +165,13 @@ func main() -> i64 {
     print("Hello, World!");
 }
 ```
+
+As of writing this document, the following standard libraries are available:
+
+- `std/io`: Input/output functions
+    - `print_int(i: i64)`: Print an integer to the console
+    - `print_float(f: f64)`: Print a floating-point number to the console
+    - `print_uint(u: u64)`: Print an unsigned integer to the console
+    - `print_bool(b: bool)`: Print a boolean value to the console
+
+> Yes it is very limited, but tbh `str`, `array` & structs are still not implemented, so it's a bit hard to implement more complex functions.

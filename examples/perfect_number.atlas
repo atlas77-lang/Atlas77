@@ -1,7 +1,9 @@
+import "std/io"
+
 func check_perfect_number(n: i64) -> i64 {
     let sum: i64 = sum_of_divisors(n, n - 1, 0);
     if n == sum {
-        print(sum);
+        print_int(sum);
     }
     return -1; // Dummy return value
 }
@@ -10,7 +12,7 @@ func main() -> i64 {
     //To big for the current stack implementation
     //Mostly because of the amount of recursive calls
     //Sub 10000 values are fine
-    return test_numbers(20000);
+    return test_numbers(500);
 }
 
 func sum_of_divisors(n: i64, divisor: i64, sum: i64) -> i64 {
