@@ -1,11 +1,12 @@
-func main() -> i64 {
-    fib(20);
+func main() -> f64 {
+    let tmp: i64 = fib(20.0);
+    return fib(20.0);
 }
 
-func fib(n: i64) -> i64 {
-    if n <= 1 {
+func fib(n: f64) -> f64 {
+    if n <= 1.0 {
         return n;
     } else {
-        return fib(n - 1) + fib(n - 2);
+        return fib(n - 1.0) + fib(n - 2.0);
     }
 }

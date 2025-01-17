@@ -27,11 +27,71 @@ pub(crate) struct TypeChecker<'hir> {
     ///
     /// Should be rework in the future, variables should only be represented as (usize, usize)
     ///  (i.e. (scope, var_name) var_name being in the arena)
-    context: Vec<HashMap<String, ContextVariable<'hir>>>, //bool is for mutability true=mut false=const
+    context: Vec<HashMap<String, ContextFunction<'hir>>>,
     signature: HirModuleSignature<'hir>,
     current_func_name: Option<&'hir str>,
     // Source code
     src: String,
+}
+
+pub(crate) struct ContextFunction<'hir> {
+    pub scopes: Vec<ContextScope<'hir>>,
+}
+
+impl<'hir> ContextFunction<'hir> {
+    pub fn new() -> Self {
+        Self {
+            scopes: vec![ContextScope::new(None)],
+        }
+    }
+    pub fn new_scope(&mut self) -> usize {
+        let parent = self.scopes.len() - 1;
+        self.scopes.push(ContextScope::new(Some(parent)));
+        parent
+    }
+    pub fn end_scope(&mut self) -> usize {
+        self.scopes.pop();
+        self.scopes.len() - 1
+    }
+
+    pub fn get(&self, name: &str) -> Option<&ContextVariable<'hir>> {
+        let scope = self.scopes.last().unwrap();
+        match scope.get(name) {
+            Some(s) => Some(s),
+            //check the previous scopes
+            None => {
+                if let Some(parent) = scope.parent {
+                    self.scopes[parent].get(name)
+                } else {
+                    None
+                }
+            }
+        }
+    }
+
+    pub fn insert(&mut self, name: &'hir str, var: ContextVariable<'hir>) {
+        self.scopes.last_mut().unwrap().insert(name, var);
+    }
+}
+
+pub(crate) struct ContextScope<'hir> {
+    pub variables: HashMap<&'hir str, ContextVariable<'hir>>,
+    pub parent: Option<usize>,
+}
+
+impl<'hir> ContextScope<'hir> {
+    pub fn new(parent: Option<usize>) -> Self {
+        Self {
+            variables: HashMap::new(),
+            parent,
+        }
+    }
+    pub fn get(&self, name: &str) -> Option<&ContextVariable<'hir>> {
+        self.variables.get(name)
+    }
+    pub fn insert(&mut self, name: &'hir str, var: ContextVariable<'hir>) {
+        self.variables.insert(name, var);
+    }
 }
 
 pub(crate) struct ContextVariable<'hir> {
@@ -65,18 +125,27 @@ impl<'hir> TypeChecker<'hir> {
 
     pub fn check_func(&mut self, func: &HirFunction<'hir>) -> HirResult<()> {
         self.context.push(HashMap::new());
+        self.context.last_mut().unwrap().insert(
+            self.current_func_name.unwrap().to_string(),
+            ContextFunction::new(),
+        );
         for param in &func.signature.params {
-            self.context.last_mut().unwrap().insert(
-                param.name.to_string(),
-                ContextVariable {
-                    name: param.name,
-                    name_span: param.span,
-                    ty: param.ty,
-                    ty_span: param.ty_span,
-                    is_mut: false,
-                    span: param.span,
-                },
-            );
+            self.context
+                .last_mut()
+                .unwrap()
+                .get_mut(self.current_func_name.unwrap())
+                .unwrap()
+                .insert(
+                    param.name,
+                    ContextVariable {
+                        name: param.name,
+                        name_span: param.span,
+                        ty: param.ty,
+                        ty_span: param.ty_span,
+                        is_mut: false,
+                        span: param.span,
+                    },
+                );
         }
         for stmt in &func.body.statements {
             self.check_stmt(stmt)?;
@@ -135,33 +204,59 @@ impl<'hir> TypeChecker<'hir> {
                         src: self.src.clone(),
                     }));
                 }
-                self.context.push(HashMap::new());
+
+                self.context
+                    .last_mut()
+                    .unwrap()
+                    .get_mut(self.current_func_name.unwrap())
+                    .unwrap()
+                    .new_scope();
                 for stmt in &i.then_branch.statements {
                     self.check_stmt(stmt)?;
                 }
-                self.context.pop();
+                self.context
+                    .last_mut()
+                    .unwrap()
+                    .get_mut(self.current_func_name.unwrap())
+                    .unwrap()
+                    .end_scope();
                 if let Some(else_branch) = &i.else_branch {
-                    self.context.push(HashMap::new());
+                    self.context
+                        .last_mut()
+                        .unwrap()
+                        .get_mut(self.current_func_name.unwrap())
+                        .unwrap()
+                        .new_scope();
                     for stmt in &else_branch.statements {
                         self.check_stmt(stmt)?;
                     }
-                    self.context.pop();
+                    self.context
+                        .last_mut()
+                        .unwrap()
+                        .get_mut(self.current_func_name.unwrap())
+                        .unwrap()
+                        .end_scope();
                 }
                 Ok(())
             }
             HirStatement::Const(c) => {
                 let ty = HirTyId::from(c.ty);
-                self.context.last_mut().unwrap().insert(
-                    c.name.to_string(),
-                    ContextVariable {
-                        name: c.name,
-                        name_span: c.name_span,
-                        ty: c.ty,
-                        ty_span: c.ty_span,
-                        is_mut: false,
-                        span: c.span,
-                    },
-                );
+                self.context
+                    .last_mut()
+                    .unwrap()
+                    .get_mut(self.current_func_name.unwrap())
+                    .unwrap()
+                    .insert(
+                        c.name,
+                        ContextVariable {
+                            name: c.name,
+                            name_span: c.name_span,
+                            ty: c.ty,
+                            ty_span: c.ty_span,
+                            is_mut: false,
+                            span: c.span,
+                        },
+                    );
                 let ty_value = self.check_expr(&c.value)?;
                 if HirTyId::from(ty_value) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
@@ -182,17 +277,22 @@ impl<'hir> TypeChecker<'hir> {
             }
             HirStatement::Let(l) => {
                 let ty = HirTyId::from(l.ty);
-                self.context.last_mut().unwrap().insert(
-                    l.name.to_string(),
-                    ContextVariable {
-                        name: l.name,
-                        name_span: l.name_span,
-                        ty: l.ty,
-                        ty_span: l.ty_span,
-                        is_mut: true,
-                        span: l.span,
-                    },
-                );
+                self.context
+                    .last_mut()
+                    .unwrap()
+                    .get_mut(self.current_func_name.unwrap())
+                    .unwrap()
+                    .insert(
+                        l.name,
+                        ContextVariable {
+                            name: l.name,
+                            name_span: l.name_span,
+                            ty: l.ty,
+                            ty_span: l.ty_span,
+                            is_mut: true,
+                            span: l.span,
+                        },
+                    );
                 let ty_value = self.check_expr(&l.value)?;
                 if HirTyId::from(ty_value) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
@@ -274,6 +374,7 @@ impl<'hir> TypeChecker<'hir> {
                     _ => Ok(lhs),
                 }
             }
+            //Todo, add support for extern func
             HirExpr::Call(f) => {
                 let callee = f.callee.as_ref();
                 let name = match callee {
@@ -320,12 +421,15 @@ impl<'hir> TypeChecker<'hir> {
                 let lhs = match a.lhs.as_ref() {
                     HirExpr::Ident(i) => match self.context.last().unwrap().get(i.name) {
                         Some(ctx_var) => {
-                            if !ctx_var.is_mut {
+                            if !ctx_var.get(i.name).unwrap().is_mut {
                                 return Err(HirError::TryingToMutateImmutableVariable(
                                     TryingToMutateImmutableVariableError {
                                         const_loc: SourceSpan::new(
-                                            SourceOffset::from(ctx_var.span.start()),
-                                            ctx_var.name_span.end() - ctx_var.span.start(),
+                                            SourceOffset::from(
+                                                ctx_var.get(i.name).unwrap().span.start(),
+                                            ),
+                                            ctx_var.get(i.name).unwrap().span.end()
+                                                - ctx_var.get(i.name).unwrap().span.start(),
                                         ),
                                         var_name: i.name.to_string(),
                                         span: SourceSpan::new(
@@ -336,7 +440,7 @@ impl<'hir> TypeChecker<'hir> {
                                     },
                                 ));
                             } else {
-                                ctx_var.ty
+                                ctx_var.get(i.name).unwrap().ty
                             }
                         }
                         None => {
@@ -374,7 +478,14 @@ impl<'hir> TypeChecker<'hir> {
                 }
             }
             HirExpr::Ident(i) => {
-                if let Some(ctx_var) = self.context.last().unwrap().get(i.name) {
+                if let Some(ctx_var) = self
+                    .context
+                    .last()
+                    .unwrap()
+                    .get(self.current_func_name.unwrap())
+                    .unwrap()
+                    .get(i.name)
+                {
                     Ok(ctx_var.ty)
                 } else {
                     Err(HirError::UnknownType(UnknownTypeError {

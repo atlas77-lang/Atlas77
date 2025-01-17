@@ -1,66 +1,68 @@
 (
     labels: [
         (
-            name: "main",
+            name: "fib",
             position: 0,
             body: [
+                StoreF64(
+                    var_name: "n",
+                ),
+                LoadI64(
+                    var_name: "n",
+                ),
                 PushFloat(1.0),
-                StoreF64(
-                    var_name: "one",
-                ),
-                PushFloat(3.14159),
-                StoreF64(
-                    var_name: "PI",
-                ),
-                PushFloat(3.0),
-                StoreI64(
-                    var_name: "PI",
-                ),
-                PushInt(5),
-                PushInt(5),
-                AddI64,
-                StoreI64(
-                    var_name: "five",
-                ),
-                PushInt(1),
-                PushInt(1),
-                CallFunction(
-                    name: "test",
-                    args: 2,
-                ),
-                PushInt(5),
-                PushInt(5),
-                Eq,
+                Lte,
                 JmpZ(
-                    pos: 2,
+                    pos: 3,
                 ),
-                PushInt(5),
-                StoreI64(
-                    var_name: "a",
+                LoadI64(
+                    var_name: "n",
                 ),
-                Halt,
+                Return,
+                Jmp(
+                    pos: 11,
+                ),
+                LoadI64(
+                    var_name: "n",
+                ),
+                PushFloat(1.0),
+                SubI64,
+                CallFunction(
+                    name: "fib",
+                    args: 1,
+                ),
+                LoadI64(
+                    var_name: "n",
+                ),
+                PushFloat(2.0),
+                SubI64,
+                CallFunction(
+                    name: "fib",
+                    args: 1,
+                ),
+                AddI64,
+                Return,
             ],
         ),
         (
-            name: "test",
-            position: 19,
+            name: "main",
+            position: 18,
             body: [
-                StoreI64(
-                    var_name: "b",
+                PushFloat(20.0),
+                CallFunction(
+                    name: "fib",
+                    args: 1,
                 ),
-                StoreI64(
-                    var_name: "a",
+                StoreF64(
+                    var_name: "tmp",
                 ),
-                LoadI64(
-                    var_name: "a",
+                PushFloat(20.0),
+                CallFunction(
+                    name: "fib",
+                    args: 1,
                 ),
-                LoadI64(
-                    var_name: "b",
-                ),
-                AddI64,
-                StoreI64(
-                    var_name: "c",
-                ),
+                Return,
+                Halt,
             ],
         ),
     ],

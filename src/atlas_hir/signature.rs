@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use atlas_core::prelude::Span;
 use serde::Serialize;
 
-use super::ty::HirTy;
+use super::ty::{HirTy, HirUnitTy};
 
 /// An HirModuleSignature represents the API of a module.
 ///
@@ -23,6 +23,20 @@ pub(crate) struct HirFunctionSignature<'hir> {
     pub return_ty_span: Option<Span>,
     pub is_external: bool,
 }
+
+impl Default for HirFunctionSignature<'_> {
+    fn default() -> Self {
+        Self {
+            span: Span::default(),
+            params: Vec::new(),
+            type_params: Vec::new(),
+            return_ty: &HirTy::Unit(HirUnitTy {}),
+            return_ty_span: None,
+            is_external: false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct HirTypeParameterItemSignature<'hir> {
     pub span: Span,

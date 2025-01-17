@@ -7,10 +7,10 @@ func main() {
     if 5 == 5 {
         let a: i64 = 5;
     }
-    b = 6;
+    
 }
 
 func test(a: i64, b: i64) -> i64 {
     let c: i64 = a + b;
-    return 6.0;
+    return 6;
 }
