@@ -94,7 +94,6 @@ impl<'run> Atlas77VM<'run> {
         }
         while self.pc < self.program.len() {
             let instr = self.program[self.pc].clone();
-            //println!("Current Instruction: {:?}", instr);
             self.execute_instruction(instr)?;
         }
         self.stack.pop()

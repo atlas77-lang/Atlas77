@@ -6,6 +6,8 @@ use rand::{thread_rng, Rng};
 
 use crate::atlas_vm::vm_state::VMState;
 
+pub const MATH_ATLAS: &'static str = include_str!("math.atlas");
+
 pub const MATH_FUNCTIONS: [(&str, CallBack); 7] = [
     ("abs", abs),
     ("pow", pow),

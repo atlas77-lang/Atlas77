@@ -4,11 +4,6 @@ use serde::Serialize;
 use super::{signature::HirFunctionSignature, stmt::HirBlock};
 
 #[derive(Debug, Clone, Serialize)]
-pub(crate) enum HirItem<'hir> {
-    Function(HirFunction<'hir>),
-    _Import(HirImport<'hir>),
-}
-#[derive(Debug, Clone, Serialize)]
 pub(crate) struct HirFunction<'hir> {
     pub span: Span,
     pub name: &'hir str,

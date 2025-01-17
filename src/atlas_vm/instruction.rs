@@ -112,7 +112,7 @@ pub struct Program<'vm> {
     pub libraries: &'vm [&'vm ImportedLibrary],
 }
 
-impl<'vm> Index<usize> for Program<'vm> {
+impl Index<usize> for Program<'_> {
     type Output = Instruction;
 
     fn index(&self, index: usize) -> &Self::Output {

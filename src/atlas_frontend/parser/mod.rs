@@ -23,7 +23,7 @@ use crate::atlas_frontend::lexer::{Literal, Token, TokenKind, TokenVec};
 use arena::AstArena;
 
 pub(crate) struct Parser<'ast> {
-    arena: AstArena<'ast>,
+    arena: &'ast AstArena<'ast>,
     tokens: Vec<Token>,
     //for error reporting
     _file_path: PathBuf,
@@ -39,7 +39,7 @@ pub(crate) fn remove_comments(toks: Vec<Token>) -> Vec<Token> {
 
 impl<'ast> Parser<'ast> {
     pub(crate) fn new(
-        arena: AstArena<'ast>,
+        arena: &'ast AstArena<'ast>,
         tokens: Vec<Token>,
         _file_path: PathBuf,
         src: String,
@@ -542,9 +542,12 @@ impl<'ast> Parser<'ast> {
         let _ = self.advance();
         let name = self.parse_identifier()?;
         self.expect(TokenKind::LParen)?;
-        let mut params = vec![];
+        let mut args_name = vec![];
+        let mut args_ty = vec![];
         while self.current().kind() != TokenKind::RParen {
-            params.push(self.parse_type()?);
+            args_name.push(self.parse_identifier()?);
+            self.expect(TokenKind::Colon)?;
+            args_ty.push(self.parse_type()?);
             if self.current().kind() == TokenKind::Comma {
                 let _ = self.advance();
             }
@@ -555,7 +558,8 @@ impl<'ast> Parser<'ast> {
         let node = AstExternFunction {
             span: Span::union_span(name.span, ret_ty.span()),
             name: self.arena.alloc(name),
-            args: self.arena.alloc_vec(params),
+            args_name: self.arena.alloc_vec(args_name),
+            args_ty: self.arena.alloc_vec(args_ty),
             ret: self.arena.alloc(ret_ty),
         };
         Ok(node)
@@ -839,31 +843,31 @@ mod tests {
     #[test]
     fn test_parse_struct() -> Result<()> {
         let input = r#"
-import "foo.atlas" as foo
-import "std/io"
-//struct fields are public by default
-struct Foo {
-    bar: &str;
-    baz: f64;
-}
-extern print(&str) -> unit
-func main() -> i64 {
-    let test: str = "Hello World";
-    if test {
-        print(test);
-    } else {
-        print("Goodbye World");
-    }
-    while test {
-        break;
-        continue;
-        return b;
-        let a: i64 = "a";
-    }
-    print("Hello World");
-    index[0];
-    0;
-}
+        import "foo.atlas" as foo
+        import "std/io"
+        //struct fields are public by default
+        struct Foo {
+            bar: &str;
+            baz: f64;
+        }
+        extern print(val: &str) -> unit
+        func main() -> i64 {
+            let test: str = "Hello World";
+            if test {
+                print(test);
+            } else {
+                print("Goodbye World");
+            }
+            while test {
+                break;
+                continue;
+                return b;
+                let a: i64 = "a";
+            }
+            print("Hello World");
+            index[0];
+            0;
+        }
         "#
         .to_string();
         let mut lexer = AtlasLexer::default();
@@ -873,7 +877,8 @@ func main() -> i64 {
             Err(e) => panic!("{:?}", e),
         };
         let bump = Bump::new();
-        let mut parser = Parser::new(AstArena::new(&bump), tokens, PathBuf::from("test"), input);
+        let arena = &AstArena::new(&bump);
+        let mut parser = Parser::new(arena, tokens, PathBuf::from("test"), input);
         let result = parser.parse();
         match result {
             Ok(program) => {
@@ -896,9 +901,10 @@ func main() -> i64 {
                             println!(
                                 "extern {:?} ({:?}) -> {:?}\n",
                                 e.name.name,
-                                e.args
+                                e.args_name
                                     .iter()
-                                    .map(|a| format!("{:?}", a))
+                                    .zip(e.args_ty.iter())
+                                    .map(|(name, ty)| format!("{:?}: {:?}", name, ty))
                                     .collect::<String>(),
                                 e.ret
                             );

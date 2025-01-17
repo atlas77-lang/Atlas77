@@ -53,8 +53,8 @@ where
             let mut bytecode = Vec::new();
 
             let params = func.1.signature.params.clone();
-            Self::generate_bytecode_args(params, &mut bytecode, self.src.clone())?;
-            Self::generate_bytecode_block(&func.1.body, &mut bytecode, self.src.clone())?;
+            self.generate_bytecode_args(params, &mut bytecode, self.src.clone())?;
+            self.generate_bytecode_block(&func.1.body, &mut bytecode, self.src.clone())?;
 
             let len = bytecode.len();
             if func.0 == "main" {
@@ -86,30 +86,32 @@ where
     }
 
     fn generate_bytecode_block(
+        &self,
         block: &HirBlock<'hir>,
         bytecode: &mut Vec<Instruction>,
         src: String,
     ) -> HirResult<()> {
         for stmt in &block.statements {
-            Self::generate_bytecode_stmt(stmt, bytecode, src.clone())?;
+            self.generate_bytecode_stmt(stmt, bytecode, src.clone())?;
         }
         Ok(())
     }
 
     fn generate_bytecode_stmt(
+        &self,
         stmt: &HirStatement<'hir>,
         bytecode: &mut Vec<Instruction>,
         src: String,
     ) -> HirResult<()> {
         match stmt {
             HirStatement::Return(e) => {
-                Self::generate_bytecode_expr(e.value, bytecode, src)?;
+                self.generate_bytecode_expr(e.value, bytecode, src)?;
                 bytecode.push(Instruction::Return);
             }
             HirStatement::IfElse(i) => {
-                Self::generate_bytecode_expr(i.condition, bytecode, src.clone())?;
+                self.generate_bytecode_expr(i.condition, bytecode, src.clone())?;
                 let mut then_body = Vec::new();
-                Self::generate_bytecode_block(i.then_branch, &mut then_body, src.clone())?;
+                self.generate_bytecode_block(i.then_branch, &mut then_body, src.clone())?;
 
                 bytecode.push(Instruction::JmpZ {
                     pos: (then_body.len() + if i.else_branch.is_some() { 1 } else { 0 }) as isize,
@@ -117,7 +119,7 @@ where
                 bytecode.append(&mut then_body);
                 if let Some(e) = i.else_branch {
                     let mut else_body = Vec::new();
-                    Self::generate_bytecode_block(e, &mut else_body, src)?;
+                    self.generate_bytecode_block(e, &mut else_body, src)?;
 
                     bytecode.push(Instruction::Jmp {
                         pos: (else_body.len() + 1) as isize,
@@ -127,10 +129,10 @@ where
             }
             HirStatement::While(w) => {
                 let start = bytecode.len() as isize;
-                Self::generate_bytecode_expr(w.condition, bytecode, src.clone())?;
+                self.generate_bytecode_expr(w.condition, bytecode, src.clone())?;
                 let mut body = Vec::new();
 
-                Self::generate_bytecode_block(w.body, &mut body, src)?;
+                self.generate_bytecode_block(w.body, &mut body, src)?;
                 //If the condition is false jump to the end of the loop
                 bytecode.push(Instruction::JmpZ {
                     pos: (body.len() + 1) as isize,
@@ -143,7 +145,7 @@ where
             }
             HirStatement::Let(l) => {
                 let mut value = Vec::new();
-                Self::generate_bytecode_expr(l.value, &mut value, src)?;
+                self.generate_bytecode_expr(l.value, &mut value, src)?;
                 match l.ty {
                     HirTy::Int64(_) => {
                         value.push(Instruction::StoreI64 {
@@ -167,7 +169,7 @@ where
                 }
                 bytecode.append(&mut value);
             }
-            HirStatement::Expr(e) => Self::generate_bytecode_expr(e.expr, bytecode, src)?,
+            HirStatement::Expr(e) => self.generate_bytecode_expr(e.expr, bytecode, src)?,
             _ => {
                 return Err(crate::atlas_hir::error::HirError::UnsupportedStatement(
                     UnsupportedStatement {
@@ -185,6 +187,7 @@ where
     }
 
     fn generate_bytecode_expr(
+        &self,
         expr: &HirExpr<'hir>,
         bytecode: &mut Vec<Instruction>,
         src: String,
@@ -194,7 +197,7 @@ where
                 let lhs = a.lhs.as_ref();
                 match lhs {
                     HirExpr::Ident(i) => {
-                        Self::generate_bytecode_expr(&a.rhs, bytecode, src)?;
+                        self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
                         match i.ty {
                             HirTy::Int64(_) => {
                                 bytecode.push(Instruction::StoreI64 {
@@ -234,8 +237,8 @@ where
                 }
             }
             HirExpr::HirBinaryOp(b) => {
-                Self::generate_bytecode_expr(&b.lhs, bytecode, src.clone())?;
-                Self::generate_bytecode_expr(&b.rhs, bytecode, src)?;
+                self.generate_bytecode_expr(&b.lhs, bytecode, src.clone())?;
+                self.generate_bytecode_expr(&b.rhs, bytecode, src)?;
                 match b.op {
                     crate::atlas_hir::expr::HirBinaryOp::Add => {
                         bytecode.push(Instruction::AddI64);
@@ -275,17 +278,18 @@ where
             }
             HirExpr::Unary(u) => {
                 //The operator are not yet implemented
-                Self::generate_bytecode_expr(&u.expr, bytecode, src)?;
+                self.generate_bytecode_expr(&u.expr, bytecode, src)?;
             }
             //This need to be thoroughly tested
             HirExpr::Call(f) => {
                 for arg in &f.args {
-                    Self::generate_bytecode_expr(arg, bytecode, src.clone())?;
+                    self.generate_bytecode_expr(arg, bytecode, src.clone())?;
                 }
                 let callee = f.callee.as_ref();
                 match callee {
                     HirExpr::Ident(i) => {
-                        if i.name == "print" || i.name == "println" {
+                        let func = self.hir.signature.functions.get(i.name).unwrap();
+                        if func.is_external {
                             bytecode.push(Instruction::ExternCall {
                                 name: i.name.to_string(),
                                 args: f.args.len() as u8,
@@ -355,6 +359,7 @@ where
     }
 
     fn generate_bytecode_args(
+        &self,
         args: Vec<&HirFunctionParameterSignature<'hir>>,
         bytecode: &mut Vec<Instruction>,
         src: String,

@@ -83,7 +83,7 @@ impl<'arena> TypeArena<'arena> {
         self.intern.borrow().get(&id).copied()
     }
 
-    pub fn get_integer64_ty(&'arena self) -> &'arena HirTy {
+    pub fn get_integer64_ty(&'arena self) -> &'arena HirTy<'arena> {
         let id = HirTyId::compute_integer64_ty_id();
         self.intern
             .borrow_mut()
@@ -91,7 +91,7 @@ impl<'arena> TypeArena<'arena> {
             .or_insert_with(|| self.allocator.alloc(HirTy::Int64(HirIntegerTy {})))
     }
 
-    pub fn get_float64_ty(&'arena self) -> &'arena HirTy {
+    pub fn get_float64_ty(&'arena self) -> &'arena HirTy<'arena> {
         let id = HirTyId::compute_float64_ty_id();
         self.intern
             .borrow_mut()
@@ -99,7 +99,7 @@ impl<'arena> TypeArena<'arena> {
             .or_insert_with(|| self.allocator.alloc(HirTy::Float64(HirFloatTy {})))
     }
 
-    pub fn get_uint64_ty(&'arena self) -> &'arena HirTy {
+    pub fn get_uint64_ty(&'arena self) -> &'arena HirTy<'arena> {
         let id = HirTyId::compute_uint64_ty_id();
         self.intern
             .borrow_mut()
@@ -107,7 +107,7 @@ impl<'arena> TypeArena<'arena> {
             .or_insert_with(|| self.allocator.alloc(HirTy::UInt64(HirUnsignedIntTy {})))
     }
 
-    pub fn get_boolean_ty(&'arena self) -> &'arena HirTy {
+    pub fn get_boolean_ty(&'arena self) -> &'arena HirTy<'arena> {
         let id = HirTyId::compute_boolean_ty_id();
         self.intern
             .borrow_mut()
@@ -115,7 +115,7 @@ impl<'arena> TypeArena<'arena> {
             .or_insert_with(|| self.allocator.alloc(HirTy::Boolean(HirBooleanTy {})))
     }
 
-    pub fn get_unit_ty(&'arena self) -> &'arena HirTy {
+    pub fn get_unit_ty(&'arena self) -> &'arena HirTy<'arena> {
         let id = HirTyId::compute_unit_ty_id();
         self.intern
             .borrow_mut()
@@ -123,7 +123,7 @@ impl<'arena> TypeArena<'arena> {
             .or_insert_with(|| self.allocator.alloc(HirTy::Unit(HirUnitTy {})))
     }
 
-    pub fn get_uninitialized_ty(&'arena self) -> &'arena HirTy {
+    pub fn get_uninitialized_ty(&'arena self) -> &'arena HirTy<'arena> {
         let id = HirTyId::compute_uninitialized_ty_id();
         self.intern.borrow_mut().entry(id).or_insert_with(|| {
             self.allocator

@@ -2,44 +2,63 @@ use atlas_core::prelude::{Span, Spanned};
 use miette::{SourceOffset, SourceSpan};
 
 use crate::{
-    atlas_frontend::parser::ast::{
-        AstBinaryOp, AstBlock, AstExpr, AstFunction, AstItem, AstLiteral, AstObjField, AstProgram,
-        AstStatement, AstType, AstUnaryOp,
+    atlas_frontend::{
+        parse,
+        parser::{
+            arena::AstArena,
+            ast::{
+                AstBinaryOp, AstBlock, AstExpr, AstFunction, AstImport, AstItem, AstLiteral,
+                AstObjField, AstProgram, AstStatement, AstType, AstUnaryOp,
+            },
+        },
     },
-    atlas_hir::{
-        expr::HirAssignExpr, item::HirImport, signature::HirFunctionSignature, stmt::HirLetStmt,
-    },
+    atlas_hir::{expr::HirAssignExpr, signature::HirFunctionSignature, stmt::HirLetStmt},
+    atlas_stdlib::{file::FILE_ATLAS, io::IO_ATLAS, math::MATH_ATLAS, string::STRING_ATLAS},
 };
 
 use super::{
     arena::HirArena,
-    error::{HirResult, UnsupportedExpr, UnsupportedStatement},
+    error::{HirError, HirResult, UnsupportedExpr, UnsupportedStatement},
     expr::{
         HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirExpr, HirFloatLiteralExpr,
         HirFunctionCallExpr, HirIdentExpr, HirIntegerLiteralExpr, HirUnsignedIntegerLiteralExpr,
         UnaryOp, UnaryOpExpr,
     },
-    item::{HirFunction, HirItem},
+    item::HirFunction,
     signature::{HirFunctionParameterSignature, HirModuleSignature, HirTypeParameterItemSignature},
     stmt::{HirBlock, HirExprStmt, HirIfElseStmt, HirReturn, HirStatement, HirWhileStmt},
     ty::HirTy,
-    HirModule, HirModuleBody,
+    HirImport, HirModule, HirModuleBody,
 };
 
 pub(crate) struct AstSyntaxLoweringPass<'ast, 'hir> {
     arena: &'hir HirArena<'hir>,
     ast: &'ast AstProgram<'ast>,
+    ast_arena: &'ast AstArena<'ast>,
     //source code
     src: String,
 }
 
 impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
-    pub(crate) fn new(arena: &'hir HirArena<'hir>, ast: &'ast AstProgram, src: String) -> Self {
-        Self { arena, ast, src }
+    pub(crate) fn new(
+        arena: &'hir HirArena<'hir>,
+        ast: &'ast AstProgram,
+        ast_arena: &'ast AstArena<'ast>,
+        src: String,
+    ) -> Self {
+        Self {
+            arena,
+            ast,
+            ast_arena,
+            src,
+        }
     }
 }
 
-impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
+impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir>
+where
+    'ast: 'hir,
+{
     pub(crate) fn lower(&self) -> HirResult<HirModule> {
         let mut module_body = HirModuleBody::default();
         let mut module_signature = HirModuleSignature::default();
@@ -48,6 +67,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         for item in self.ast.items {
             items.push(self.visit_item(&mut module_body, &mut module_signature, item)?);
         }
+        //println!("{:#?}", module_signature);
         Ok(HirModule {
             body: module_body,
             signature: module_signature,
@@ -58,7 +78,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         module_body: &mut HirModuleBody<'hir>,
         module_signature: &mut HirModuleSignature<'hir>,
         item: &'ast AstItem<'ast>,
-    ) -> HirResult<HirItem<'hir>> {
+    ) -> HirResult<()> {
         match item {
             AstItem::Func(f) => {
                 let fun = self.visit_func(f)?;
@@ -67,35 +87,176 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 module_body.functions.insert(name, fun);
             }
             AstItem::Import(i) => {
-                let hir = self.arena.intern(HirImport {
-                    span: i.span,
-                    path: self.arena.names().get(i.path),
-                    path_span: Span::empty(),
+                let hir = self.visit_import(i)?;
+                let allocated_hir: &'hir HirModule<'hir> = self.arena.intern(hir);
+                for (name, signature) in allocated_hir.signature.functions.iter() {
+                    module_signature.functions.insert(name, *signature);
+                }
+                allocated_hir.body.imports.iter().for_each(|i| {
+                    module_body.imports.push(i);
+                });
+            }
+            AstItem::ExternFunction(e) => {
+                let name = self.arena.names().get(e.name.name);
+                let ty = self.visit_ty(e.ret)?;
+
+                let mut params: Vec<&HirFunctionParameterSignature<'hir>> = Vec::new();
+                let mut type_params: Vec<&HirTypeParameterItemSignature<'_>> = Vec::new();
+
+                for (arg_name, arg_ty) in e.args_name.iter().zip(e.args_ty.iter()) {
+                    let hir_arg_ty = self.visit_ty(arg_ty)?;
+                    let hir_arg_name = self.arena.names().get(arg_name.name);
+
+                    params.push(self.arena.intern(HirFunctionParameterSignature {
+                        span: arg_name.span,
+                        name: hir_arg_name,
+                        name_span: arg_name.span,
+                        ty: hir_arg_ty,
+                        ty_span: arg_ty.span(),
+                    }));
+
+                    type_params.push(self.arena.intern(HirTypeParameterItemSignature {
+                        span: arg_name.span,
+                        name: hir_arg_name,
+                        name_span: arg_name.span,
+                    }));
+                }
+                let hir = self.arena.intern(HirFunctionSignature {
+                    span: e.span,
+                    params,
+                    type_params,
+                    return_ty: ty,
+                    return_ty_span: Some(e.ret.span()),
+                    is_external: true,
+                });
+                module_signature.functions.insert(name, hir);
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn visit_import(&self, node: &'ast AstImport<'ast>) -> HirResult<HirModule<'hir>> {
+        match node.path.split("/").last().unwrap() {
+            "io" => {
+                let ast: AstProgram<'ast> = parse(
+                    "atlas_stdlib/io.atlas",
+                    &self.ast_arena,
+                    IO_ATLAS.to_string(),
+                )
+                .unwrap();
+                let allocated_ast = self.ast_arena.alloc(ast);
+                let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
+                    self.arena,
+                    allocated_ast,
+                    self.ast_arena,
+                    IO_ATLAS.to_string(),
+                ));
+                let mut lower = hir.lower()?;
+
+                let hir_import: &'hir HirImport<'_> = self.arena.intern(HirImport {
+                    span: node.span,
+                    path: node.path,
+                    path_span: node.span,
                     alias: None,
                     alias_span: None,
                 });
 
-                module_body.imports.push(hir);
+                lower.body.imports.push(&hir_import);
+
+                Ok(lower)
             }
-            _ => {}
+            "math" => {
+                let ast: AstProgram<'ast> = parse(
+                    "atlas_stdlib/math.atlas",
+                    &self.ast_arena,
+                    MATH_ATLAS.to_string(),
+                )
+                .unwrap();
+                let allocated_ast = self.ast_arena.alloc(ast);
+                let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
+                    self.arena,
+                    allocated_ast,
+                    self.ast_arena,
+                    IO_ATLAS.to_string(),
+                ));
+                hir.lower()
+            }
+            "file" => {
+                let ast: AstProgram<'ast> = parse(
+                    "atlas_stdlib/file.atlas",
+                    &self.ast_arena,
+                    FILE_ATLAS.to_string(),
+                )
+                .unwrap();
+                let allocated_ast = self.ast_arena.alloc(ast);
+                let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
+                    self.arena,
+                    allocated_ast,
+                    self.ast_arena,
+                    IO_ATLAS.to_string(),
+                ));
+                hir.lower()
+            }
+            "list" => {
+                let ast: AstProgram<'ast> = parse(
+                    "atlas_stdlib/list.atlas",
+                    &self.ast_arena,
+                    FILE_ATLAS.to_string(),
+                )
+                .unwrap();
+                let allocated_ast = self.ast_arena.alloc(ast);
+                let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
+                    self.arena,
+                    allocated_ast,
+                    self.ast_arena,
+                    IO_ATLAS.to_string(),
+                ));
+                hir.lower()
+            }
+            "string" => {
+                let ast: AstProgram<'ast> = parse(
+                    "atlas_stdlib/string.atlas",
+                    &self.ast_arena,
+                    STRING_ATLAS.to_string(),
+                )
+                .unwrap();
+                let allocated_ast = self.ast_arena.alloc(ast);
+                let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
+                    self.arena,
+                    allocated_ast,
+                    self.ast_arena,
+                    IO_ATLAS.to_string(),
+                ));
+                hir.lower()
+            }
+            "time" => {
+                let ast: AstProgram<'ast> = parse(
+                    "atlas_stdlib/time.atlas",
+                    &self.ast_arena,
+                    STRING_ATLAS.to_string(),
+                )
+                .unwrap();
+                let allocated_ast = self.ast_arena.alloc(ast);
+                let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
+                    self.arena,
+                    allocated_ast,
+                    self.ast_arena,
+                    IO_ATLAS.to_string(),
+                ));
+                hir.lower()
+            }
+            _ => {
+                return Err(HirError::UnsupportedStatement(UnsupportedStatement {
+                    span: SourceSpan::new(
+                        SourceOffset::from(node.span.start()),
+                        node.span.end() - node.span.start(),
+                    ),
+                    stmt: format!("{:?}", node),
+                    src: self.src.clone(),
+                }))
+            }
         }
-        Ok(HirItem::Function(HirFunction {
-            span: Span::empty(),
-            name: "",
-            name_span: Span::empty(),
-            signature: self.arena.intern(HirFunctionSignature {
-                span: Span::empty(),
-                params: Vec::new(),
-                type_params: Vec::new(),
-                return_ty: self.arena.types().get_uninitialized_ty(),
-                return_ty_span: None,
-                is_external: false,
-            }),
-            body: HirBlock {
-                statements: Vec::new(),
-                span: Span::empty(),
-            },
-        }))
     }
 
     fn visit_block(&self, node: &'ast AstBlock<'ast>) -> HirResult<HirBlock<'hir>> {

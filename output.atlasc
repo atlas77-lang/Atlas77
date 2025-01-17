@@ -1,187 +1,23 @@
 (
     labels: [
         (
-            name: "add_u64",
+            name: "main",
             position: 0,
             body: [
-                StoreU64(
-                    var_name: "b",
-                ),
-                StoreU64(
-                    var_name: "a",
-                ),
-                LoadI64(
-                    var_name: "a",
-                ),
-                LoadI64(
-                    var_name: "b",
-                ),
-                AddI64,
-                Return,
-            ],
-        ),
-        (
-            name: "conditional_check",
-            position: 6,
-            body: [
-                StoreU64(
-                    var_name: "a",
-                ),
-                LoadI64(
-                    var_name: "a",
-                ),
-                PushUnsignedInt(10),
-                Gt,
-                JmpZ(
-                    pos: 3,
-                ),
-                PushBool(true),
-                Return,
-                Jmp(
-                    pos: 3,
-                ),
-                PushBool(false),
-                Return,
-            ],
-        ),
-        (
-            name: "main",
-            position: 16,
-            body: [
-                PushUnsignedInt(10),
-                PushUnsignedInt(20),
-                CallFunction(
-                    name: "add_u64",
-                    args: 2,
-                ),
-                StoreU64(
-                    var_name: "valid_sum",
-                ),
-                PushUnsignedInt(5),
-                CallFunction(
-                    name: "negate_u64",
+                PushInt(42),
+                ExternCall(
+                    name: "print_int",
                     args: 1,
                 ),
-                StoreU64(
-                    var_name: "invalid_negate",
-                ),
-                CallFunction(
-                    name: "test_consts",
-                    args: 0,
-                ),
-                StoreU64(
-                    var_name: "const_mutation",
-                ),
-                PushUnsignedInt(15),
-                CallFunction(
-                    name: "conditional_check",
-                    args: 1,
-                ),
-                StoreBool(
-                    var_name: "result",
-                ),
-                PushUnsignedInt(10),
-                CallFunction(
-                    name: "sum_until",
-                    args: 1,
-                ),
-                StoreU64(
-                    var_name: "total",
-                ),
-                LoadI64(
-                    var_name: "total",
-                ),
-                Return,
                 Halt,
-            ],
-        ),
-        (
-            name: "negate_u64",
-            position: 33,
-            body: [
-                StoreU64(
-                    var_name: "a",
-                ),
-                LoadI64(
-                    var_name: "a",
-                ),
-                Return,
-            ],
-        ),
-        (
-            name: "sum_until",
-            position: 36,
-            body: [
-                StoreU64(
-                    var_name: "limit",
-                ),
-                PushUnsignedInt(0),
-                StoreU64(
-                    var_name: "sum",
-                ),
-                PushUnsignedInt(0),
-                StoreU64(
-                    var_name: "counter",
-                ),
-                LoadI64(
-                    var_name: "counter",
-                ),
-                LoadI64(
-                    var_name: "limit",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 9,
-                ),
-                LoadI64(
-                    var_name: "sum",
-                ),
-                LoadI64(
-                    var_name: "counter",
-                ),
-                CallFunction(
-                    name: "add_u64",
-                    args: 2,
-                ),
-                StoreI64(
-                    var_name: "sum",
-                ),
-                LoadI64(
-                    var_name: "counter",
-                ),
-                PushUnsignedInt(1),
-                AddI64,
-                StoreI64(
-                    var_name: "counter",
-                ),
-                Jmp(
-                    pos: -12,
-                ),
-                LoadI64(
-                    var_name: "sum",
-                ),
-                Return,
-            ],
-        ),
-        (
-            name: "test_consts",
-            position: 56,
-            body: [
-                PushUnsignedInt(10),
-                StoreU64(
-                    var_name: "a",
-                ),
-                PushUnsignedInt(15),
-                StoreI64(
-                    var_name: "a",
-                ),
-                LoadI64(
-                    var_name: "a",
-                ),
-                Return,
             ],
         ),
     ],
     entry_point: "main",
-    libraries: [],
+    libraries: [
+        (
+            name: "std/io",
+            is_std: true,
+        ),
+    ],
 )

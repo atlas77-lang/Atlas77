@@ -1,5 +1,5 @@
 import "std/io"
 
 func main() {
-    println("Hello, world!");
+    print_int(42);
 }

@@ -159,7 +159,7 @@ impl<'hir> TypeChecker<'hir> {
                 Ok(())
             }
             HirStatement::Return(r) => {
-                let actual_ret_ty = self.check_expr(&r.value)?;
+                let actual_ret_ty = self.check_expr(r.value)?;
                 let func_ret_from = self
                     .signature
                     .functions
@@ -292,7 +292,7 @@ impl<'hir> TypeChecker<'hir> {
                             span: c.span,
                         },
                     );
-                let ty_value = self.check_expr(&c.value)?;
+                let ty_value = self.check_expr(c.value)?;
                 if HirTyId::from(ty_value) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{:?}", ty_value),
@@ -302,8 +302,8 @@ impl<'hir> TypeChecker<'hir> {
                         ),
                         expected_type: format!("{:?}", c.ty),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(c.name_span.start()),
-                            c.name_span.end() - c.name_span.start(),
+                            SourceOffset::from(c.span.start()),
+                            c.name_span.end() - c.span.start(),
                         ),
                         src: self.src.clone(),
                     }));
@@ -328,7 +328,7 @@ impl<'hir> TypeChecker<'hir> {
                             span: l.span,
                         },
                     );
-                let ty_value = self.check_expr(&l.value)?;
+                let ty_value = self.check_expr(l.value)?;
                 if HirTyId::from(ty_value) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{:?}", ty_value),
@@ -344,7 +344,7 @@ impl<'hir> TypeChecker<'hir> {
                         src: self.src.clone(),
                     }));
                 }
-                return Ok(());
+                Ok(())
             }
             _ => {
                 todo!("TypeChecker::check_stmt")
@@ -453,6 +453,8 @@ impl<'hir> TypeChecker<'hir> {
                 Ok(func.return_ty)
             }
             HirExpr::Assign(a) => {
+                //first because of the borrow checker
+                let rhs = self.check_expr(&a.rhs)?;
                 let lhs = match a.lhs.as_ref() {
                     HirExpr::Ident(i) => match self
                         .context
@@ -460,16 +462,14 @@ impl<'hir> TypeChecker<'hir> {
                         .unwrap()
                         .get(self.current_func_name.unwrap())
                     {
-                        Some(ctx_var) => {
-                            if !ctx_var.get(i.name).unwrap().is_mut {
+                        Some(ctx_func) => {
+                            let ctx_var = ctx_func.get(i.name).unwrap();
+                            if !ctx_var.is_mut {
                                 return Err(HirError::TryingToMutateImmutableVariable(
                                     TryingToMutateImmutableVariableError {
                                         const_loc: SourceSpan::new(
-                                            SourceOffset::from(
-                                                ctx_var.get(i.name).unwrap().span.start(),
-                                            ),
-                                            ctx_var.get(i.name).unwrap().span.end()
-                                                - ctx_var.get(i.name).unwrap().span.start(),
+                                            SourceOffset::from(ctx_var.span.start()),
+                                            ctx_var.name_span.end() - ctx_var.span.start(),
                                         ),
                                         var_name: i.name.to_string(),
                                         span: SourceSpan::new(
@@ -480,7 +480,7 @@ impl<'hir> TypeChecker<'hir> {
                                     },
                                 ));
                             } else {
-                                ctx_var.get(i.name).unwrap().ty
+                                ctx_var
                             }
                         }
                         None => {
@@ -498,23 +498,23 @@ impl<'hir> TypeChecker<'hir> {
                         todo!("TypeChecker::check_expr")
                     }
                 };
-                let rhs = self.check_expr(&a.rhs)?;
-                if HirTyId::from(lhs) != HirTyId::from(rhs) {
-                    return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", lhs),
+
+                if HirTyId::from(lhs.ty) != HirTyId::from(rhs) {
+                    Err(HirError::TypeMismatch(TypeMismatchError {
+                        actual_type: format!("{:?}", rhs),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(a.lhs.start()),
-                            a.lhs.end() - a.lhs.start(),
+                            a.rhs.end() - a.lhs.start(),
                         ),
-                        expected_type: format!("{:?}", rhs),
+                        expected_type: format!("{:?}", lhs.ty),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(a.rhs.start()),
-                            a.rhs.end() - a.rhs.start(),
+                            SourceOffset::from(lhs.name_span.start()),
+                            lhs.ty_span.end() - lhs.name_span.start(),
                         ),
                         src: self.src.clone(),
-                    }));
+                    }))
                 } else {
-                    Ok(lhs)
+                    Ok(lhs.ty)
                 }
             }
             HirExpr::Ident(i) => {

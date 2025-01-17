@@ -3,6 +3,8 @@ use crate::{
     atlas_vm::{errors::RuntimeError, vm_state::VMState, CallBack},
 };
 
+pub const LIST_ATLAS: &'static str = include_str!("list.atlas");
+
 pub const LIST_FUNCTIONS: [(&str, CallBack); 7] = [
     ("len", len),
     ("get", get),

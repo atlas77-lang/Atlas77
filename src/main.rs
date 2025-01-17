@@ -12,6 +12,7 @@ use crate::{
     atlas_frontend::parse,
     atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass},
 };
+use atlas_frontend::parser::arena::AstArena;
 use atlas_hir::type_check_pass::TypeChecker;
 use bumpalo::Bump;
 use clap::{command, Parser};
@@ -58,15 +59,16 @@ pub(crate) fn build(path: String) -> miette::Result<()> {
     } else {
         eprintln!("Failed to get current directory");
     }
-    //parse
-    let bump = Bump::new();
-    let program = parse(path_buf.to_str().unwrap(), &bump)?;
 
     let source = std::fs::read_to_string(path).unwrap();
+    //parse
+    let bump = Bump::new();
+    let ast_arena = AstArena::new(&bump);
+    let program = parse(path_buf.to_str().unwrap(), &ast_arena, source.clone())?;
 
     //hir
     let hir_arena = HirArena::new();
-    let lower = AstSyntaxLoweringPass::new(&hir_arena, &program, source.clone());
+    let lower = AstSyntaxLoweringPass::new(&hir_arena, &program, &ast_arena, source.clone());
     let hir = lower.lower()?;
 
     //type-check
@@ -102,27 +104,7 @@ pub(crate) fn build(path: String) -> miette::Result<()> {
     Ok(())
 }
 
-pub(crate) fn run(path: String) -> miette::Result<()> {
-    let mut path_buf = PathBuf::from(path.clone());
-
-    if let Ok(current_dir) = std::env::current_dir() {
-        if !path_buf.is_absolute() {
-            path_buf = current_dir.join(path_buf);
-        }
-    } else {
-        eprintln!("Failed to get current directory");
-    }
-
-    let bump = Bump::new();
-
-    let program = parse(path_buf.to_str().unwrap(), &bump)?;
-
-    #[cfg(debug_assertions)]
-    println!("{:?}", &program);
-
-    let start = Instant::now();
-
-    let end = Instant::now();
-    println!("Elapsed time: {:?}", (end - start));
+//The "run" function needs a bit of refactoring
+pub(crate) fn run(_path: String) -> miette::Result<()> {
     Ok(())
 }
