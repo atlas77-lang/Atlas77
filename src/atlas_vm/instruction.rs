@@ -10,6 +10,7 @@ pub enum Instruction {
     PushInt(i64),
     PushFloat(f64),
     PushUnsignedInt(u64),
+    PushBool(bool),
     PushString(String),
     PushUnit,
 
@@ -27,6 +28,9 @@ pub enum Instruction {
     StoreU64 {
         var_name: String,
     },
+    StoreBool {
+        var_name: String,
+    },
 
     /// Load an i64 value from a variable to the stack
     LoadI64 {
@@ -38,6 +42,9 @@ pub enum Instruction {
     },
     /// Load an u64 value from a variable to the stack
     LoadU64 {
+        var_name: String,
+    },
+    LoadBool {
         var_name: String,
     },
 

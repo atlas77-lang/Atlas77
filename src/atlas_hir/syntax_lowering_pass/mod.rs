@@ -278,6 +278,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 }));
                 Ok(hir)
             }
+
             AstExpr::Literal(l) => {
                 let hir = match l {
                     AstLiteral::Integer(i) => {

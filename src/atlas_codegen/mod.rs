@@ -149,16 +149,23 @@ where
                         value.push(Instruction::StoreI64 {
                             var_name: l.name.to_string(),
                         });
-                        bytecode.append(&mut value);
                     }
                     HirTy::Float64(_) => {
                         value.push(Instruction::StoreF64 {
                             var_name: l.name.to_string(),
                         });
-                        bytecode.append(&mut value);
                     }
+                    HirTy::UInt64(_) => {
+                        value.push(Instruction::StoreU64 {
+                            var_name: l.name.to_string(),
+                        });
+                    }
+                    HirTy::Boolean(_) => value.push(Instruction::StoreBool {
+                        var_name: l.name.to_string(),
+                    }),
                     _ => unimplemented!("Unsupported type for now"),
                 }
+                bytecode.append(&mut value);
             }
             HirStatement::Expr(e) => Self::generate_bytecode_expr(e.expr, bytecode, src)?,
             _ => {
@@ -327,6 +334,7 @@ where
             },
             HirExpr::IntegerLiteral(i) => bytecode.push(Instruction::PushInt(i.value)),
             HirExpr::FloatLiteral(f) => bytecode.push(Instruction::PushFloat(f.value)),
+            HirExpr::BooleanLiteral(b) => bytecode.push(Instruction::PushBool(b.value)),
             HirExpr::UnsignedIntegererLiteral(u) => {
                 bytecode.push(Instruction::PushUnsignedInt(u.value))
             }

@@ -1,16 +1,63 @@
-func main() {
-    let one: f64 = 1.0;
-    let PI: f64 = 3.14159;
-    PI = 3.0;
-    let five: i64 = 5 + 5;
-    test(1, 1);
-    if 5 == 5 {
-        let a: i64 = 5;
-    }
-    
+// Type Checking Test Case
+
+// Define constants and variables
+
+// Function definitions
+func add(a: i64, b: i64) -> i64 {
+    return a + b; // Valid addition of i64
 }
 
-func test(a: i64, b: i64) -> i64 {
-    let c: i64 = a + b;
-    return 6;
+func negate(a: u64) -> u64 {
+    // Attempt to negate a u64 - this should fail type checking
+    return -a; // Invalid: u64 cannot be negated
+}
+
+func test_consts() -> i64 {
+    const a: i64 = 10; // Constant i64
+    // Attempt to mutate a const - this should fail type checking
+    a = 15; // Invalid: 'a' is a constant
+    return a;
+}
+
+// If-else block with type checking
+func conditional_check(a: i64) -> bool {
+    if a > 10 {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// While loop with type checking
+func sum_until(limit: i64) -> i64 {
+    let sum: i64 = 0;
+    let counter: i64 = 0;
+
+    while counter < limit {
+        sum = add(sum, counter); // Valid addition
+        counter = counter + 1; // Increment counter
+    }
+
+    return sum;
+}
+
+func add_i_f(a: i64, b: f64) -> i64 {
+    return a + b; // Invalid: i64 + f64
+}
+
+// Main function for testing
+func main() -> i64 {
+    let valid_sum: i64 = add(10, 20); // Valid function call
+
+    let invalid_negate: u64 = negate(5_u64); // This should trigger a type-checking error
+
+    let const_mutation: i64 = test_consts(); // This should trigger a type-checking error
+
+    let result: bool = conditional_check(15); // Valid conditional check
+
+    let total: i64 = sum_until(10); // Valid while loop execution
+
+    let add_i_f: i64 = add_i_f(10, 5.0); // This should trigger a type-checking error
+
+    return total;
 }

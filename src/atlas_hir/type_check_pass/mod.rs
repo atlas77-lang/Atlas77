@@ -187,8 +187,43 @@ impl<'hir> TypeChecker<'hir> {
 
                 Ok(())
             }
+            HirStatement::While(w) => {
+                let cond_ty = self.check_expr(w.condition)?;
+                if HirTyId::from(cond_ty) != HirTyId::compute_boolean_ty_id() {
+                    return Err(HirError::TypeMismatch(TypeMismatchError {
+                        actual_type: format!("{:?}", cond_ty),
+                        actual_loc: SourceSpan::new(
+                            SourceOffset::from(w.condition.start()),
+                            w.condition.end() - w.condition.start(),
+                        ),
+                        expected_type: format!("{:?}", self.arena.types().get_boolean_ty()),
+                        expected_loc: SourceSpan::new(
+                            SourceOffset::from(w.condition.start()),
+                            w.condition.end() - w.condition.start(),
+                        ),
+                        src: self.src.clone(),
+                    }));
+                }
+                self.context
+                    .last_mut()
+                    .unwrap()
+                    .get_mut(self.current_func_name.unwrap())
+                    .unwrap()
+                    .new_scope();
+                for stmt in &w.body.statements {
+                    self.check_stmt(stmt)?;
+                }
+                self.context
+                    .last_mut()
+                    .unwrap()
+                    .get_mut(self.current_func_name.unwrap())
+                    .unwrap()
+                    .end_scope();
+
+                Ok(())
+            }
             HirStatement::IfElse(i) => {
-                let cond_ty = self.check_expr(&i.condition)?;
+                let cond_ty = self.check_expr(i.condition)?;
                 if HirTyId::from(cond_ty) != HirTyId::compute_boolean_ty_id() {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{:?}", cond_ty),
@@ -419,7 +454,12 @@ impl<'hir> TypeChecker<'hir> {
             }
             HirExpr::Assign(a) => {
                 let lhs = match a.lhs.as_ref() {
-                    HirExpr::Ident(i) => match self.context.last().unwrap().get(i.name) {
+                    HirExpr::Ident(i) => match self
+                        .context
+                        .last()
+                        .unwrap()
+                        .get(self.current_func_name.unwrap())
+                    {
                         Some(ctx_var) => {
                             if !ctx_var.get(i.name).unwrap().is_mut {
                                 return Err(HirError::TryingToMutateImmutableVariable(
