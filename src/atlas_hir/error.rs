@@ -12,6 +12,8 @@ declare_error_type! {
         FunctionTypeMismatch(FunctionTypeMismatchError),
         UnsupportedStatement(UnsupportedStatement),
         UnsupportedExpr(UnsupportedExpr),
+        TryingToNegateUnsigned(TryingToNegateUnsignedError),
+        TryingToMutateImmutableVariable(TryingToMutateImmutableVariableError),
     }
 }
 
@@ -19,21 +21,48 @@ declare_error_type! {
 pub type HirResult<T> = Result<T, HirError>;
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(sema::unknown_type))]
+#[diagnostic(code(sema::trying_to_mutate_immutable))]
+#[error("trying to mutate an immutable variable")]
+pub struct TryingToMutateImmutableVariableError {
+    #[label = "{var_name} is immutable, try to use `let` instead"]
+    pub const_loc: Span,
+    pub var_name: String,
+    #[label = "cannot mutate an immutable variable"]
+    pub span: Span,
+    #[source_code]
+    pub src: String,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::trying_to_negate_unsigned))]
+#[error("trying to negate an unsigned integer")]
+pub struct TryingToNegateUnsignedError {
+    #[label = "unsigned integers cannot be negated"]
+    pub span: Span,
+    #[source_code]
+    pub src: String,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::unsupported_expr))]
 #[error("{expr} isn't supported yet")]
 pub struct UnsupportedExpr {
     #[label = "unsupported expr"]
     pub span: Span,
     pub expr: String,
+    #[source_code]
+    pub src: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(sema::unknown_type))]
+#[diagnostic(code(sema::unsupported_stmt))]
 #[error("{stmt} isn't supported yet")]
 pub struct UnsupportedStatement {
     #[label = "unsupported statement"]
     pub span: Span,
     pub stmt: String,
+    #[source_code]
+    pub src: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -43,6 +72,8 @@ pub struct UnknownTypeError {
     pub name: String,
     #[label = "could not find type {name}"]
     pub span: Span,
+    #[source_code]
+    pub src: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -51,6 +82,8 @@ pub struct UnknownTypeError {
 pub struct BreakOutsideLoopError {
     #[label = "there is no enclosing loop"]
     pub span: Span,
+    #[source_code]
+    pub src: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -59,6 +92,8 @@ pub struct BreakOutsideLoopError {
 pub struct ContinueOutsideLoopError {
     #[label = "there is no enclosing loop"]
     pub span: Span,
+    #[source_code]
+    pub src: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -71,6 +106,8 @@ pub struct TypeMismatchError {
     pub actual_loc: Span,
     #[label = "expected type {expected_type}"]
     pub expected_loc: Span,
+    #[source_code]
+    pub src: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -80,4 +117,6 @@ pub struct FunctionTypeMismatchError {
     pub expected_ty: String,
     #[label = "the function has type {expected_ty}"]
     pub span: Span,
+    #[source_code]
+    pub src: String,
 }

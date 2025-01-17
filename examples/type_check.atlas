@@ -1,0 +1,16 @@
+func main() {
+    let one: f64 = 1.0;
+    let PI: f64 = 3.14159;
+    PI = 3.0;
+    let five: i64 = 5 + 5;
+    test(1, 1);
+    if 5 == 5 {
+        let a: i64 = 5;
+    }
+    b = 6;
+}
+
+func test(a: i64, b: i64) -> i64 {
+    let c: i64 = a + b;
+    return 6.0;
+}

@@ -241,6 +241,7 @@ impl<'ast> Parser<'ast> {
     }
 
     fn parse_let(&mut self) -> ParseResult<AstLetExpr<'ast>> {
+        let start = self.current().span();
         self.expect(TokenKind::KwLet)?;
         let name = self.parse_identifier()?;
 
@@ -252,7 +253,7 @@ impl<'ast> Parser<'ast> {
 
         let value = self.parse_binary()?;
         let node = AstLetExpr {
-            span: Span::union_span(name.span, value.span()),
+            span: Span::union_span(start, value.span()),
             name: self.arena.alloc(name),
             ty: Some(self.arena.alloc(ty)),
             value: self.arena.alloc(value),
@@ -261,6 +262,7 @@ impl<'ast> Parser<'ast> {
     }
 
     fn parse_const(&mut self) -> ParseResult<AstConstExpr<'ast>> {
+        let start = self.current().span();
         self.expect(TokenKind::KwConst)?;
         let name = self.parse_identifier()?;
 
@@ -272,7 +274,7 @@ impl<'ast> Parser<'ast> {
 
         let value = self.parse_binary()?;
         let node = AstConstExpr {
-            span: Span::union_span(name.span, value.span()),
+            span: Span::union_span(start, value.span()),
             name: self.arena.alloc(name),
             ty: Some(self.arena.alloc(ty)),
             value: self.arena.alloc(value),

@@ -29,6 +29,7 @@ where
     program: Program<'gen>,
     arena: CodeGenArena<'gen>,
     current_pos: usize,
+    src: String,
 }
 
 impl<'hir, 'gen> CodeGenUnit<'hir, 'gen>
@@ -36,12 +37,13 @@ where
     'gen: 'hir,
 {
     /// Create a new CodeGenUnit
-    pub(crate) fn new(hir: HirModule<'hir>, arena: CodeGenArena<'gen>) -> Self {
+    pub(crate) fn new(hir: HirModule<'hir>, arena: CodeGenArena<'gen>, src: String) -> Self {
         Self {
             hir,
             program: Program::new(),
             current_pos: 0,
             arena,
+            src,
         }
     }
     /// Take the HIR and convert it to a VM representation
@@ -51,8 +53,8 @@ where
             let mut bytecode = Vec::new();
 
             let params = func.1.signature.params.clone();
-            Self::generate_bytecode_args(params, &mut bytecode)?;
-            Self::generate_bytecode_block(&func.1.body, &mut bytecode)?;
+            Self::generate_bytecode_args(params, &mut bytecode, self.src.clone())?;
+            Self::generate_bytecode_block(&func.1.body, &mut bytecode, self.src.clone())?;
 
             let len = bytecode.len();
             if func.0 == "main" {
@@ -86,9 +88,10 @@ where
     fn generate_bytecode_block(
         block: &HirBlock<'hir>,
         bytecode: &mut Vec<Instruction>,
+        src: String,
     ) -> HirResult<()> {
         for stmt in &block.statements {
-            Self::generate_bytecode_stmt(stmt, bytecode)?;
+            Self::generate_bytecode_stmt(stmt, bytecode, src.clone())?;
         }
         Ok(())
     }
@@ -96,16 +99,17 @@ where
     fn generate_bytecode_stmt(
         stmt: &HirStatement<'hir>,
         bytecode: &mut Vec<Instruction>,
+        src: String,
     ) -> HirResult<()> {
         match stmt {
             HirStatement::Return(e) => {
-                Self::generate_bytecode_expr(e.value, bytecode)?;
+                Self::generate_bytecode_expr(e.value, bytecode, src)?;
                 bytecode.push(Instruction::Return);
             }
             HirStatement::IfElse(i) => {
-                Self::generate_bytecode_expr(i.condition, bytecode)?;
+                Self::generate_bytecode_expr(i.condition, bytecode, src.clone())?;
                 let mut then_body = Vec::new();
-                Self::generate_bytecode_block(i.then_branch, &mut then_body)?;
+                Self::generate_bytecode_block(i.then_branch, &mut then_body, src.clone())?;
 
                 bytecode.push(Instruction::JmpZ {
                     pos: (then_body.len() + if i.else_branch.is_some() { 1 } else { 0 }) as isize,
@@ -113,7 +117,7 @@ where
                 bytecode.append(&mut then_body);
                 if let Some(e) = i.else_branch {
                     let mut else_body = Vec::new();
-                    Self::generate_bytecode_block(e, &mut else_body)?;
+                    Self::generate_bytecode_block(e, &mut else_body, src)?;
 
                     bytecode.push(Instruction::Jmp {
                         pos: (else_body.len() + 1) as isize,
@@ -123,10 +127,10 @@ where
             }
             HirStatement::While(w) => {
                 let start = bytecode.len() as isize;
-                Self::generate_bytecode_expr(w.condition, bytecode)?;
+                Self::generate_bytecode_expr(w.condition, bytecode, src.clone())?;
                 let mut body = Vec::new();
 
-                Self::generate_bytecode_block(w.body, &mut body)?;
+                Self::generate_bytecode_block(w.body, &mut body, src)?;
                 //If the condition is false jump to the end of the loop
                 bytecode.push(Instruction::JmpZ {
                     pos: (body.len() + 1) as isize,
@@ -139,7 +143,7 @@ where
             }
             HirStatement::Let(l) => {
                 let mut value = Vec::new();
-                Self::generate_bytecode_expr(l.value, &mut value)?;
+                Self::generate_bytecode_expr(l.value, &mut value, src)?;
                 match l.ty {
                     HirTy::Int64(_) => {
                         value.push(Instruction::StoreI64 {
@@ -147,10 +151,16 @@ where
                         });
                         bytecode.append(&mut value);
                     }
+                    HirTy::Float64(_) => {
+                        value.push(Instruction::StoreF64 {
+                            var_name: l.name.to_string(),
+                        });
+                        bytecode.append(&mut value);
+                    }
                     _ => unimplemented!("Unsupported type for now"),
                 }
             }
-            HirStatement::Expr(e) => Self::generate_bytecode_expr(e.expr, bytecode)?,
+            HirStatement::Expr(e) => Self::generate_bytecode_expr(e.expr, bytecode, src)?,
             _ => {
                 return Err(crate::atlas_hir::error::HirError::UnsupportedStatement(
                     UnsupportedStatement {
@@ -159,6 +169,7 @@ where
                             stmt.span().end() - stmt.span().start(),
                         ),
                         stmt: format!("{:?}", stmt),
+                        src: src.clone(),
                     },
                 ))
             }
@@ -169,13 +180,14 @@ where
     fn generate_bytecode_expr(
         expr: &HirExpr<'hir>,
         bytecode: &mut Vec<Instruction>,
+        src: String,
     ) -> HirResult<()> {
         match expr {
             HirExpr::Assign(a) => {
                 let lhs = a.lhs.as_ref();
                 match lhs {
                     HirExpr::Ident(i) => {
-                        Self::generate_bytecode_expr(&a.rhs, bytecode)?;
+                        Self::generate_bytecode_expr(&a.rhs, bytecode, src)?;
                         match i.ty {
                             HirTy::Int64(_) => {
                                 bytecode.push(Instruction::StoreI64 {
@@ -208,14 +220,15 @@ where
                                     expr.span().end() - expr.span().start(),
                                 ),
                                 expr: format!("{:?}", expr),
+                                src: src.clone(),
                             },
                         ));
                     }
                 }
             }
             HirExpr::HirBinaryOp(b) => {
-                Self::generate_bytecode_expr(&b.lhs, bytecode)?;
-                Self::generate_bytecode_expr(&b.rhs, bytecode)?;
+                Self::generate_bytecode_expr(&b.lhs, bytecode, src.clone())?;
+                Self::generate_bytecode_expr(&b.rhs, bytecode, src)?;
                 match b.op {
                     crate::atlas_hir::expr::HirBinaryOp::Add => {
                         bytecode.push(Instruction::AddI64);
@@ -255,12 +268,12 @@ where
             }
             HirExpr::Unary(u) => {
                 //The operator are not yet implemented
-                Self::generate_bytecode_expr(&u.expr, bytecode)?;
+                Self::generate_bytecode_expr(&u.expr, bytecode, src)?;
             }
             //This need to be thoroughly tested
             HirExpr::Call(f) => {
                 for arg in &f.args {
-                    Self::generate_bytecode_expr(arg, bytecode)?;
+                    Self::generate_bytecode_expr(arg, bytecode, src.clone())?;
                 }
                 let callee = f.callee.as_ref();
                 match callee {
@@ -285,6 +298,7 @@ where
                                     expr.span().end() - expr.span().start(),
                                 ),
                                 expr: format!("Can't call from: {:?}", expr),
+                                src: src.clone(),
                             },
                         ))
                     }
@@ -324,6 +338,7 @@ where
                             expr.span().end() - expr.span().start(),
                         ),
                         expr: format!("{:?}", expr),
+                        src: src.clone(),
                     },
                 ))
             }
@@ -334,6 +349,7 @@ where
     fn generate_bytecode_args(
         args: Vec<&HirFunctionParameterSignature<'hir>>,
         bytecode: &mut Vec<Instruction>,
+        src: String,
     ) -> HirResult<()> {
         let args = args.iter().rev().cloned().collect::<Vec<_>>();
         for arg in args {

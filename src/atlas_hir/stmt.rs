@@ -13,6 +13,8 @@ pub(crate) enum HirStatement<'hir> {
     Return(HirReturn<'hir>),
     Expr(HirExprStmt<'hir>),
     Let(HirLetStmt<'hir>),
+    //tbf, no need to use anything else than a LetStmt for the const
+    Const(HirLetStmt<'hir>),
     IfElse(HirIfElseStmt<'hir>),
     While(HirWhileStmt<'hir>),
     Break(Span),
@@ -26,6 +28,7 @@ impl Spanned for HirStatement<'_> {
             HirStatement::Return(ret) => ret.span,
             HirStatement::Expr(expr) => expr.span,
             HirStatement::Let(let_stmt) => let_stmt.span,
+            HirStatement::Const(const_stmt) => const_stmt.span,
             HirStatement::IfElse(if_else) => if_else.span,
             HirStatement::While(while_stmt) => while_stmt.span,
             HirStatement::Break(span) => *span,
@@ -53,6 +56,7 @@ pub(crate) struct HirLetStmt<'hir> {
     pub name: &'hir str,
     pub name_span: Span,
     pub ty: &'hir HirTy<'hir>,
+    pub ty_span: Span,
     pub value: &'hir HirExpr<'hir>,
 }
 

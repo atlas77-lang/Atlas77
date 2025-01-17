@@ -12,6 +12,7 @@ pub(crate) enum HirExpr<'hir> {
     Unary(UnaryOpExpr<'hir>),
     FloatLiteral(HirFloatLiteralExpr<'hir>),
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
+    BooleanLiteral(HirBooleanLiteralExpr<'hir>),
     UnsignedIntegererLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
     _StringLiteral(HirStringLiteralExpr<'hir>),
 }
@@ -22,6 +23,7 @@ impl Spanned for HirExpr<'_> {
             HirExpr::Ident(expr) => expr.span,
             HirExpr::IntegerLiteral(expr) => expr.span,
             HirExpr::UnsignedIntegererLiteral(expr) => expr.span,
+            HirExpr::BooleanLiteral(expr) => expr.span,
             HirExpr::FloatLiteral(expr) => expr.span,
             HirExpr::Unary(expr) => expr.span,
             HirExpr::HirBinaryOp(expr) => expr.span,
@@ -33,24 +35,12 @@ impl Spanned for HirExpr<'_> {
 }
 
 impl<'hir> HirExpr<'hir> {
-    pub(crate) fn span(&self) -> Span {
-        match self {
-            HirExpr::Ident(expr) => expr.span,
-            HirExpr::IntegerLiteral(expr) => expr.span,
-            HirExpr::UnsignedIntegererLiteral(expr) => expr.span,
-            HirExpr::FloatLiteral(expr) => expr.span,
-            HirExpr::Unary(expr) => expr.span,
-            HirExpr::HirBinaryOp(expr) => expr.span,
-            HirExpr::Call(expr) => expr.span,
-            HirExpr::Assign(expr) => expr.span,
-            HirExpr::_StringLiteral(expr) => expr.span,
-        }
-    }
     pub fn ty(&self) -> &'hir HirTy<'hir> {
         match self {
             HirExpr::Ident(expr) => expr.ty,
             HirExpr::IntegerLiteral(expr) => expr.ty,
             HirExpr::UnsignedIntegererLiteral(expr) => expr.ty,
+            HirExpr::BooleanLiteral(expr) => expr.ty,
             HirExpr::FloatLiteral(expr) => expr.ty,
             HirExpr::Unary(expr) => expr.ty,
             HirExpr::HirBinaryOp(expr) => expr.ty,
@@ -59,6 +49,13 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::_StringLiteral(expr) => expr.ty,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct HirBooleanLiteralExpr<'hir> {
+    pub value: bool,
+    pub span: Span,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]

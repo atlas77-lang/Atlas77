@@ -15,8 +15,9 @@ use super::{
     arena::HirArena,
     error::{HirResult, UnsupportedExpr, UnsupportedStatement},
     expr::{
-        HirBinaryOp, HirBinaryOpExpr, HirExpr, HirFloatLiteralExpr, HirFunctionCallExpr,
-        HirIdentExpr, HirIntegerLiteralExpr, HirUnsignedIntegerLiteralExpr, UnaryOp, UnaryOpExpr,
+        HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirExpr, HirFloatLiteralExpr,
+        HirFunctionCallExpr, HirIdentExpr, HirIntegerLiteralExpr, HirUnsignedIntegerLiteralExpr,
+        UnaryOp, UnaryOpExpr,
     },
     item::{HirFunction, HirItem},
     signature::{HirFunctionParameterSignature, HirModuleSignature, HirTypeParameterItemSignature},
@@ -28,11 +29,13 @@ use super::{
 pub(crate) struct AstSyntaxLoweringPass<'ast, 'hir> {
     arena: &'hir HirArena<'hir>,
     ast: &'ast AstProgram<'ast>,
+    //source code
+    src: String,
 }
 
 impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
-    pub(crate) fn new(arena: &'hir HirArena<'hir>, ast: &'ast AstProgram) -> Self {
-        Self { arena, ast }
+    pub(crate) fn new(arena: &'hir HirArena<'hir>, ast: &'ast AstProgram, src: String) -> Self {
+        Self { arena, ast, src }
     }
 }
 
@@ -119,6 +122,23 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 }));
                 Ok(hir)
             }
+            AstStatement::Const(c) => {
+                let name = self.arena.names().get(c.name.name);
+                let ty = match c.ty {
+                    Some(ty) => self.visit_ty(ty)?,
+                    None => self.arena.types().get_uninitialized_ty(),
+                };
+                let value = self.visit_expr(c.value)?;
+                let hir = self.arena.intern(HirStatement::Const(HirLetStmt {
+                    span: node.span(),
+                    name,
+                    name_span: c.name.span,
+                    ty,
+                    ty_span: c.ty.unwrap().span(),
+                    value,
+                }));
+                Ok(hir)
+            }
             AstStatement::Let(l) => {
                 let name = self.arena.names().get(l.name.name);
                 let ty = match l.ty {
@@ -131,6 +151,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                     name,
                     name_span: l.name.span,
                     ty,
+                    ty_span: l.ty.unwrap().span(),
                     value,
                 }));
                 Ok(hir)
@@ -185,6 +206,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                         node.span().end() - node.span().start(),
                     ),
                     stmt: format!("{:?}", node),
+                    src: self.src.clone(),
                 },
             )),
         }
@@ -266,6 +288,14 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                                 ty: self.arena.types().get_integer64_ty(),
                             }))
                     }
+                    AstLiteral::Boolean(b) => {
+                        self.arena
+                            .intern(HirExpr::BooleanLiteral(HirBooleanLiteralExpr {
+                                span: l.span(),
+                                value: b.value,
+                                ty: self.arena.types().get_boolean_ty(),
+                            }))
+                    }
                     AstLiteral::Float(f) => {
                         self.arena
                             .intern(HirExpr::FloatLiteral(HirFloatLiteralExpr {
@@ -288,6 +318,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                                 node.span().end() - node.span().start(),
                             ),
                             expr: format!("{:?}", node),
+                            src: self.src.clone(),
                         }));
                     }
                 };
@@ -299,6 +330,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                     node.span().end() - node.span().start(),
                 ),
                 expr: format!("{:?}", node),
+                src: self.src.clone(),
             })),
         }
     }
