@@ -16,7 +16,7 @@
 
 ### Versions
 
-Please include the OS and what version of the OS you're running, and the version of Reg-Lang you are using (or the latest commit of your build).
+Please include the OS and what version of the OS you're running, and the version of Atlas77 you are using (or the latest commit of your build).
 
 ### Additional Information
 

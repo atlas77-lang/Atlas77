@@ -1,0 +1,5 @@
+import "std/io"
+
+func main() {
+    print_int(42);
+}

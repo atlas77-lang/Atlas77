@@ -50,6 +50,7 @@
     </li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#goal-of-the-language">Goal of the language</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -61,8 +62,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Atlas77 is a functional programming language with a strong interop with Rust.
-It is designed to be a high-level language with a strong focus on performance and safety. 
+Atlas77 is an experimental statically typed programming language with a strong interop with Rust.
+It will run on a custom VM. I'll implement a JIT compiler using Cranelift later on. (There will be an AOT compiler too)
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -102,16 +103,22 @@ Or directly from their website: [Rust](https://www.rust-lang.org/tools/install)
 
 ### Fibonacci Example
 ```ts
-let fib: (n: int) -> int = 
-  match n
-  | 0 ~> 0
-  | 1 ~> 1
-  \ _ ~> fib(n - 1) + fib(n - 2)
+import "std/io"
 
-let main: () -> int = fib(10) //> 55
+func fib(n: i64) -> i64 {
+    if n <= 1 {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+func main() -> i64 {
+    let n: i64 = 10;
+    print_int(fib(n));
+}
 ```
 
-_For more examples, please refer to the [examples folder](https://github.com/atlas77-lang/Atlas77/tree/main/examples)_
+_For more examples, please refer to the [examples folder](./examples/README.MD)_
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -120,51 +127,58 @@ _For more examples, please refer to the [examples folder](https://github.com/atl
 <!-- ROADMAP -->
 ## Roadmap
 
+
 ### v0.3 "Foundation"
+> Deprecated, if you wanna know more about the v0.3.x, check the releases page.
 - [v0.3](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3)
-  - [x] Variable assignments
-  - [x] Function declarations
-  - [x] Conditional expressions (`if-else`)
-  - [x] Recursion
-  - [x] Basic arithmetic operations
-  - [x] `do..end` blocks to allow multiple expressions
-  - [x] Basic runtime & memory system
 - [v0.3.1](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3.1)
-  - [x] Support for `string` & `List[T]` types (including indexing and concatenation)
-  - [x] Basic CLI support
-  - [x] Basic stdio functions
-  - [x] `match` expressions
 
 ### v0.4 "Keystone"
+> Deprecated, if you wanna know more about the v0.4, check the releases page.
 - [v0.4 "Keystone"](https://github.com/atlas77-lang/Atlas77/tag/v0.4)
-  - [x] Support for `struct` types
-  - [x] Improved runtime & memory system (~80% performance uplift)
-  - [x] Support for external functions (Rust interop)
-  - [x] Expanded standard library using external functions
 
-### Upcoming Features
-- [ ] Support for `enum` types:
-  - [ ] Base enums (standard integer enums)
-  - [ ] Advanced enums (enums with associated data)
-- [ ] Support for structs with named fields
-- [ ] Type Checking:
-  - [ ] High-Level Intermediate Representation (HLIR)
-  - [ ] Defining external functions
-  - [ ] Compile-time traits (e.g., `+`, `-`, `*`, `/`, `&`)
-  - [ ] Type inference
-- [ ] New and improved runtime:
-  - [ ] Garbage collection
-  - [ ] Memoization
-  - [ ] Concurrency/parallelism by default for pure functions
-- [ ] Interoperability with other languages (e.g., C):
-  - [ ] Support for loading shared libraries
-- [ ] Differentiation between "pure" and "impure" functions:
-  - [ ] Ability to mark impure functions for side effects
-- [ ] Syntax rework for functions:
-  - [ ] Replace `let fib: (n: int) -> int = ...` with `let fib: (int) -> int = \n -> ...` to remove argument names in type definitions.
-  - [ ] Anonymous functions
-  - [ ] New Abstract Syntax Tree (AST)
-  - [ ] New parser
+### v0.5 Phoenix Release Timeline
+The v0.5 is a complete rewrite of Atlas77, it aligns better with the end goal of the language (see [_Goal of the language_](#goal-of-the-language)).
+> NB: up until the v1.0 the language will always be in alpha, tho I'll try to make every release as stable as possible.
+> I hope I can release the v0.5 this month
+
+| Feature | Expected Version | Description | Status |
+| --- | --- | --- | --- |
+| Functions | **v0.5** | Define and call functions | ✅ |
+| Variables | **v0.5** | Immutable (`const`) and mutable (`let`) variables | ✅ |
+| Basic `std` Library | **v0.5** | Core utilities for `time`, `file`, `io`, `math`, `string`, `list` | ✅ |
+| Import | **v0.5** | Limited to standard library imports for now | ✅ |
+| Control Flow | **v0.5** | `if/else` statements for conditional logic, `while` loops for iteration | ✅ |
+| Match Expressions | **v0.5.1** | Pattern matching | 💭 |
+| Structs | **v0.5.1** | User-defined types with named fields | 💭 |
+| Unions | **v0.5.1** | Low-level data structures allowing overlapping memory layouts | 💤 |
+| Enums | **v0.5.1** | Enumerations with optional associated data for flexible value sets | 💤 |
+| Lambdas & Closures | **v0.5.2** | Inline, anonymous functions with captured variables | 💭 |
+| Classes | **v0.5.2** | Object-oriented programming support | 💭 |
+| Traits | **v0.5.2** | Interfaces for defining shared behavior | 💤 |
+| Pointers | **v0.5.2** | Basic pointer manipulation for low-level programming | 💭 |
+| Memory Management | **v0.5.2** | Simple memory management | 💭 |
+| Imports | **v0.5.2** | Importing code from other files | 💤 |
+| Generics | **v0.5.x** | Type parameters for writing reusable code | 💤 |
+| Standard Library | **v0.5.x** | A comprehensive standard library | 💤 |
+| Package Manager | **unknown** | A package manager for sharing code | 💤 |
+| Language Server Protocol | **unknown** | Editor support for code completion, diagnostics, and more | 💤 |
+| Cranelift JIT | **unknown** | Just-in-time compilation for faster execution | 💤 |
+
+
+#### Legend
+
+- 💤: Not implemented
+- 💭: Being thought of
+- 🔧: Being implemented
+- ✅: Working
+
+
+#### Stability and Refinement
+> As the language is still in alpha (not 1.0 yet), I won't make "alpha"/"beta" build, it doesn't really make sense.
+
+The beta phase (aka after 0.5.2 and beyond) will focus on stabilizing the language. All features will be finalized, tested extensively, and optimized for real-world use. This phase will serve as a release candidate.
+
 
 
 
@@ -172,6 +186,19 @@ See the [open issues](https://github.com/atlas77-lang/Atlas77/issues) for a full
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+
+<!-- GOAL OF THE LANGUAGE -->
+## Goal of the language
+
+- Boostrapping the compiler
+- Making a simple ECS
+- Making a simple Game Engine with Vulkan bindings (maybe OpenGL too) 
+> At least it should be possible to make one with Atlas77
+- Using BlueEngine from the language (even if it's not really most efficient)
+- Ahead of time compilation using cranelift
+- Making the package manager directly in Atlas77
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 <!-- CONTRIBUTING -->
@@ -190,9 +217,11 @@ Don't forget to give the project a star! Thanks again!
 
 ### Top contributors:
 
-<a href="https://github.com/atlas77-lang/Atlas77/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=atlas77-lang/Atlas77" alt="contrib.rocks image" />
+<a href="https://github.com/atlas77-lang/atlas77/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=atlas77-lang/atlas77" />
 </a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -231,4 +260,3 @@ Project Link: [https://github.com/atlas77-lang/Atlas77](https://github.com/atlas
 [issues-url]: https://github.com/atlas77-lang/Atlas77/issues
 [license-shield]: https://img.shields.io/github/license/atlas77-lang/Atlas77.svg?style=for-the-badge
 [license-url]: https://github.com/atlas77-lang/Atlas77/blob/master/LICENSE.txt
-

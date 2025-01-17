@@ -6,10 +6,19 @@ use crate::{
         object_map::{Object, Structure},
         vm_data::VMData,
     },
-    atlas_runtime::{errors::RuntimeError, vm_state::VMState},
+    atlas_vm::{errors::RuntimeError, vm_state::VMState, CallBack},
 };
 
 use time::{format_description, OffsetDateTime};
+
+pub const TIME_ATLAS: &str = include_str!("time.atlas");
+
+pub const TIME_FUNCTIONS: [(&str, CallBack); 4] = [
+    ("now", now),
+    ("format_time_iso", format_time_iso),
+    ("format_time", format_time),
+    ("elapsed", elapsed),
+];
 
 //now() -> &Time
 pub fn now(state: VMState) -> Result<VMData, RuntimeError> {

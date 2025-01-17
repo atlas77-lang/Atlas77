@@ -1,7 +1,12 @@
-let fib: (a: int) -> int = 
-    match a 
-    | 0 ~> 0,
-    | 1 ~> 1,
-    \ _ ~> fib(a - 1) + fib(a - 2)
+func main() -> f64 {
+    let tmp: i64 = fib(20.0);
+    return fib(20.0);
+}
 
-let main: () -> int = fib(20)
+func fib(n: f64) -> f64 {
+    if n <= 1.0 {
+        return n;
+    } else {
+        return fib(n - 1.0) + fib(n - 2.0);
+    }
+}

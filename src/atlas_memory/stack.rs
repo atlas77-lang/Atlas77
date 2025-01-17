@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
-use crate::{atlas_memory::vm_data::VMData, atlas_runtime::errors::RuntimeError};
-
-const STACK_SIZE: usize = 16 * 1024 / size_of::<VMData>();
+use crate::{atlas_memory::vm_data::VMData, atlas_vm::errors::RuntimeError};
+/// The size of the stack in bytes, 16384 is the maximum before it overflows "thread main"
+///
+/// I'll try allocating the stack into the heap later on so
+const STACK_SIZE: usize = 16 * 16384 / size_of::<VMData>();
 /// The stack should be more used overall.
 ///
 /// And allow features such as holding objects themselves e.g.
@@ -41,6 +43,10 @@ impl Stack {
         } else {
             Err(RuntimeError::StackOverflow)
         }
+    }
+
+    pub fn truncate(&mut self, new_top: usize) {
+        self.top = new_top;
     }
 
     pub fn pop(&mut self) -> Result<VMData, RuntimeError> {
@@ -83,7 +89,7 @@ impl Display for Stack {
             {
                 let mut s = "[".to_string();
                 for i in 0..self.top - 1 {
-                    s.push_str(&format!("{:?}, ", self.values[i]))
+                    s.push_str(&format!("{}, ", self.values[i]))
                 }
                 s.push(']');
                 s

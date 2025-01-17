@@ -1,11 +1,18 @@
 use crate::{
     atlas_memory::{object_map::Object, vm_data::VMData},
-    atlas_runtime::{errors::RuntimeError, vm_state::VMState},
+    atlas_vm::{errors::RuntimeError, vm_state::VMState, CallBack},
 };
 
-// List[string] will have a tag of 257 (0-255 are reserved for the compiler)
+pub const FILE_ATLAS: &str = include_str!("file.atlas");
 
-// read_dir(path: &string) -> &List[string]
+pub const FILE_FUNCTIONS: [(&str, CallBack); 5] = [
+    ("read_dir", read_dir),
+    ("read_file", read_file),
+    ("write_file", write_file),
+    ("file_exists", file_exists),
+    ("remove_file", remove_file),
+];
+
 pub fn read_dir(state: VMState) -> Result<VMData, RuntimeError> {
     let path_ptr = state.stack.pop()?.as_object();
     let path = state.object_map.get(path_ptr).string();
@@ -30,7 +37,6 @@ pub fn read_dir(state: VMState) -> Result<VMData, RuntimeError> {
     }
 }
 
-// read_file(path: &string) -> &string
 pub fn read_file(state: VMState) -> Result<VMData, RuntimeError> {
     let path_ptr = state.stack.pop()?.as_object();
     let path = state.object_map.get(path_ptr).string();
@@ -43,7 +49,6 @@ pub fn read_file(state: VMState) -> Result<VMData, RuntimeError> {
     }
 }
 
-// write_file(path: &string, content: &string) -> ()
 pub fn write_file(state: VMState) -> Result<VMData, RuntimeError> {
     let content_ptr = state.stack.pop()?.as_object();
     let path_ptr = state.stack.pop()?.as_object();
@@ -55,7 +60,6 @@ pub fn write_file(state: VMState) -> Result<VMData, RuntimeError> {
     Ok(VMData::new_unit())
 }
 
-// file_exists(path: &string) -> bool
 pub fn file_exists(state: VMState) -> Result<VMData, RuntimeError> {
     let path_ptr = state.stack.pop()?.as_object();
     let path = state.object_map.get(path_ptr).string();
@@ -64,7 +68,6 @@ pub fn file_exists(state: VMState) -> Result<VMData, RuntimeError> {
     Ok(VMData::new_bool(exists))
 }
 
-// remove_file(path: &string) -> ()
 pub fn remove_file(state: VMState) -> Result<VMData, RuntimeError> {
     let path_ptr = state.stack.pop()?.as_object();
     let path = state.object_map.get(path_ptr).string();

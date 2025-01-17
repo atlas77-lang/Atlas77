@@ -1,11 +1,15 @@
 [package]
 name = "atlas_77"
-version = "0.4.0"
+version = "0.5.0-alpha1"
 edition = "2021"
 description = "Functional programming language with strong interoperability with Rust"
 authors = ["Gipson62", "ElhamAryanpur"]
 license = "MIT"
 repository = "https://github.com/atlas77-lang/Atlas77"
+keywords = ["programming", "language", "compiler", "atlas77"]
+categories = ["Compilers", "programming-languages"]
+homepage = "https://redgear.tk/"
+readme = "README.md"
 
 [profile.release]
 opt-level = 3
@@ -20,8 +24,17 @@ opt-level = 3
 codegen-units = 1
 
 [dependencies]
-internment = "0.8.4"
-clap = { version = "4.4.8", features = ["derive"] }
+# Lexer Generator
+atlas-core = "0.7.1"
+# For the CLI
+clap = { version = "4.5.26", features = ["derive"] }
+# For the Standard Library
 rand = "0.8.5"
-atlas-core = "0.7.0-beta3"
 time = { version = "0.3.37", features = ["formatting"] }
+# For the Parser
+bumpalo = "3.16.0"
+serde = { version =  "1.0.217", features = ["derive"] }
+# For pretty printing of errors
+thiserror = { version = "2.0.11" }
+miette = { version = "7.4.0", features = ["fancy"] }
+ron = "0.8.1"

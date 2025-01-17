@@ -1,19 +1,18 @@
+use std::path::PathBuf;
+
 use lexer::AtlasLexer;
-use parser::{ast::AbstractSyntaxTree, ParseError};
+use parser::{arena::AstArena, ast::AstProgram, error::ParseResult};
 
 pub mod lexer;
 pub mod parser;
 
-pub fn parse(path: &str) -> Result<AbstractSyntaxTree, ParseError> {
-    //"default()" setup all the systems you asked for, tho you could use "new()" to add them manually
-    let source = std::fs::read_to_string(path).unwrap();
+pub(crate) fn parse<'ast>(
+    path: &'ast str,
+    arena: &'ast AstArena<'ast>,
+    source: String,
+) -> ParseResult<AstProgram<'ast>> {
     let mut lex: AtlasLexer = lexer::AtlasLexer::default();
-    let tokens = lex
-        .set_path("src/main.atlas")
-        .set_source(source)
-        .tokenize()
-        .unwrap();
-    let mut parser = parser::SimpleParserV1::new();
-    parser.with_tokens(tokens);
+    let tokens = lex.set_source(source.clone()).tokenize().unwrap();
+    let mut parser = parser::Parser::new(arena, tokens, PathBuf::from(path), source);
     parser.parse()
 }

@@ -1,593 +1,483 @@
-use core::fmt;
+use serde::Serialize;
 
-use atlas_core::prelude::{Span, Spanned};
-use internment::Intern;
+use atlas_core::utils::span::*;
 
-use crate::atlas_frontend::lexer::TokenKind;
-
-pub type AbstractSyntaxTree = Vec<Expression>;
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Literal {
-    Integer(i64),
-    Float(f64),
-    Unit,
-    String(Intern<String>),
-    Bool(bool),
-    List(Vec<Expression>),
+/// An `AstProgram` is the top-level node of the AST and contains all the items.
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstProgram<'ast> {
+    pub items: &'ast [&'ast AstItem<'ast>],
 }
 
-impl fmt::Display for Literal {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Integer(i) => write!(f, "{}", i),
-            Self::Float(fl) => write!(f, "{}", fl),
-            Self::Unit => write!(f, "()"),
-            Self::String(s) => write!(f, "{}", s),
-            Self::Bool(b) => write!(f, "{}", b),
-            Self::List(l) => write!(
-                f,
-                "[{}]",
-                l.iter()
-                    .map(|a| a.to_string())
-                    .collect::<Vec<String>>()
-                    .join(", ")
-            ),
-        }
-    }
+/// An `Item` is anything that can be declared at the top-level scope of a program.
+/// This currently means variables & structs declarations
+///
+/// Enums & unions are also top-level items, but they are not yet supported
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) enum AstItem<'ast> {
+    Struct(AstStruct<'ast>),
+    ExternFunction(AstExternFunction<'ast>),
+    Func(AstFunction<'ast>),
+    _Enum(AstEnum<'ast>),
+    _Union(AstUnion<'ast>),
+    Import(AstImport<'ast>),
 }
 
-#[derive(Debug, Clone)]
-pub enum Statement {
-    VariableDeclaration(VariableDeclaration),
-    Expression(Expression),
-    Return(Expression),
-}
-
-impl Spanned for Statement {
+impl Spanned for AstItem<'_> {
     fn span(&self) -> Span {
         match self {
-            Self::VariableDeclaration(v) => v.span(),
-            Self::Expression(e) => e.span(),
-            Self::Return(e) => e.span(),
+            AstItem::Struct(v) => v.span,
+            AstItem::ExternFunction(v) => v.span,
+            AstItem::Func(v) => v.span,
+            AstItem::_Enum(v) => v.span,
+            AstItem::_Union(v) => v.span,
+            AstItem::Import(v) => v.span,
         }
     }
 }
 
-impl fmt::Display for Statement {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstFunction<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub args: &'ast [&'ast AstObjField<'ast>],
+    pub ret: &'ast AstType<'ast>,
+    pub body: &'ast AstBlock<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstUnion<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub variants: &'ast [&'ast AstUnionVariant<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstUnionVariant<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub fields: &'ast [&'ast AstObjField<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstEnum<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub variants: &'ast [&'ast AstEnumVariant<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+/// Enums currently don't support associated values
+pub(crate) struct AstEnumVariant<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstStruct<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub fields: &'ast [&'ast AstObjField<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstObjField<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub ty: &'ast AstType<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstExternFunction<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub args_name: &'ast [&'ast AstIdentifier<'ast>],
+    pub args_ty: &'ast [&'ast AstType<'ast>],
+    pub ret: &'ast AstType<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstImport<'ast> {
+    pub span: Span,
+    pub path: &'ast str,
+    pub alias: Option<&'ast AstIdentifier<'ast>>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) enum AstStatement<'ast> {
+    Let(AstLetExpr<'ast>),
+    Const(AstConstExpr<'ast>),
+    IfElse(AstIfElseExpr<'ast>),
+    _InnerFunc(AstFunction<'ast>),
+    _Block(AstBlock<'ast>),
+    _Call(AstCallExpr<'ast>),
+    While(AstWhileExpr<'ast>),
+    Expr(AstExpr<'ast>),
+    Break(AstBreakStmt),
+    Continue(AstContinueStmt),
+    Return(AstReturnStmt<'ast>),
+}
+
+impl AstStatement<'_> {
+    pub fn span(&self) -> Span {
         match self {
-            Self::VariableDeclaration(v) => write!(f, "{};", v),
-            Self::Expression(e) => write!(f, "{};", e),
-            Self::Return(e) => write!(f, "return {};", e),
+            AstStatement::Let(e) => e.span,
+            AstStatement::Const(e) => e.span,
+            AstStatement::IfElse(e) => e.span,
+            AstStatement::_InnerFunc(e) => e.span,
+            AstStatement::_Block(e) => e.span,
+            AstStatement::_Call(e) => e.span,
+            AstStatement::While(e) => e.span,
+            AstStatement::Expr(e) => e.span(),
+            AstStatement::Break(e) => e.span,
+            AstStatement::Continue(e) => e.span,
+            AstStatement::Return(e) => e.span,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Type {
-    Integer,
-    Float,
-    String,
-    Bool,
-    Unit,
-    List(Box<Type>),
-    Map(Box<Type>, Box<Type>),
-    Function(Vec<(Intern<String>, Type)>, Box<Type>),
-    NonPrimitive(Intern<String>),
-}
-
-impl fmt::Display for Type {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Integer => write!(f, "i64"),
-            Self::Float => write!(f, "f64"),
-            Self::String => write!(f, "string"),
-            Self::Bool => write!(f, "bool"),
-            Self::Unit => write!(f, "()"),
-            Self::List(t) => write!(f, "List[{}]", t),
-            Self::Map(k, v) => write!(f, "Map[{}, {}]", k, v),
-            Self::Function(args, ret) => write!(
-                f,
-                "({}) -> {}",
-                args.iter()
-                    .map(|(s, t)| format!("{}: {}", s, t))
-                    .collect::<Vec<String>>()
-                    .join(", "),
-                ret
-            ),
-            Self::NonPrimitive(s) => write!(f, "{}", s),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct StructDeclaration {
-    pub name: Intern<String>,
-    pub fields: Vec<Type>,
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstContinueStmt {
     pub span: Span,
 }
 
-impl Spanned for StructDeclaration {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for StructDeclaration {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "struct {} ({})",
-            self.name,
-            self.fields
-                .iter()
-                .map(|t| format!("{}", t))
-                .collect::<Vec<String>>()
-                .join(",\n\t")
-        )
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct VariableDeclaration {
-    pub name: Intern<String>,
-    pub t: Type,
-    pub mutable: bool,
-    pub value: Option<Box<Expression>>,
-    pub span: Span,
-}
-impl Spanned for VariableDeclaration {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for VariableDeclaration {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.value.is_some() {
-            writeln!(
-                f,
-                "let {}{}: {} = {}",
-                if self.mutable { "mut " } else { "" },
-                self.name,
-                self.t,
-                self.clone().value.unwrap()
-            )
-        } else {
-            writeln!(
-                f,
-                "let {}{}: {}",
-                if self.mutable { "mut " } else { "" },
-                self.name,
-                self.t
-            )
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct FunctionExpression {
-    pub args: Vec<(Intern<String>, Type)>,
-    pub body: Box<Expression>,
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstBreakStmt {
     pub span: Span,
 }
 
-impl Spanned for FunctionExpression {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for FunctionExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.body)
-    }
-}
-
-/// Identifier
-#[derive(Debug, Clone, PartialEq)]
-pub struct IdentifierNode {
-    /// Name of the identifier
-    pub name: Intern<String>,
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstConstExpr<'ast> {
     pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub ty: Option<&'ast AstType<'ast>>,
+    pub value: &'ast AstExpr<'ast>,
 }
 
-impl Spanned for IdentifierNode {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for IdentifierNode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)
-    }
-}
-
-/// Binary expression
-#[derive(Debug, Clone, PartialEq)]
-pub struct BinaryExpression {
-    pub left: Box<Expression>,
-    pub operator: BinaryOperator,
-    pub right: Box<Expression>,
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstWhileExpr<'ast> {
     pub span: Span,
+    pub condition: &'ast AstExpr<'ast>,
+    pub body: &'ast AstBlock<'ast>,
 }
 
-impl Spanned for BinaryExpression {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for BinaryExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({} {} {})", self.left, self.operator, self.right)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum BinaryOperator {
-    OpAdd,
-    OpSub,
-    OpMul,
-    OpDiv,
-    OpMod,
-    OpEq,
-    OpNe,
-    OpLt,
-    OpLe,
-    OpGt,
-    OpGe,
-    OpAnd,
-    OpOr,
-}
-
-impl fmt::Display for BinaryOperator {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::OpAdd => write!(f, "+"),
-            Self::OpSub => write!(f, "-"),
-            Self::OpMul => write!(f, "*"),
-            Self::OpDiv => write!(f, "/"),
-            Self::OpMod => write!(f, "%"),
-            Self::OpEq => write!(f, "=="),
-            Self::OpNe => write!(f, "!="),
-            Self::OpLt => write!(f, "<"),
-            Self::OpLe => write!(f, "<="),
-            Self::OpGt => write!(f, ">"),
-            Self::OpGe => write!(f, ">="),
-            Self::OpAnd => write!(f, "&&"),
-            Self::OpOr => write!(f, "||"),
-        }
-    }
-}
-
-impl From<&TokenKind> for Option<BinaryOperator> {
-    fn from(value: &TokenKind) -> Self {
-        match value {
-            TokenKind::OpAdd => Some(BinaryOperator::OpAdd),
-            TokenKind::OpSub => Some(BinaryOperator::OpSub),
-            TokenKind::OpMul => Some(BinaryOperator::OpMul),
-            TokenKind::OpDiv => Some(BinaryOperator::OpDiv),
-            TokenKind::OpMod => Some(BinaryOperator::OpMod),
-            TokenKind::OpEq => Some(BinaryOperator::OpEq),
-            TokenKind::OpNEq => Some(BinaryOperator::OpNe),
-            TokenKind::OpLessThan => Some(BinaryOperator::OpLt),
-            TokenKind::OpLessThanEq => Some(BinaryOperator::OpLe),
-            TokenKind::OpGreaterThan => Some(BinaryOperator::OpGt),
-            TokenKind::OpGreaterThanEq => Some(BinaryOperator::OpGe),
-            TokenKind::OpAnd => Some(BinaryOperator::OpAnd),
-            TokenKind::OpOr => Some(BinaryOperator::OpOr),
-            _ => None,
-        }
-    }
-}
-
-/// Unary expression
-#[derive(Debug, Clone, PartialEq)]
-pub struct UnaryExpression {
-    pub operator: Option<UnaryOperator>,
-    pub expression: Box<Expression>,
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstAssignExpr<'ast> {
     pub span: Span,
+    pub target: &'ast AstExpr<'ast>,
+    pub value: &'ast AstExpr<'ast>,
 }
 
-impl Spanned for UnaryExpression {
-    fn span(&self) -> Span {
-        self.span
-    }
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) enum AstExpr<'ast> {
+    _Let(AstLetExpr<'ast>),
+    _Lambda(AstLambdaExpr<'ast>),
+    _CompTime(AstCompTimeExpr<'ast>),
+    IfElse(AstIfElseExpr<'ast>),
+    BinaryOp(AstBinaryOpExpr<'ast>),
+    UnaryOp(AstUnaryOpExpr<'ast>),
+    Call(AstCallExpr<'ast>),
+    Literal(AstLiteral<'ast>),
+    Identifier(AstIdentifier<'ast>),
+    Indexing(AstIndexingExpr<'ast>),
+    FieldAccess(AstFieldAccessExpr<'ast>),
+    _NewObj(AstNewObjExpr<'ast>),
+    _Block(AstBlock<'ast>),
+    Assign(AstAssignExpr<'ast>),
+    //Tuple(AstTupleExpr<'ast>),
 }
 
-impl fmt::Display for UnaryExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.operator.is_some() {
-            write!(f, "{} {}", self.operator.clone().unwrap(), self.expression)
-        } else {
-            write!(f, "{}", self.expression)
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum UnaryOperator {
-    OpSub,
-    OpNot,
-}
-
-impl fmt::Display for UnaryOperator {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::OpSub => write!(f, "-"),
-            Self::OpNot => write!(f, "!"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct IfElseNode {
-    pub condition: Box<Expression>,
-    pub if_body: Box<Expression>,
-    pub else_body: Option<Box<Expression>>,
-    pub span: Span,
-}
-
-impl Spanned for IfElseNode {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for IfElseNode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(e) = &self.else_body {
-            write!(
-                f,
-                "if {}then\n\t{}else\n\t{}",
-                self.condition, self.if_body, e
-            )
-        } else {
-            write!(f, "if {} then\n\t{}", self.condition, self.if_body)
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct FunctionCall {
-    pub name: Intern<String>,
-    pub args: Vec<Box<Expression>>,
-    pub span: Span,
-}
-
-impl Spanned for FunctionCall {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for FunctionCall {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}({})",
-            self.name,
-            self.args
-                .iter()
-                .map(|a| a.to_string())
-                .collect::<Vec<String>>()
-                .join(", ")
-        )
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct IndexExpression {
-    pub name: Intern<String>,
-    pub index: Box<Expression>,
-    pub span: Span,
-}
-
-impl Spanned for IndexExpression {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for IndexExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}[{}]", self.name, self.index)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct DoExpression {
-    pub body: Vec<Box<Expression>>,
-    pub span: Span,
-}
-
-impl Spanned for DoExpression {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for DoExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "do\n\t{}",
-            self.body
-                .iter()
-                .map(|a| a.to_string())
-                .collect::<Vec<String>>()
-                .join("\n\t")
-        )
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct MatchArm {
-    pub pattern: Box<Expression>,
-    pub body: Box<Expression>,
-    pub span: Span,
-}
-
-impl Spanned for MatchArm {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for MatchArm {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} => {}", self.pattern, self.body)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct MatchExpression {
-    pub expr: Box<Expression>,
-    pub arms: Vec<MatchArm>,
-    pub default: Option<Box<Expression>>,
-    pub span: Span,
-}
-
-impl Spanned for MatchExpression {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for MatchExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.default.is_some() {
-            write!(
-                f,
-                "match {} \n\t{}default\n\t{}",
-                self.expr,
-                self.arms
-                    .iter()
-                    .map(|a| a.pattern.to_string() + "=>" + &a.body.to_string())
-                    .collect::<Vec<String>>()
-                    .join("\n\t"),
-                self.default.clone().unwrap()
-            )
-        } else {
-            write!(
-                f,
-                "match {} \n\t{}",
-                self.expr,
-                self.arms
-                    .iter()
-                    .map(|a| a.pattern.to_string() + "=>" + &a.body.to_string())
-                    .collect::<Vec<String>>()
-                    .join("\n\t")
-            )
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct NewObjectExpression {
-    pub name: Intern<String>,
-    pub fields: Vec<Expression>,
-    pub span: Span,
-}
-
-impl Spanned for NewObjectExpression {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for NewObjectExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "new {} {{\n\t{}\n}}",
-            self.name,
-            self.fields
-                .iter()
-                .map(|a| a.to_string())
-                .collect::<Vec<String>>()
-                .join(",\n\t")
-        )
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct FieldAccessExpression {
-    pub name: Intern<String>,
-    pub field: usize, //currently accessing field is through index (like a tuple)
-    pub span: Span,
-}
-
-impl Spanned for FieldAccessExpression {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-impl fmt::Display for FieldAccessExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}.{}", self.name, self.field)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Expression {
-    Literal(Literal),
-    Identifier(IdentifierNode),
-    BinaryExpression(BinaryExpression),
-    UnaryExpression(UnaryExpression),
-    IfElseNode(IfElseNode),
-    FunctionExpression(FunctionExpression),
-    VariableDeclaration(VariableDeclaration),
-    StructDeclaration(StructDeclaration),
-    FunctionCall(FunctionCall),
-    DoExpression(DoExpression),
-    MatchExpression(MatchExpression),
-    IndexExpression(IndexExpression),
-    FieldAccessExpression(FieldAccessExpression),
-    NewObjectExpression(NewObjectExpression),
-}
-
-impl Spanned for Expression {
+impl Spanned for AstExpr<'_> {
     fn span(&self) -> Span {
         match self {
-            Self::Identifier(i) => i.span(),
-            Self::BinaryExpression(b) => b.span(),
-            Self::UnaryExpression(u) => u.span(),
-            Self::IfElseNode(i) => i.span(),
-            Self::FunctionExpression(fun) => fun.span(),
-            Self::VariableDeclaration(v) => v.span(),
-            Self::FunctionCall(fun) => fun.span(),
-            Self::DoExpression(d) => d.span(),
-            Self::MatchExpression(m) => m.span(),
-            Self::IndexExpression(l) => l.span(),
-            Self::NewObjectExpression(n) => n.span(),
-            Self::FieldAccessExpression(f) => f.span(),
-            _ => unreachable!("Literal has no span"),
+            AstExpr::_Let(e) => e.span,
+            AstExpr::_Lambda(e) => e.span,
+            AstExpr::_CompTime(e) => e.span,
+            AstExpr::IfElse(e) => e.span,
+            AstExpr::BinaryOp(e) => e.span,
+            AstExpr::UnaryOp(e) => e.span,
+            AstExpr::Call(e) => e.span,
+            AstExpr::Literal(e) => e.span(),
+            AstExpr::Identifier(e) => e.span,
+            AstExpr::Indexing(e) => e.span,
+            AstExpr::FieldAccess(e) => e.span,
+            AstExpr::_NewObj(e) => e.span,
+            AstExpr::_Block(e) => e.span,
+            AstExpr::Assign(e) => e.span,
         }
     }
 }
 
-impl fmt::Display for Expression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstReturnStmt<'ast> {
+    pub span: Span,
+    pub value: &'ast AstExpr<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstBlock<'ast> {
+    pub span: Span,
+    pub stmts: &'ast [&'ast AstStatement<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstNewObjExpr<'ast> {
+    pub span: Span,
+    pub ty: &'ast AstType<'ast>,
+    pub fields: &'ast [&'ast AstFieldInit<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstFieldInit<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub value: &'ast AstExpr<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstFieldAccessExpr<'ast> {
+    pub span: Span,
+    pub target: &'ast AstExpr<'ast>,
+    pub field: &'ast AstIdentifier<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstIndexingExpr<'ast> {
+    pub span: Span,
+    pub target: &'ast AstExpr<'ast>,
+    pub index: &'ast AstExpr<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstCallExpr<'ast> {
+    pub span: Span,
+    pub callee: &'ast AstExpr<'ast>,
+    pub args: &'ast [&'ast AstExpr<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstUnaryOpExpr<'ast> {
+    pub span: Span,
+    pub expr: &'ast AstExpr<'ast>,
+    pub op: Option<AstUnaryOp>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) enum AstUnaryOp {
+    Neg,
+    Not,
+    _Deref,
+    _AsRef,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstBinaryOpExpr<'ast> {
+    pub span: Span,
+    pub lhs: &'ast AstExpr<'ast>,
+    pub rhs: &'ast AstExpr<'ast>,
+    pub op: AstBinaryOp,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) enum AstBinaryOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    Eq,
+    NEq,
+    Lt,
+    Lte,
+    Gt,
+    Gte,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstIfElseExpr<'ast> {
+    pub span: Span,
+    pub condition: &'ast AstExpr<'ast>,
+    pub body: &'ast AstBlock<'ast>,
+    pub else_body: Option<&'ast AstBlock<'ast>>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstLetExpr<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub ty: Option<&'ast AstType<'ast>>,
+    pub value: &'ast AstExpr<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstLambdaExpr<'ast> {
+    pub span: Span,
+    pub args: &'ast [&'ast AstIdentifier<'ast>],
+    pub body: &'ast AstExpr<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstCompTimeExpr<'ast> {
+    pub span: Span,
+    pub expr: &'ast AstExpr<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstIdentifier<'ast> {
+    pub span: Span,
+    pub name: &'ast str,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) enum AstLiteral<'ast> {
+    Integer(AstIntegerLiteral),
+    UnsignedIntegerer(AstUnsignedIntegerLiteral),
+    Float(AstFloatLiteral),
+    String(AstStringLiteral<'ast>),
+    Boolean(AstBooleanLiteral),
+    _List(AstListLiteral<'ast>),
+}
+
+impl Spanned for AstLiteral<'_> {
+    fn span(&self) -> Span {
         match self {
-            Self::Literal(l) => write!(f, "{}", l),
-            Self::Identifier(i) => write!(f, "{}", i),
-            Self::BinaryExpression(b) => write!(f, "{}", b),
-            Self::UnaryExpression(u) => write!(f, "{}", u),
-            Self::IfElseNode(i) => write!(f, "{}", i),
-            Self::FunctionExpression(fun) => write!(f, "{}", fun),
-            Self::VariableDeclaration(v) => write!(f, "{}", v),
-            Self::FunctionCall(fun) => write!(f, "{}", fun),
-            Self::DoExpression(d) => write!(f, "{}", d),
-            Self::MatchExpression(m) => write!(f, "{}", m),
-            Self::IndexExpression(l) => write!(f, "{}", l),
-            Self::StructDeclaration(s) => write!(f, "{}", s),
-            Self::NewObjectExpression(n) => write!(f, "{}", n),
-            Self::FieldAccessExpression(fa) => write!(f, "{}", fa),
+            AstLiteral::Integer(l) => l.span,
+            AstLiteral::UnsignedIntegerer(l) => l.span,
+            AstLiteral::Float(l) => l.span,
+            AstLiteral::String(l) => l.span,
+            AstLiteral::Boolean(l) => l.span,
+            AstLiteral::_List(l) => l.span,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstListLiteral<'ast> {
+    pub span: Span,
+    pub items: &'ast [&'ast AstExpr<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstBooleanLiteral {
+    pub span: Span,
+    pub value: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstStringLiteral<'ast> {
+    pub span: Span,
+    pub value: &'ast str,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstFloatLiteral {
+    pub span: Span,
+    pub value: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstUnsignedIntegerLiteral {
+    pub span: Span,
+    pub value: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstIntegerLiteral {
+    pub span: Span,
+    pub value: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) enum AstType<'ast> {
+    Unit(AstUnitType),
+    Boolean(AstBooleanType),
+    Integer(AstIntegerType),
+    Float(AstFloatType),
+    UnsignedIntegerer(AstUnsignedIntegerType),
+    String(AstStringType),
+    Named(AstNamedType<'ast>),
+    Pointer(AstPointerType<'ast>),
+    Function(AstFunctionType<'ast>),
+    _List(AstListType<'ast>),
+    _Map(AstMapType<'ast>),
+    //Tuple(AstTupleType<'ast>),
+}
+
+impl Spanned for AstType<'_> {
+    fn span(&self) -> Span {
+        match self {
+            AstType::Unit(t) => t.span,
+            AstType::Boolean(t) => t.span,
+            AstType::Integer(t) => t.span,
+            AstType::Float(t) => t.span,
+            AstType::UnsignedIntegerer(t) => t.span,
+            AstType::String(t) => t.span,
+            AstType::Named(t) => t.span,
+            AstType::Pointer(t) => t.span,
+            AstType::Function(t) => t.span,
+            AstType::_List(t) => t.span,
+            AstType::_Map(t) => t.span,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstMapType<'ast> {
+    pub span: Span,
+    pub key: &'ast AstType<'ast>,
+    pub value: &'ast AstType<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstListType<'ast> {
+    pub span: Span,
+    pub inner: &'ast AstType<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstFunctionType<'ast> {
+    pub span: Span,
+    pub args: &'ast [&'ast AstType<'ast>],
+    pub ret: &'ast AstType<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstPointerType<'ast> {
+    pub span: Span,
+    pub inner: &'ast AstType<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstStringType {
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstNamedType<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstIntegerType {
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstFloatType {
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstUnsignedIntegerType {
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstBooleanType {
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub(crate) struct AstUnitType {
+    pub span: Span,
 }

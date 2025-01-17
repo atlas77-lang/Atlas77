@@ -1,8 +1,18 @@
-struct Position(int, int, int)
+//Should work in Atlas v0.5.1 and later
 
-let main: () -> int = do
-    let pos: Position = new Position(1, 2, 3);
-    print(pos);
-    print(pos.0);
-    25;
-end
+struct Vector3 {
+    x: f32;
+    y: f32;
+    z: f32;
+}
+
+func main() {
+    let my_vector: Vector3 = Vector3 {
+        x: 1.0,
+        y: 2.0,
+        z: 3.0
+    };
+    println(my_vector.x);
+    println(my_vector.y);
+    println(my_vector.z);
+}

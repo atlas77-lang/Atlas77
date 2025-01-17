@@ -5,9 +5,8 @@ use std::{
 
 use super::object_map::ObjectIndex;
 
-/// A way to represent ``&fn`` should be better implemented honestly, as they can have all sort of the types,
-/// and you should, technically, be able to store `&extern fn` and used them as normal `&fn`
 #[derive(Clone, Copy)]
+//There might need to be some pointer to the stack
 pub union RawVMData {
     as_unit: (),
     as_i64: i64,
@@ -16,8 +15,6 @@ pub union RawVMData {
     as_bool: bool,
     as_char: char,
     as_object: ObjectIndex,
-    //as_fn_ptr: fn(&[VMData]) -> VMData, //This will be added later for the FFI
-    as_fn_ptr: usize,
 }
 
 #[derive(Clone, Copy)]
@@ -43,7 +40,6 @@ impl VMData {
     pub const TAG_BOOL: u64 = 10;
     pub const TAG_STR: u64 = 11;
     pub const TAG_CHAR: u64 = 12;
-    pub const TAG_FN_PTR: u64 = 13;
 
     pub fn new(tag: u64, data: RawVMData) -> Self {
         Self { tag, data }
@@ -81,7 +77,6 @@ impl VMData {
     def_new_vmdata_func!(new_f64, as_f64, f64, TAG_FLOAT);
     def_new_vmdata_func!(new_bool, as_bool, bool, TAG_BOOL);
     def_new_vmdata_func!(new_char, as_char, char, TAG_CHAR);
-    def_new_vmdata_func!(new_fn_ptr, as_fn_ptr, usize, TAG_FN_PTR);
 }
 
 impl PartialEq for VMData {
@@ -193,7 +188,6 @@ impl Display for VMData {
                 Self::TAG_FLOAT => self.as_f64().to_string(),
                 Self::TAG_BOOL => self.as_bool().to_string(),
                 Self::TAG_CHAR => self.as_char().to_string(),
-                Self::TAG_FN_PTR => format!("fn_ptr: {}", self.as_fn_ptr()),
                 _ if self.is_object() => self.as_object().to_string(),
                 _ => "reserved".to_string(),
             }
@@ -214,7 +208,6 @@ impl std::fmt::Debug for VMData {
                 Self::TAG_I64 => "i64",
                 Self::TAG_U64 => "u64",
                 Self::TAG_CHAR => "char",
-                Self::TAG_FN_PTR => "fn_ptr",
                 _ if self.is_object() => "obj",
                 _ => "res",
             },
@@ -225,7 +218,6 @@ impl std::fmt::Debug for VMData {
                 Self::TAG_FLOAT => self.as_f64().to_string(),
                 Self::TAG_BOOL => self.as_bool().to_string(),
                 Self::TAG_CHAR => self.as_char().to_string(),
-                Self::TAG_FN_PTR => format!("fn_ptr: {}", self.as_fn_ptr()),
                 _ if self.is_object() => self.as_object().to_string(),
                 _ => "reserved".to_string(),
             }
@@ -256,7 +248,6 @@ impl VMData {
     enum_variant_function!(as_bool, is_bool, TAG_BOOL, bool);
     enum_variant_function!(as_char, is_char, TAG_CHAR, char);
     enum_variant_function!(as_unit, is_unit, TAG_UNIT, ());
-    enum_variant_function!(as_fn_ptr, is_fn_ptr, TAG_FN_PTR, usize);
 
     #[inline(always)]
     #[must_use]

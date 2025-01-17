@@ -1,0 +1,42 @@
+//everything in this file is purely theoretical and does not work in the current version of the compiler
+
+public trait Shape {
+    func getArea(&self) -> i64;
+}
+
+
+public class Rectangle : Shape {
+    private:
+        width: i64;
+        height: i64;
+    public:
+        func new(width: i64, height: i64) -> Rectangle {
+            return Rectangle {
+                width: width,
+                height: height
+            }
+        }
+        func setWidth(&self, w: i64) {
+            self.width = w;
+        }
+        func setHeight(&self, h: i64) {
+            self.height = h;
+        }
+        func getWidth(&self) -> i64 {
+            return self.width;
+        }
+        func getHeight(&self) -> i64 {
+            return self.height;
+        }
+        #[override(Shape::getArea)] //Why? Because you can implement multiple traits, and the compiler needs to know which one you are implementing
+        func getArea(&self) -> i64 {
+            return self.width * self.height;
+        }
+}
+
+func main() -> i64 {
+    let r = Rectangle::new(10, 20);
+    r.setWidth(30);
+    r.setHeight(40);
+    return r.getArea();
+}

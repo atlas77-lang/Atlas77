@@ -1,0 +1,10 @@
+extern abs(x: i64) -> i64;
+extern pow(x: i64, y: i64) -> i64;
+extern min(x: i64, y: i64) -> i64;
+extern max(x: i64, y: i64) -> i64;
+extern round(x: f64) -> i64;
+extern random(min: i64, max: i64) -> i64;
+
+extern powf(x: f64, y: f64) -> f64;
+extern minf(x: f64, y: f64) -> f64;
+extern maxf(x: f64, y: f64) -> f64;
