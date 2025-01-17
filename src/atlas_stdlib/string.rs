@@ -3,7 +3,7 @@ use crate::{
     atlas_vm::{errors::RuntimeError, vm_state::VMState, CallBack},
 };
 
-pub const STRING_ATLAS: &'static str = include_str!("string.atlas");
+pub const STRING_ATLAS: &str = include_str!("string.atlas");
 
 pub const STRING_FUNCTIONS: [(&str, CallBack); 5] = [
     ("str_len", str_len),

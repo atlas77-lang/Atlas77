@@ -3,9 +3,8 @@ use crate::{
     atlas_vm::{errors::RuntimeError, vm_state::VMState, CallBack},
 };
 
-pub const FILE_ATLAS: &'static str = include_str!("file.atlas");
+pub const FILE_ATLAS: &str = include_str!("file.atlas");
 
-// List[string] will have a tag of 257 (0-255 are reserved for the compiler)
 pub const FILE_FUNCTIONS: [(&str, CallBack); 5] = [
     ("read_dir", read_dir),
     ("read_file", read_file),

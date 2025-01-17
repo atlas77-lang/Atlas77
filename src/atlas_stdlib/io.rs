@@ -3,7 +3,7 @@ use crate::{
     atlas_vm::{errors::RuntimeError, vm_state::VMState, CallBack},
 };
 
-pub const IO_ATLAS: &'static str = include_str!("io.atlas");
+pub const IO_ATLAS: &str = include_str!("io.atlas");
 
 pub const IO_FUNCTIONS: [(&str, CallBack); 7] = [
     ("println", println),

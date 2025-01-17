@@ -141,7 +141,7 @@ where
             "io" => {
                 let ast: AstProgram<'ast> = parse(
                     "atlas_stdlib/io.atlas",
-                    &self.ast_arena,
+                    self.ast_arena,
                     IO_ATLAS.to_string(),
                 )
                 .unwrap();
@@ -162,14 +162,14 @@ where
                     alias_span: None,
                 });
 
-                lower.body.imports.push(&hir_import);
+                lower.body.imports.push(hir_import);
 
                 Ok(lower)
             }
             "math" => {
                 let ast: AstProgram<'ast> = parse(
                     "atlas_stdlib/math.atlas",
-                    &self.ast_arena,
+                    self.ast_arena,
                     MATH_ATLAS.to_string(),
                 )
                 .unwrap();
@@ -185,7 +185,7 @@ where
             "file" => {
                 let ast: AstProgram<'ast> = parse(
                     "atlas_stdlib/file.atlas",
-                    &self.ast_arena,
+                    self.ast_arena,
                     FILE_ATLAS.to_string(),
                 )
                 .unwrap();
@@ -201,7 +201,7 @@ where
             "list" => {
                 let ast: AstProgram<'ast> = parse(
                     "atlas_stdlib/list.atlas",
-                    &self.ast_arena,
+                    self.ast_arena,
                     FILE_ATLAS.to_string(),
                 )
                 .unwrap();
@@ -217,7 +217,7 @@ where
             "string" => {
                 let ast: AstProgram<'ast> = parse(
                     "atlas_stdlib/string.atlas",
-                    &self.ast_arena,
+                    self.ast_arena,
                     STRING_ATLAS.to_string(),
                 )
                 .unwrap();
@@ -233,7 +233,7 @@ where
             "time" => {
                 let ast: AstProgram<'ast> = parse(
                     "atlas_stdlib/time.atlas",
-                    &self.ast_arena,
+                    self.ast_arena,
                     STRING_ATLAS.to_string(),
                 )
                 .unwrap();
@@ -246,16 +246,14 @@ where
                 ));
                 hir.lower()
             }
-            _ => {
-                return Err(HirError::UnsupportedStatement(UnsupportedStatement {
-                    span: SourceSpan::new(
-                        SourceOffset::from(node.span.start()),
-                        node.span.end() - node.span.start(),
-                    ),
-                    stmt: format!("{:?}", node),
-                    src: self.src.clone(),
-                }))
-            }
+            _ => Err(HirError::UnsupportedStatement(UnsupportedStatement {
+                span: SourceSpan::new(
+                    SourceOffset::from(node.span.start()),
+                    node.span.end() - node.span.start(),
+                ),
+                stmt: format!("{:?}", node),
+                src: self.src.clone(),
+            })),
         }
     }
 

@@ -11,7 +11,7 @@ use crate::{
 
 use time::{format_description, OffsetDateTime};
 
-pub const TIME_ATLAS: &'static str = include_str!("time.atlas");
+pub const TIME_ATLAS: &str = include_str!("time.atlas");
 
 pub const TIME_FUNCTIONS: [(&str, CallBack); 4] = [
     ("now", now),
