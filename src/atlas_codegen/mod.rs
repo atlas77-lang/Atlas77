@@ -56,10 +56,10 @@ where
             self.generate_bytecode_args(params, &mut bytecode, self.src.clone())?;
             self.generate_bytecode_block(&func.1.body, &mut bytecode, self.src.clone())?;
 
-            let len = bytecode.len();
             if func.0 == "main" {
                 bytecode.push(Instruction::Halt);
             }
+            let len = bytecode.len();
 
             labels.push(Label {
                 name: func.0.to_string(),
