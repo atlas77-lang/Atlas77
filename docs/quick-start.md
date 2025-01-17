@@ -93,6 +93,9 @@ Atlas77 has several built-in data types, including integers, floating-point numb
 
 > Note: The `str` type is a sequence of Unicode characters and is immutable, later on a `String` type will be introduced as a more flexible alternative to `str` a bit like Rust's `String` & `&str`. The `array` type is a fixed-size collection of elements of the same type (e.g., `[i64; 5]`).
 
+> NB 2: Since this is a VM-based language, all numeric types smaller than 64 bits (e.g., u8, u16, u32) are internally represented as 64-bit values for simplicity and consistency. However, they will behave as their original types, respecting their size and overflow semantics. In the future, packed types may be introduced to optimize memory usage for arrays (e.g., ``[u8]`` could be represented as ``[u8x8]``, ``[u16]`` as ``[u16x4]``, etc.). At present, the minimum memory size for numeric types is 8 bytes.
+
+
 ## 6. Functions
 
 Functions in Atlas77 are defined using the `func` keyword, followed by the function name, parameters, return type, and body. The return type of a function is specified after the `->` symbol. For example:

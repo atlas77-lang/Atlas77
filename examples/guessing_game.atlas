@@ -1,35 +1,18 @@
-let main: () -> int = start_game(5)
+import "std/math"
 
-let start_game: (max_attempts: int) -> int = do
-    let number_to_guess: int = random(1, 100);
-    print("Welcome to 'Guess the Number'!");
-    print("I have selected a number between 1 and 100.");
-    print("Attemps: ");
-    print(max_attempts);
-    guess_loop(number_to_guess, max_attempts, 1);
-end
 
-let guess_loop: (number_to_guess: int, max_attempts: int, current_attempts: int) -> int = do
-    if current_attempts > max_attempts
-    then do 
-        print("Game Over");
-        print(number_to_guess);
-        print("was the number to guess.");
-    end
-    else do
-        print("Enter your guess:");
-        let guess: int = read_int();
-        if guess == number_to_guess
-        then do
-            print("Congratulations! You guessed the number correctly.");
-            print("It took you that many attemps:");
-            print(current_attempts);
-        end
-        else do
-            print("Incorrect guess.");
-            print("Remaining attemps: ");
-            print(max_attempts - current_attempts);
-            guess_loop(number_to_guess, max_attempts, current_attempts + 1);
-        end;
-    end;
-end
+func main() {
+    let secret: i64 = random(1, 100);
+    let guess: i64 = 0;
+    while guess != secret {
+        print("Guess the number: ");
+        guess = input();
+        if guess < secret {
+            println("Too low!");
+        } else if guess > secret {
+            println("Too high!");
+        } else {
+            println("You win!");
+        }
+    }
+}

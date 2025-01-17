@@ -4,7 +4,7 @@ struct Vector3 {
     z: f32;
 }
 
-func main() -> i64 {
+func main() {
     let my_vector: Vector3 = Vector3 {
         x: 1.0,
         y: 2.0,
@@ -13,5 +13,4 @@ func main() -> i64 {
     println(my_vector.x);
     println(my_vector.y);
     println(my_vector.z);
-    return 0;
 }

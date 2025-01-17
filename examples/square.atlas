@@ -1,9 +1,7 @@
-// The program will output:
-// No stack frame to return to Ok(VMData { tag: 8(i64), data: 25}) @ 2
-// Because entering main doesn't create a stack frame
+import "std/io"
 
 func main() -> i64 {
-    return square(5);
+    println(square(5));
 }
 
 func square(x: i64) -> i64 {

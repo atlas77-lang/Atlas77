@@ -340,6 +340,9 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.truncate(sp);
                 self.stack.push(ret).unwrap();
             }
+            Instruction::Halt => {
+                self.pc = self.program.len();
+            }
             _ => unimplemented!("{:?}", instr),
         }
         Ok(())

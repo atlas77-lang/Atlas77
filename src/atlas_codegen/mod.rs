@@ -55,6 +55,9 @@ where
             Self::generate_bytecode_block(&func.1.body, &mut bytecode)?;
 
             let len = bytecode.len();
+            if func.0 == "main" {
+                bytecode.push(Instruction::Halt);
+            }
 
             labels.push(Label {
                 name: func.0.to_string(),

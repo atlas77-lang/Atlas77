@@ -1,3 +1,5 @@
+//everything in this file is purely theoretical and does not work in the current version of the compiler
+
 public trait Shape {
     func getArea(&self) -> i64;
 }

@@ -9,6 +9,7 @@ func check_perfect_number(n: i64) -> i64 {
 func main() -> i64 {
     //To big for the current stack implementation
     //Mostly because of the amount of recursive calls
+    //Sub 10000 values are fine
     return test_numbers(20000);
 }
 

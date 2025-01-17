@@ -103,13 +103,19 @@ Or directly from their website: [Rust](https://www.rust-lang.org/tools/install)
 
 ### Fibonacci Example
 ```ts
-let fib: (i64) -> i64 = \ n ->
-  match n
-  | 0 ~> 0
-  | 1 ~> 1
-  \ _ ~> fib(n - 1) + fib(n - 2)
+import "std/io"
 
-let main: () -> i64 = \ _ -> fib(10) //> 55
+func fib(n: i64) -> i64 {
+    if n <= 1 {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+func main() -> i64 {
+    let n: i64 = 10;
+    println(fib(n));
+}
 ```
 
 _For more examples, please refer to the [examples folder](https://github.com/atlas77-lang/Atlas77/tree/main/examples)_
@@ -121,72 +127,59 @@ _For more examples, please refer to the [examples folder](https://github.com/atl
 <!-- ROADMAP -->
 ## Roadmap
 
+
 ### v0.3 "Foundation"
+> Deprecated, if you wanna know more about the v0.3.x, check the releases page.
 - [v0.3](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3)
-  - [x] Variable assignments
-  - [x] Function declarations
-  - [x] Conditional expressions (`if-else`)
-  - [x] Recursion
-  - [x] Basic arithmetic operations
-  - [x] `do..end` blocks to allow multiple expressions
-  - [x] Basic runtime & memory system
 - [v0.3.1](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3.1)
-  - [x] Support for `string` & `List[T]` types (including indexing and concatenation)
-  - [x] Basic CLI support
-  - [x] Basic stdio functions
-  - [x] `match` expressions
 
 ### v0.4 "Keystone"
+> Deprecated, if you wanna know more about the v0.4, check the releases page.
 - [v0.4 "Keystone"](https://github.com/atlas77-lang/Atlas77/tag/v0.4)
-  - [x] Support for `struct` types
-  - [x] Improved runtime & memory system (~80% performance uplift)
-  - [x] Support for external functions (Rust interop)
-  - [x] Expanded standard library using external functions
 
 ### v0.5 Phoenix Release Timeline
-The v0.5 is a complete rewrite of Atlas77, it aligns better with the end goal of the language (see _Goal of the language_).
-Up until the ``v0.5-alpha4``, the compiler will trust you when it comes to types.
+The v0.5 is a complete rewrite of Atlas77, it aligns better with the end goal of the language (see [_Goal of the language_](#goal-of-the-language)).
+> NB: up until the v1.0 the language will always be in alpha, tho I'll try to make every release as stable as possible.
+> I hope I can release the v0.5 this month
 
-#### v0.5-alpha1: Core Foundations
-- Functions: Define and call functions.
-- Variables: Immutable and mutable variables.
-- Basic Standard Library: Core utilities for:
-  - Time operations
-  - File handling
-  - Input/Output (I/O)
-  - Math functions
-  - String manipulations
-  - List manipulations
-- Include Directive: Limited to standard library imports for now.
-- Control Flow:
-  - match expressions for pattern matching.
-  - if/else statements for conditional logic.
-  - while loops for iteration.
+| Feature | Expected Version | Description | Status |
+| --- | --- | --- | --- |
+| Functions | **v0.5** | Define and call functions | ✅ |
+| Variables | **v0.5** | Immutable (`const`) and mutable (`let`) variables | ✅ |
+| Basic `std` Library | **v0.5** | Core utilities for `time`, `file`, `io`, `math`, `string`, `list` | ✅ |
+| Import | **v0.5** | Limited to standard library imports for now | ✅ |
+| Control Flow | **v0.5** | `if/else` statements for conditional logic, `while` loops for iteration | ✅ |
+| Match Expressions | **v0.5.1** | Pattern matching | 💭 |
+| Structs | **v0.5.1** | User-defined types with named fields | 💭 |
+| Unions | **v0.5.1** | Low-level data structures allowing overlapping memory layouts | 💤 |
+| Enums | **v0.5.1** | Enumerations with optional associated data for flexible value sets | 💤 |
+| Lambdas & Closures | **v0.5.2** | Inline, anonymous functions with captured variables | 💭 |
+| Classes | **v0.5.2** | Object-oriented programming support | 💭 |
+| Traits | **v0.5.2** | Interfaces for defining shared behavior | 💤 |
+| Pointers | **v0.5.2** | Basic pointer manipulation for low-level programming | 💭 |
+| Memory Management | **v0.5.2** | Simple memory management | 💭 |
+| Imports | **v0.5.2** | Importing code from other files | 💤 |
+| Generics | **v0.5.x** | Type parameters for writing reusable code | 💤 |
+| Standard Library | **v0.5.x** | A comprehensive standard library | 💤 |
+| Package Manager | **unknown** | A package manager for sharing code | 💤 |
+| Language Server Protocol | **unknown** | Editor support for code completion, diagnostics, and more | 💤 |
+| Cranelift JIT | **unknown** | Just-in-time compilation for faster execution | 💤 |
 
-#### v0.5-alpha2: Data Structures and Lambdas
-- Lambdas & Closures: Inline, anonymous functions with captured variables. (May be split into a separate alpha release.)
-- Structs: User-defined types with named fields.
-- Unions: Low-level data structures allowing overlapping memory layouts.
-- Enums: Enumerations with optional associated data for flexible value sets.
 
-#### v0.5-alpha3: Classes and Memory Management
-- Classes: Object-oriented programming support.
-- Pointers: Basic pointer manipulation for low-level programming.
-- Simple Memory Management: Automatic deallocation of resources after their scope ends, except for returned values or objects with ownership ties.
+#### Legend
 
-#### v0.5-alpha4: Type Safety
-- Basic Type Checking: Initial support for catching type mismatches at compile time.
+- 💤: Not implemented
+- 💭: Being thought of
+- 🔧: Being implemented
+- ✅: Working
 
-#### v0.5-beta: Stability and Refinement
-- The beta phase will focus on stabilizing the language. All features will be finalized, tested extensively, and optimized for real-world use. This phase will serve as a release candidate.
-Future Versions
 
-#### Planned features for v0.6 and beyond:
+#### Stability and Refinement
+> As the language is still in alpha (not 1.0 yet), I won't make "alpha"/"beta" build, it doesn't really make sense.
 
-- Generics: Support for reusable, type-agnostic code.
-- Traits: Define shared behavior across different types.
-- Macros: Compile-time code generation and metaprogramming.
-- Multi-File Projects: Extend the include directive to support user-defined modules across multiple files.
+The beta phase (aka after 0.5.2 and beyond) will focus on stabilizing the language. All features will be finalized, tested extensively, and optimized for real-world use. This phase will serve as a release candidate.
+
+
 
 
 See the [open issues](https://github.com/atlas77-lang/Atlas77/issues) for a full list of proposed features (and known issues).

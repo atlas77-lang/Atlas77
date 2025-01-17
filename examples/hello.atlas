@@ -1,7 +1,5 @@
-//Using the "as" keyword means you rename the whole module, instead of just having the module's functions in the current namespace.
 import "std/io"
 
 func main() {
-    // This doesn't print "true" because the precedence of the operators is wrong.
-    println(5+4*3 == 17);
+    println("Hello, world!");
 }

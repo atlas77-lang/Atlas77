@@ -10,12 +10,12 @@ use miette::{SourceOffset, SourceSpan};
 
 use ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType,
-    AstBreakStmt, AstCallExpr, AstContinueStmt, AstExpr, AstExternFunction, AstFieldAccessExpr,
-    AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType, AstIdentifier, AstIfElseExpr,
-    AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem, AstLetExpr, AstLiteral,
-    AstNamedType, AstObjField, AstPointerType, AstProgram, AstReturnStmt, AstStatement,
-    AstStringLiteral, AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
-    AstUnsignedIntegerLiteral, AstUnsignedIntegerType, AstWhileExpr,
+    AstBreakStmt, AstCallExpr, AstConstExpr, AstContinueStmt, AstExpr, AstExternFunction,
+    AstFieldAccessExpr, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType, AstIdentifier,
+    AstIfElseExpr, AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem,
+    AstLetExpr, AstLiteral, AstNamedType, AstObjField, AstPointerType, AstProgram, AstReturnStmt,
+    AstStatement, AstStringLiteral, AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr,
+    AstUnitType, AstUnsignedIntegerLiteral, AstUnsignedIntegerType, AstWhileExpr,
 };
 use error::{ParseError, ParseResult, UnexpectedTokenError};
 
@@ -172,6 +172,11 @@ impl<'ast> Parser<'ast> {
                 self.expect(TokenKind::Semicolon)?;
                 Ok(node)
             }
+            TokenKind::KwConst => {
+                let node = AstStatement::Const(self.parse_const()?);
+                self.expect(TokenKind::Semicolon)?;
+                Ok(node)
+            }
             TokenKind::KwIf => {
                 let node = AstStatement::IfElse(self.parse_if_expr()?);
                 Ok(node)
@@ -236,7 +241,7 @@ impl<'ast> Parser<'ast> {
     }
 
     fn parse_let(&mut self) -> ParseResult<AstLetExpr<'ast>> {
-        let _ = self.advance();
+        self.expect(TokenKind::KwLet)?;
         let name = self.parse_identifier()?;
 
         self.expect(TokenKind::Colon)?;
@@ -247,6 +252,26 @@ impl<'ast> Parser<'ast> {
 
         let value = self.parse_binary()?;
         let node = AstLetExpr {
+            span: Span::union_span(name.span, value.span()),
+            name: self.arena.alloc(name),
+            ty: Some(self.arena.alloc(ty)),
+            value: self.arena.alloc(value),
+        };
+        Ok(node)
+    }
+
+    fn parse_const(&mut self) -> ParseResult<AstConstExpr<'ast>> {
+        self.expect(TokenKind::KwConst)?;
+        let name = self.parse_identifier()?;
+
+        self.expect(TokenKind::Colon)?;
+
+        let ty = self.parse_type()?;
+
+        self.expect(TokenKind::OpAssign)?;
+
+        let value = self.parse_binary()?;
+        let node = AstConstExpr {
             span: Span::union_span(name.span, value.span()),
             name: self.arena.alloc(name),
             ty: Some(self.arena.alloc(ty)),
