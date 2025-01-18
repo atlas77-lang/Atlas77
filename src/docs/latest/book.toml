@@ -1,0 +1,25 @@
+[book]
+title = "Atlas77"
+authors = ["Gipson62"]
+language = "en"
+multilingual = false
+src = "./src"
+
+[build]
+build-dir = "../../../docs/docs/latest"
+
+[output.html]
+theme = "../theme"
+default-theme = "dark"
+preferred-dark-theme = "Atlas77"
+git-repository-url = "https://github.com/atlas77-lang/Atlas77"
+git-repository-icon = "fa-github"
+site-url = "/docs/latest/"
+edit-url-template = "https://github.com/atlas77-lang/Atlas77/edit/main/src/docs/latest/{path}"
+line-numbers = false
+
+[output.html.playground]
+copyable = true
+copy-js = true
+
+[preprocessor.alerts]
