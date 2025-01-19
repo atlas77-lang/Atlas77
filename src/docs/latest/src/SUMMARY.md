@@ -5,8 +5,9 @@
 
 # Basic Usage
 
-- [Configuration]()
+- [Configuration](./configuration.md)
 - [Syntax]()
 
 # Standard Library
-- [std](./.md)
+
+- [std](./std.md)

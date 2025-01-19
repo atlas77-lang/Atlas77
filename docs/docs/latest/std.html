@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Introduction - Atlas77</title>
+        <title>std - Atlas77</title>
 
 
         <!-- Custom HTML head -->
@@ -130,7 +130,7 @@
                         <a href="https://github.com/atlas77-lang/Atlas77" title="Git repository" aria-label="Git repository">
                             <i id="git-repository-button" class="fa fa-github"></i>
                         </a>
-                        <a href="https://github.com/atlas77-lang/Atlas77/edit/main/src/docs/latest/./src/introduction.md" title="Suggest an edit" aria-label="Suggest an edit">
+                        <a href="https://github.com/atlas77-lang/Atlas77/edit/main/src/docs/latest/./src/std.md" title="Suggest an edit" aria-label="Suggest an edit">
                             <i id="git-edit-button" class="fa fa-edit"></i>
                         </a>
 
@@ -159,18 +159,115 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
-<p>Atlas77 is a statically typed, compiled programming language that I do in my free time.
-I hope to be able to use it for future projects. Don't expect it to be production-ready anytime soon.</p>
+                        <h1 id="standard-library"><a class="header" href="#standard-library">Standard Library</a></h1>
+<blockquote>
+<p>NB: All the standard library is a work in progress.</p>
+</blockquote>
+<div class="table-wrapper"><table><thead><tr><th>Module</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>std/io</code></td><td>Input/output functions</td></tr>
+<tr><td><code>std/fs</code></td><td>File handling functions</td></tr>
+<tr><td><code>std/str</code></td><td>String manipulation functions</td></tr>
+<tr><td><code>std/list</code></td><td>List manipulation functions</td></tr>
+<tr><td><code>std/time</code></td><td>Time functions</td></tr>
+<tr><td><code>std/math</code></td><td>Math functions</td></tr>
+</tbody></table>
+</div>
+<p>As of now only part of the <code>std/io</code> module is implemented and working properly.
+When the <code>v0.5.1</code> will be released, <code>std/fs</code>, <code>std/str</code>, <code>std/io</code>, <code>std/math</code> &amp; <code>std/time</code> should be fully implemented and working.</p>
+<h2 id="stdio"><a class="header" href="#stdio"><code>std/io</code></a></h2>
+<ul>
+<li><code>print(val: str) -&gt; unit</code>: Print a string to the standard output.</li>
+<li><code>println(val: str) -&gt; unit</code>: Print a string to the standard output followed by a newline.</li>
+<li><code>input() -&gt; str</code>: Read a line from the standard input.</li>
+</ul>
+<h2 id="stdfs"><a class="header" href="#stdfs"><code>std/fs</code></a></h2>
+<ul>
+<li><code>File</code>: A file type that can be used to read and write files.</li>
+</ul>
+<blockquote>
+<p>NB: The <code>File</code> type is not implemented yet.</p>
+</blockquote>
+<ul>
+<li><code>open(filename: str, mode: str) -&gt; File</code>: Open a file in the specified mode.</li>
+<li><code>read(file: File) -&gt; str</code>: Read the content of a file.</li>
+<li><code>write(file: File, content: str) -&gt; unit</code>: Write content to a file.</li>
+<li><code>close(file: File) -&gt; unit</code>: Close a file.</li>
+<li><code>exists(filename: str) -&gt; bool</code>: Check if a file exists.</li>
+<li><code>remove(filename: str) -&gt; unit</code>: Remove a file.</li>
+<li><code>rename(old: str, new: str) -&gt; unit</code>: Rename a file.</li>
+</ul>
+<h2 id="stdstr"><a class="header" href="#stdstr"><code>std/str</code></a></h2>
+<ul>
+<li><code>String</code>: A string type that can be used to manipulate strings.</li>
+</ul>
+<blockquote>
+<p>NB: The <code>String</code> type is not implemented yet.</p>
+</blockquote>
+<ul>
+<li><code>str_len(s: String) -&gt; u64</code>: Get the length of a string.</li>
+<li><code>concat(s1: String, s2: String) -&gt; String</code>: Concatenate two strings.</li>
+<li><code>split(s: String, sep: str) -&gt; List</code>: Split a string into a list of substrings.</li>
+<li><code>join(lst: List, sep: str) -&gt; String</code>: Join a list of strings into a single string.</li>
+<li><code>replace(s: String, old: str, new: str) -&gt; String</code>: Replace all occurrences of a substring in a string.</li>
+<li><code>to_upper(s: String) -&gt; String</code>: Convert a string to uppercase.</li>
+<li><code>to_lower(s: String) -&gt; String</code>: Convert a string to lowercase.</li>
+<li><code>trim(s: String) -&gt; String</code>: Remove leading and trailing whitespace from a string.</li>
+<li><code>starts_with(s: String, prefix: str) -&gt; bool</code>: Check if a string starts with a prefix.</li>
+<li><code>ends_with(s: String, suffix: str) -&gt; bool</code>: Check if a string ends with a suffix.</li>
+<li><code>contains(s: String, sub: str) -&gt; bool</code>: Check if a string contains a substring.</li>
+<li><code>find(s: String, sub: str) -&gt; i64</code>: Find the index of the first occurrence of a substring in a string.</li>
+<li><code>rfind(s: String, sub: str) -&gt; i64</code>: Find the index of the last occurrence of a substring in a string.</li>
+<li><code>slice(s: String, start: i64, end: i64) -&gt; String</code>: Get a substring of a string.</li>
+</ul>
+<h2 id="stdlist"><a class="header" href="#stdlist"><code>std/list</code></a></h2>
+<blockquote>
+<p>NB: <code>std/list</code> is not implemented yet.</p>
+</blockquote>
+<h2 id="stdtime"><a class="header" href="#stdtime"><code>std/time</code></a></h2>
+<ul>
+<li><code>Time</code>: A time type that can be used to represent time.</li>
+</ul>
+<pre><code>struct Time {
+    sec: u64;
+    nsect: u64;
+}
+</code></pre>
+<ul>
+<li><code>now() -&gt; Time</code>: Get the current time.</li>
+<li><code>format(t: Time, fmt: str) -&gt; str</code>: Format a time value as a string.</li>
+<li><code>sleep(ms: u64) -&gt; unit</code>: Sleep for the specified number of milliseconds.</li>
+<li><code>sleep_us(us: u64) -&gt; unit</code>: Sleep for the specified number of microseconds.</li>
+<li><code>sleep_ns(ns: u64) -&gt; unit</code>: Sleep for the specified number of nanoseconds.</li>
+<li><code>elapsed(start: Time, end: Time) -&gt; u64</code>: Calculate the elapsed time between two time values in milliseconds.</li>
+<li><code>elapsed_us(start: Time, end: Time) -&gt; u64</code>: Calculate the elapsed time between two time values in microseconds.</li>
+<li><code>elapsed_ns(start: Time, end: Time) -&gt; u64</code>: Calculate the elapsed time between two time values in nanoseconds.</li>
+<li><code>parse(s: str, fmt: str) -&gt; Time</code>: Parse a string into a time value.</li>
+<li><code>add(t: Time, ms: u64) -&gt; Time</code>: Add milliseconds to a time value.</li>
+</ul>
+<h2 id="stdmath"><a class="header" href="#stdmath"><code>std/math</code></a></h2>
+<ul>
+<li><code>abs(x: f64) -&gt; f64</code>: Compute the absolute value of a floating-point number.</li>
+<li><code>sqrt(x: f64) -&gt; f64</code>: Compute the square root of a floating-point number.</li>
+<li><code>pow(x: f64, y: f64) -&gt; f64</code>: Compute <code>x</code> raised to the power of <code>y</code>.</li>
+<li><code>exp(x: f64) -&gt; f64</code>: Compute the exponential function of a floating-point number.</li>
+<li><code>log(x: f64) -&gt; f64</code>: Compute the natural logarithm of a floating-point number.</li>
+<li><code>log10(x: f64) -&gt; f64</code>: Compute the base 10 logarithm of a floating-point number.</li>
+<li><code>sin(x: f64) -&gt; f64</code>: Compute the sine of a floating-point number.</li>
+<li><code>cos(x: f64) -&gt; f64</code>: Compute the cosine of a floating-point number.</li>
+<li><code>tan(x: f64) -&gt; f64</code>: Compute the tangent of a floating-point number.</li>
+<li><code>asin(x: f64) -&gt; f64</code>: Compute the arcsine of a floating-point number.</li>
+<li><code>acos(x: f64) -&gt; f64</code>: Compute the arccosine of a floating-point number.</li>
+<li><code>atan(x: f64) -&gt; f64</code>: Compute the arctangent of a floating-point number.</li>
+</ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-
-                            <a rel="next prefetch" href="getting_started.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
+                            <a rel="prev" href="configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
                             </a>
+
 
                         <div style="clear: both"></div>
                     </nav>
@@ -178,10 +275,10 @@ I hope to be able to use it for future projects. Don't expect it to be productio
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-
-                    <a rel="next prefetch" href="getting_started.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
+                    <a rel="prev" href="configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
                     </a>
+
             </nav>
 
         </div>
