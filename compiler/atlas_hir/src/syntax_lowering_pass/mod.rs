@@ -285,34 +285,36 @@ where
             }
             AstStatement::Const(c) => {
                 let name = self.arena.names().get(c.name.name);
-                let ty = match c.ty {
-                    Some(ty) => self.visit_ty(ty)?,
-                    None => self.arena.types().get_uninitialized_ty(),
-                };
+                let ty = c.ty.map(|ty| self.visit_ty(ty)).transpose()?;
+                
                 let value = self.visit_expr(c.value)?;
                 let hir = HirStatement::Const(HirLetStmt {
                     span: node.span(),
                     name,
                     name_span: c.name.span,
                     ty,
-                    ty_span: c.ty.unwrap().span(),
+                    ty_span: match ty {
+                        Some(_) => Some(c.ty.unwrap().span()),
+                        None => None,
+                    },
                     value,
                 });
                 Ok(hir)
             }
             AstStatement::Let(l) => {
                 let name = self.arena.names().get(l.name.name);
-                let ty = match l.ty {
-                    Some(ty) => self.visit_ty(ty)?,
-                    None => self.arena.types().get_uninitialized_ty(),
-                };
+                let ty = l.ty.map(|ty| self.visit_ty(ty)).transpose()?;
+                
                 let value = self.visit_expr(l.value)?;
                 let hir = HirStatement::Let(HirLetStmt {
                     span: node.span(),
                     name,
                     name_span: l.name.span,
                     ty,
-                    ty_span: l.ty.unwrap().span(),
+                    ty_span: match ty {
+                        Some(_) => Some(l.ty.unwrap().span()),
+                        None => None,
+                    },
                     value,
                 });
                 Ok(hir)

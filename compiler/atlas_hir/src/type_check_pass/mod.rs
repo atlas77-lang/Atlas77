@@ -3,7 +3,6 @@
 //A rework of the type checker will be done when structs, classes, enums and unions are added.
 
 use std::collections::HashMap;
-
 use atlas_core::prelude::{Span, Spanned};
 use miette::{SourceOffset, SourceSpan};
 
@@ -282,7 +281,10 @@ impl<'hir> TypeChecker<'hir> {
                 Ok(())
             }
             HirStatement::Const(c) => {
-                let ty = HirTyId::from(c.ty);
+                let expr_ty = self.check_expr(&mut c.value)?;
+                let const_ty = c.ty.unwrap_or_else(|| expr_ty);
+                c.ty = Some(const_ty);
+                let ty = HirTyId::from(const_ty);
                 self.context
                     .last_mut()
                     .unwrap()
@@ -293,16 +295,16 @@ impl<'hir> TypeChecker<'hir> {
                         ContextVariable {
                             _name: c.name,
                             name_span: c.name_span,
-                            ty: c.ty,
-                            ty_span: c.ty_span,
+                            ty: const_ty,
+                            ty_span: c.ty_span.unwrap_or_else(|| c.name_span),
                             is_mut: false,
                             span: c.span,
                         },
                     );
-                let ty_value = self.check_expr(&mut c.value)?;
-                if HirTyId::from(ty_value) != ty {
+                
+                if HirTyId::from(expr_ty) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", ty_value),
+                        actual_type: format!("{:?}", expr_ty),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(c.value.start()),
                             c.value.end() - c.value.start(),
@@ -318,7 +320,10 @@ impl<'hir> TypeChecker<'hir> {
                 Ok(())
             }
             HirStatement::Let(l) => {
-                let ty = HirTyId::from(l.ty);
+                let expr_ty = self.check_expr(&mut l.value)?;
+                let var_ty = l.ty.unwrap_or_else(|| expr_ty);
+                l.ty = Some(var_ty);
+                let ty = HirTyId::from(var_ty);
                 self.context
                     .last_mut()
                     .unwrap()
@@ -329,16 +334,15 @@ impl<'hir> TypeChecker<'hir> {
                         ContextVariable {
                             _name: l.name,
                             name_span: l.name_span,
-                            ty: l.ty,
-                            ty_span: l.ty_span,
+                            ty: var_ty,
+                            ty_span: l.ty_span.unwrap_or_else(|| l.name_span),
                             is_mut: true,
                             span: l.span,
                         },
                     );
-                let ty_value = self.check_expr(&mut l.value)?;
-                if HirTyId::from(ty_value) != ty {
+                if HirTyId::from(expr_ty) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", ty_value),
+                        actual_type: format!("{:?}", expr_ty),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(l.value.start()),
                             l.value.end() - l.value.start(),
@@ -403,7 +407,6 @@ impl<'hir> TypeChecker<'hir> {
                         src: self.src.clone(),
                     }));
                 }
-                //Should handle conditions:
 
                 match b.op {
                     HirBinaryOp::And
@@ -475,7 +478,6 @@ impl<'hir> TypeChecker<'hir> {
             }
             //todo: this should have its own function
             HirExpr::Assign(a) => {
-                //first because of the borrow checker
                 let rhs = self.check_expr(&mut a.rhs)?;
                 let lhs = match a.lhs.as_mut() {
                     HirExpr::Ident(i) => {

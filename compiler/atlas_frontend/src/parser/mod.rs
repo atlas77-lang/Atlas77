@@ -244,10 +244,15 @@ impl<'ast> Parser<'ast> {
         let start = self.current().span();
         self.expect(TokenKind::KwLet)?;
         let name = self.parse_identifier()?;
-
-        self.expect(TokenKind::Colon)?;
-
-        let ty = self.parse_type()?;
+        
+        let ty: Option<&AstType> = if let TokenKind::Colon = self.current().kind() {
+            let _ = self.advance();
+            let t = self.parse_type()?;
+            Some(self.arena.alloc(t))
+        } else {
+            eprintln!("Type inference is still unstable.");
+            None
+        };
 
         self.expect(TokenKind::OpAssign)?;
 
@@ -255,7 +260,7 @@ impl<'ast> Parser<'ast> {
         let node = AstLetExpr {
             span: Span::union_span(start, value.span()),
             name: self.arena.alloc(name),
-            ty: Some(self.arena.alloc(ty)),
+            ty,
             value: self.arena.alloc(value),
         };
         Ok(node)

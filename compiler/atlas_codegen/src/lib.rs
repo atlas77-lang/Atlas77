@@ -144,7 +144,10 @@ where
             HirStatement::Let(l) => {
                 let mut value = Vec::new();
                 self.generate_bytecode_expr(&l.value, &mut value, src)?;
-                match l.ty {
+                let ty = l.ty.unwrap_or_else(|| {
+                    unimplemented!("{} should have a type", l.name);
+                });
+                match ty {
                     HirTy::Int64(_) => {
                         value.push(Instruction::StoreI64 {
                             var_name: l.name.to_string(),
