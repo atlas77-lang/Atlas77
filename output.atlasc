@@ -1,63 +1,137 @@
 (
     labels: [
         (
-            name: "fib",
+            name: "iterative_fib",
             position: 0,
             body: [
-                StoreF64(
+                StoreU64(
                     var_name: "n",
                 ),
-                LoadF64(
+                PushUnsignedInt(0),
+                StoreU64(
+                    var_name: "a",
+                ),
+                PushUnsignedInt(1),
+                StoreU64(
+                    var_name: "b",
+                ),
+                PushUnsignedInt(0),
+                StoreU64(
+                    var_name: "i",
+                ),
+                LoadU64(
+                    var_name: "i",
+                ),
+                LoadU64(
                     var_name: "n",
                 ),
-                PushFloat(1.0),
+                Lt,
+                JmpZ(
+                    pos: 13,
+                ),
+                LoadU64(
+                    var_name: "a",
+                ),
+                StoreU64(
+                    var_name: "temp",
+                ),
+                LoadU64(
+                    var_name: "b",
+                ),
+                StoreU64(
+                    var_name: "a",
+                ),
+                LoadU64(
+                    var_name: "temp",
+                ),
+                LoadU64(
+                    var_name: "b",
+                ),
+                AddU64,
+                StoreU64(
+                    var_name: "b",
+                ),
+                LoadU64(
+                    var_name: "i",
+                ),
+                PushUnsignedInt(1),
+                AddU64,
+                StoreU64(
+                    var_name: "i",
+                ),
+                Jmp(
+                    pos: -16,
+                ),
+                LoadU64(
+                    var_name: "a",
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "main",
+            position: 26,
+            body: [
+                PushUnsignedInt(20),
+                CallFunction(
+                    name: "recursive_fib",
+                    args: 1,
+                ),
+                StoreU64(
+                    var_name: "fib_20",
+                ),
+                LoadU64(
+                    var_name: "fib_20",
+                ),
+                ExternCall(
+                    name: "print_uint",
+                    args: 1,
+                ),
+                Halt,
+            ],
+        ),
+        (
+            name: "recursive_fib",
+            position: 32,
+            body: [
+                StoreU64(
+                    var_name: "n",
+                ),
+                LoadU64(
+                    var_name: "n",
+                ),
+                PushUnsignedInt(1),
                 Lte,
                 JmpZ(
                     pos: 3,
                 ),
-                LoadF64(
+                LoadU64(
                     var_name: "n",
                 ),
                 Return,
                 Jmp(
                     pos: 11,
                 ),
-                LoadF64(
+                LoadU64(
                     var_name: "n",
                 ),
-                PushFloat(1.0),
-                SubF64,
+                PushUnsignedInt(1),
+                SubU64,
                 CallFunction(
-                    name: "fib",
+                    name: "recursive_fib",
                     args: 1,
                 ),
-                LoadF64(
+                LoadU64(
                     var_name: "n",
                 ),
-                PushFloat(2.0),
-                SubF64,
+                PushUnsignedInt(2),
+                SubU64,
                 CallFunction(
-                    name: "fib",
+                    name: "recursive_fib",
                     args: 1,
                 ),
-                AddF64,
+                AddU64,
                 Return,
-            ],
-        ),
-        (
-            name: "main",
-            position: 18,
-            body: [
-                PushFloat(20.0),
-                CallFunction(
-                    name: "fib",
-                    args: 1,
-                ),
-                ExternCall(
-                    name: "print_float",
-                    args: 1,
-                ),
-                Halt,
             ],
         ),
     ],

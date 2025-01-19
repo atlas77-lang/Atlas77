@@ -1,13 +1,28 @@
 import "std/io"
 
 func main()  {
-    print_float(fib(20.0));
+    let fib_20 = recursive_fib(20_u64);
+    print_uint(fib_20);
+    //print_uint(iterative_fib(20_u64));
 }
 
-func fib(n: f64) -> f64 {
-    if n <= 1.0 {
+func recursive_fib(n: u64) -> u64 {
+    if n <= 1_u64 {
         return n;
     } else {
-        return fib(n - 1.0) + fib(n - 2.0);
+        return recursive_fib(n - 1_u64) + recursive_fib(n - 2_u64);
     }
+}
+
+func iterative_fib(n: u64) -> u64 {
+    let a = 0_u64;
+    let b = 1_u64;
+    let i = 0_u64;
+    while i < n {
+        let temp = a;
+        a = b;
+        b = temp + b;
+        i = i + 1_u64;
+    }
+    return a;
 }

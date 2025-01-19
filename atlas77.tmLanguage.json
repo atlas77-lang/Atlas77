@@ -1,0 +1,68 @@
+{
+    "name": "Atlas77",
+    "scopeName": "source.atlas77",
+    "fileTypes": ["atlas"],
+    "patterns": [
+      {
+        "match": "\\b(match|if|else|func|import|class|struct|public|private|let|const)\\b",
+        "name": "keyword.control.atlas77"
+      },
+      {
+        "match": "\\byapping|baka|yappin|ragequit|chill\\b",
+        "name": "support.function.builtin.atlas77"
+      },
+      {
+        "include": "#strings"
+      },
+      {
+        "include": "#comments"
+      },
+      {
+        "include": "#chars"
+      },
+      {
+        "include": "#numbers"
+      }
+    ],
+    "repository": {
+      "strings": {
+        "patterns": [
+          {
+            "begin": "\"",
+            "end": "\"",
+            "name": "string.quoted.double.atlas77",
+            "patterns": [
+              {
+                "name": "constant.character.escape.atlas77",
+                "match": "\\\\(\\\\|\"|n|t|r|b|f|v|0)"
+              }
+            ]
+          }
+        ]
+      },
+        "comments": {
+          "patterns": [
+            {
+              "name": "comment.line.double-slash.atlas77",
+              "match": "//.*$"
+            }
+          ]
+        },
+        "chars": {
+          "patterns": [
+            {
+              "name": "constant.character.atlas77",
+              "match": "'(\\\\.|[^'])*'"
+            }
+          ]
+        },
+        "numbers": {
+          "patterns": [
+            {
+              "name": "constant.numeric.atlas77",
+              "match": "\\b-?(0|[1-9]\\d*)(\\.\\d+)?(e[+-]?\\d+)?\\b"
+            }
+          ]
+        }
+      }
+}
