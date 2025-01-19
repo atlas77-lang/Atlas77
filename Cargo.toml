@@ -1,13 +1,24 @@
+[workspace]
+members = [
+    "compiler/atlas_codegen",
+    "compiler/atlas_frontend",
+    "compiler/atlas_hir",
+    "compiler/atlas_macro",
+    "compiler/atlas_runtime",
+    "compiler/atlas_vm",
+
+]
+
 [package]
 name = "atlas_77"
-version = "0.5.0-alpha1"
+version = "0.5.0"
 edition = "2021"
 description = "Functional programming language with strong interoperability with Rust"
 authors = ["Gipson62", "ElhamAryanpur"]
 license = "MIT"
 repository = "https://github.com/atlas77-lang/Atlas77"
 keywords = ["programming", "language", "compiler", "atlas77"]
-categories = ["Compilers", "programming-languages"]
+categories = ["compilers"]
 homepage = "https://redgear.tk/"
 readme = "README.md"
 
@@ -24,13 +35,16 @@ opt-level = 3
 codegen-units = 1
 
 [dependencies]
+atlas_codegen = { path = "compiler/atlas_codegen" }
+atlas_frontend = { path = "compiler/atlas_frontend" }
+atlas_hir = { path = "compiler/atlas_hir" }
+atlas_vm = { path = "compiler/atlas_vm" }
+
 # Lexer Generator
 atlas-core = "0.7.1"
 # For the CLI
 clap = { version = "4.5.26", features = ["derive"] }
 # For the Standard Library
-rand = "0.8.5"
-time = { version = "0.3.37", features = ["formatting"] }
 # For the Parser
 bumpalo = "3.16.0"
 serde = { version =  "1.0.217", features = ["derive"] }

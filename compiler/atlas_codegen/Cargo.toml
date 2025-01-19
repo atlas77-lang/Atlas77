@@ -1,0 +1,16 @@
+[package]
+name = "atlas_codegen"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+doctest = false
+
+[dependencies]
+bumpalo = "3.16.0"
+miette = { version = "7.4.0", features = ["fancy"] }
+
+atlas_hir = { path = "../atlas_hir" }
+atlas_vm = { path = "../atlas_vm" }
+
+atlas-core = "0.7.1"

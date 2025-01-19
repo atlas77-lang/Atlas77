@@ -1,0 +1,11 @@
+[package]
+name = "atlas_runtime"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+doctest = false
+
+[dependencies]
+atlas_frontend = { path = "../atlas_frontend" }
+atlas_vm = { path = "../atlas_vm" }

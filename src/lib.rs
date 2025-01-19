@@ -1,16 +1,7 @@
-pub mod atlas_codegen;
-pub mod atlas_frontend;
-pub mod atlas_hir;
-pub mod atlas_macro;
-pub mod atlas_memory;
-pub mod atlas_runtime;
-pub mod atlas_stdlib;
-pub mod atlas_vm;
-use crate::{
-    atlas_codegen::{arena::CodeGenArena, CodeGenUnit},
-    atlas_frontend::parse,
-    atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass},
-};
+
+use atlas_codegen::{arena::CodeGenArena, CodeGenUnit};
+use atlas_frontend::parse;
+use atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass};
 use atlas_frontend::parser::arena::AstArena;
 use atlas_hir::type_check_pass::TypeChecker;
 use bumpalo::Bump;

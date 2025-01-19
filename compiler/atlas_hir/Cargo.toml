@@ -1,0 +1,20 @@
+[package]
+name = "atlas_hir"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+doctest = false
+
+[dependencies]
+bumpalo = "3.16.0"
+thiserror = { version = "2.0.11" }
+miette = { version = "7.4.0", features = ["fancy"] }
+serde = { version =  "1.0.217", features = ["derive"] }
+
+
+atlas_frontend = { path = "../atlas_frontend" }
+atlas_macro = { path = "../atlas_macro" }
+
+atlas-core = "0.7.1"
+
