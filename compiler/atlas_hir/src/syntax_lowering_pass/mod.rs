@@ -14,7 +14,7 @@ use atlas_frontend::{
     };
 use crate::{expr::HirAssignExpr, signature::HirFunctionSignature, stmt::HirLetStmt};
 
-const FILE_ATLAS: &str = include_str!("../../../../library/std/file.atlas");
+const FILE_ATLAS: &str = include_str!("../../../../library/std/fs.atlas");
 const IO_ATLAS: &str = include_str!("../../../../library/std/io.atlas");
 const MATH_ATLAS: &str = include_str!("../../../../library/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../../library/std/string.atlas");
@@ -188,7 +188,7 @@ where
             }
             "file" => {
                 let ast: AstProgram<'ast> = parse(
-                    "atlas_stdlib/file.atlas",
+                    "atlas_stdlib/fs.atlas",
                     self.ast_arena,
                     FILE_ATLAS.to_string(),
                 )

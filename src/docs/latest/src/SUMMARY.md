@@ -7,3 +7,6 @@
 
 - [Configuration]()
 - [Syntax]()
+
+# Standard Library
+- [std](./.md)

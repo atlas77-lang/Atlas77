@@ -11,7 +11,7 @@ use runtime::instruction::{Instruction, Program};
 use crate::{
     memory::{object_map::Memory, stack::Stack, vm_data::VMData},
     libraries::{
-        file::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
+        fs::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
         string::STRING_FUNCTIONS, time::TIME_FUNCTIONS,
     },
 };
