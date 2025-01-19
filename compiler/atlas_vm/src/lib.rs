@@ -1,7 +1,7 @@
 pub mod errors;
-pub mod runtime;
-pub mod memory;
 mod libraries;
+pub mod memory;
+pub mod runtime;
 
 use std::collections::HashMap;
 
@@ -9,11 +9,11 @@ use errors::RuntimeError;
 use runtime::instruction::{Instruction, Program};
 
 use crate::{
-    memory::{object_map::Memory, stack::Stack, vm_data::VMData},
     libraries::{
         fs::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
         string::STRING_FUNCTIONS, time::TIME_FUNCTIONS,
     },
+    memory::{object_map::Memory, stack::Stack, vm_data::VMData},
 };
 
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
@@ -66,7 +66,7 @@ impl<'run> Atlas77VM<'run> {
                             extern_fn.insert(name, *func);
                         });
                     }
-                    _ => panic!("Unknown standard library"),
+                    _ => panic!("Unknown standard libraries"),
                 }
             }
         });

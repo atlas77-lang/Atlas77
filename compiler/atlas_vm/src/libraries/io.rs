@@ -1,11 +1,11 @@
 use crate::{
-    memory::{object_map::Object, vm_data::VMData},
-    runtime::{ vm_state::VMState, },
     errors::RuntimeError,
-    CallBack
+    memory::{object_map::Object, vm_data::VMData},
+    runtime::vm_state::VMState,
+    CallBack,
 };
 
-pub const IO_ATLAS: &str = include_str!("../../../../library/std/io.atlas");
+pub const IO_ATLAS: &str = include_str!("../../../../libraries/std/io.atlas");
 
 pub const IO_FUNCTIONS: [(&str, CallBack); 7] = [
     ("println", println),

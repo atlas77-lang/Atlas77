@@ -2,16 +2,16 @@
 // Time will have a tag of 256 as it will be the first type defined by the compiler (0-255 are reserved for the compiler)
 
 use crate::{
-    memory::{object_map::Object, vm_data::VMData},
-    runtime::{ vm_state::VMState, },
     errors::RuntimeError,
-    CallBack
+    memory::{object_map::Object, vm_data::VMData},
+    runtime::vm_state::VMState,
+    CallBack,
 };
 
-use time::{format_description, OffsetDateTime};
 use crate::memory::object_map::Structure;
+use time::{format_description, OffsetDateTime};
 
-pub const TIME_ATLAS: &str = include_str!("../../../../library/std/time.atlas");
+pub const TIME_ATLAS: &str = include_str!("../../../../libraries/std/time.atlas");
 
 pub const TIME_FUNCTIONS: [(&str, CallBack); 4] = [
     ("now", now),

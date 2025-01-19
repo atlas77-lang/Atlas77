@@ -1,121 +1,61 @@
 (
     labels: [
         (
-            name: "main",
+            name: "fib",
             position: 0,
             body: [
-                PushInt(0),
-                StoreI64(
-                    var_name: "sum",
+                StoreF64(
+                    var_name: "n",
                 ),
-                PushInt(500),
-                StoreI64(
-                    var_name: "num",
+                LoadF64(
+                    var_name: "n",
                 ),
-                PushInt(1),
-                StoreI64(
-                    var_name: "i",
-                ),
-                LoadI64(
-                    var_name: "i",
-                ),
-                PushInt(500),
-                Lt,
+                PushFloat(1.0),
+                Lte,
                 JmpZ(
-                    pos: 40,
+                    pos: 3,
                 ),
-                PushInt(1),
-                StoreI64(
-                    var_name: "j",
+                LoadF64(
+                    var_name: "n",
                 ),
-                LoadI64(
-                    var_name: "j",
-                ),
-                LoadI64(
-                    var_name: "num",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 17,
-                ),
-                LoadI64(
-                    var_name: "num",
-                ),
-                LoadI64(
-                    var_name: "j",
-                ),
-                ModI64,
-                StoreI64(
-                    var_name: "mod",
-                ),
-                LoadI64(
-                    var_name: "mod",
-                ),
-                PushInt(0),
-                Eq,
-                JmpZ(
-                    pos: 4,
-                ),
-                LoadI64(
-                    var_name: "sum",
-                ),
-                LoadI64(
-                    var_name: "j",
-                ),
-                AddI64,
-                StoreI64(
-                    var_name: "sum",
-                ),
-                LoadI64(
-                    var_name: "j",
-                ),
-                PushInt(1),
-                AddI64,
-                StoreI64(
-                    var_name: "j",
-                ),
+                Return,
                 Jmp(
-                    pos: -20,
+                    pos: 11,
                 ),
-                LoadI64(
-                    var_name: "num",
+                LoadF64(
+                    var_name: "n",
                 ),
-                LoadI64(
-                    var_name: "sum",
-                ),
-                Eq,
-                JmpZ(
-                    pos: 2,
-                ),
-                LoadI64(
-                    var_name: "sum",
-                ),
-                ExternCall(
-                    name: "print_int",
+                PushFloat(1.0),
+                SubF64,
+                CallFunction(
+                    name: "fib",
                     args: 1,
                 ),
-                PushInt(0),
-                StoreI64(
-                    var_name: "sum",
+                LoadF64(
+                    var_name: "n",
                 ),
-                LoadI64(
-                    var_name: "num",
+                PushFloat(2.0),
+                SubF64,
+                CallFunction(
+                    name: "fib",
+                    args: 1,
                 ),
-                PushInt(1),
-                SubI64,
-                StoreI64(
-                    var_name: "num",
+                AddF64,
+                Return,
+            ],
+        ),
+        (
+            name: "main",
+            position: 18,
+            body: [
+                PushFloat(20.0),
+                CallFunction(
+                    name: "fib",
+                    args: 1,
                 ),
-                LoadI64(
-                    var_name: "i",
-                ),
-                PushInt(1),
-                AddI64,
-                StoreI64(
-                    var_name: "i",
-                ),
-                Jmp(
-                    pos: -43,
+                ExternCall(
+                    name: "print_float",
+                    args: 1,
                 ),
                 Halt,
             ],

@@ -1,0 +1,52 @@
+//"std/math" library implementation
+
+extern round(x: f64) -> i64
+extern random(min: i64, max: i64) -> i64
+
+func abs(x: i64) -> i64 {
+    if x < 0 {
+        return -x;
+    }
+    return x;
+}
+func pow(x: i64, y: i64) -> i64 {
+    let result: i64 = 1;
+    while y > 0 {
+        result = result * x;
+        y = y - 1;
+    }
+    return result;
+}
+func min(x: i64, y: i64) -> i64 {
+    if x < y {
+        return x;
+    }
+    return y;
+}
+func max(x: i64, y: i64) -> i64 {
+    if x > y {
+        return x;
+    }
+    return y;
+}
+
+func powf(x: f64, y: i64) -> f64 {
+    let result: f64 = 1.0;
+    while y > 0 {
+        result = result * x;
+        y = y - 1;
+    }
+    return result;
+}
+func minf(x: f64, y: f64) -> f64 {
+    if x < y {
+        return x;
+    }
+    return y;
+}
+func maxf(x: f64, y: f64) -> f64 {
+    if x > y {
+        return x;
+    }
+    return y;
+}

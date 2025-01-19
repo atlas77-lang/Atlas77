@@ -1,11 +1,11 @@
 use crate::{
-    memory::{object_map::Object, vm_data::VMData},
-    runtime::{ vm_state::VMState, },
     errors::RuntimeError,
-    CallBack
+    memory::{object_map::Object, vm_data::VMData},
+    runtime::vm_state::VMState,
+    CallBack,
 };
 
-pub const STRING_ATLAS: &str = include_str!("../../../../library/std/string.atlas");
+pub const STRING_ATLAS: &str = include_str!("../../../../libraries/std/string.atlas");
 
 pub const STRING_FUNCTIONS: [(&str, CallBack); 5] = [
     ("str_len", str_len),

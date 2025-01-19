@@ -2,13 +2,13 @@
 pub mod arena;
 
 use atlas_hir::{
-        error::{HirResult, UnsupportedExpr, UnsupportedStatement},
-        expr::HirExpr,
-        signature::HirFunctionParameterSignature,
-        stmt::{HirBlock, HirStatement},
-        ty::HirTy,
-        HirModule,
-    };
+    error::{HirResult, UnsupportedExpr, UnsupportedStatement},
+    expr::HirExpr,
+    signature::HirFunctionParameterSignature,
+    stmt::{HirBlock, HirStatement},
+    ty::HirTy,
+    HirModule,
+};
 use atlas_vm::runtime::instruction::{ImportedLibrary, Instruction, Label, Program};
 
 use arena::CodeGenArena;
@@ -103,19 +103,19 @@ where
     ) -> HirResult<()> {
         match stmt {
             HirStatement::Return(e) => {
-                self.generate_bytecode_expr(e.value, bytecode, src)?;
+                self.generate_bytecode_expr(&e.value, bytecode, src)?;
                 bytecode.push(Instruction::Return);
             }
             HirStatement::IfElse(i) => {
-                self.generate_bytecode_expr(i.condition, bytecode, src.clone())?;
+                self.generate_bytecode_expr(&i.condition, bytecode, src.clone())?;
                 let mut then_body = Vec::new();
-                self.generate_bytecode_block(i.then_branch, &mut then_body, src.clone())?;
+                self.generate_bytecode_block(&i.then_branch, &mut then_body, src.clone())?;
 
                 bytecode.push(Instruction::JmpZ {
                     pos: (then_body.len() + if i.else_branch.is_some() { 1 } else { 0 }) as isize,
                 });
                 bytecode.append(&mut then_body);
-                if let Some(e) = i.else_branch {
+                if let Some(e) = &i.else_branch {
                     let mut else_body = Vec::new();
                     self.generate_bytecode_block(e, &mut else_body, src)?;
 
@@ -127,10 +127,10 @@ where
             }
             HirStatement::While(w) => {
                 let start = bytecode.len() as isize;
-                self.generate_bytecode_expr(w.condition, bytecode, src.clone())?;
+                self.generate_bytecode_expr(&w.condition, bytecode, src.clone())?;
                 let mut body = Vec::new();
 
-                self.generate_bytecode_block(w.body, &mut body, src)?;
+                self.generate_bytecode_block(&w.body, &mut body, src)?;
                 //If the condition is false jump to the end of the loop
                 bytecode.push(Instruction::JmpZ {
                     pos: (body.len() + 1) as isize,
@@ -143,7 +143,7 @@ where
             }
             HirStatement::Let(l) => {
                 let mut value = Vec::new();
-                self.generate_bytecode_expr(l.value, &mut value, src)?;
+                self.generate_bytecode_expr(&l.value, &mut value, src)?;
                 match l.ty {
                     HirTy::Int64(_) => {
                         value.push(Instruction::StoreI64 {
@@ -167,7 +167,7 @@ where
                 }
                 bytecode.append(&mut value);
             }
-            HirStatement::Expr(e) => self.generate_bytecode_expr(e.expr, bytecode, src)?,
+            HirStatement::Expr(e) => self.generate_bytecode_expr(&e.expr, bytecode, src)?,
             _ => {
                 return Err(atlas_hir::error::HirError::UnsupportedStatement(
                     UnsupportedStatement {
@@ -239,19 +239,74 @@ where
                 self.generate_bytecode_expr(&b.rhs, bytecode, src)?;
                 match b.op {
                     atlas_hir::expr::HirBinaryOp::Add => {
-                        bytecode.push(Instruction::AddI64);
+                        match b.ty {
+                            HirTy::Int64(_) => {
+                                bytecode.push(Instruction::AddI64);
+                            }
+                            HirTy::Float64(_) => {
+                                bytecode.push(Instruction::AddF64);
+                            }
+                            HirTy::UInt64(_) => {
+                                bytecode.push(Instruction::AddU64);
+                            }
+                            _ => unimplemented!("Unsupported type for now"),
+                        }
                     }
                     atlas_hir::expr::HirBinaryOp::Sub => {
-                        bytecode.push(Instruction::SubI64);
+                        match b.ty {
+                            HirTy::Int64(_) => {
+                                bytecode.push(Instruction::SubI64);
+                            }
+                            HirTy::Float64(_) => {
+                                bytecode.push(Instruction::SubF64);
+                            }
+                            HirTy::UInt64(_) => {
+                                bytecode.push(Instruction::SubU64);
+                            }
+                            _ => unimplemented!("Unsupported type for now"),
+                        }
                     }
                     atlas_hir::expr::HirBinaryOp::Mul => {
-                        bytecode.push(Instruction::MulI64);
+                        match b.ty {
+                            HirTy::Int64(_) => {
+                                bytecode.push(Instruction::MulI64);
+                            }
+                            HirTy::Float64(_) => {
+                                bytecode.push(Instruction::MulF64);
+                            }
+                            HirTy::UInt64(_) => {
+                                bytecode.push(Instruction::MulU64);
+                            }
+                            _ => unimplemented!("Unsupported type for now"),
+                        }
                     }
                     atlas_hir::expr::HirBinaryOp::Div => {
-                        bytecode.push(Instruction::DivI64);
+                        match b.ty {
+                            HirTy::Int64(_) => {
+                                bytecode.push(Instruction::DivI64);
+                            }
+                            HirTy::Float64(_) => {
+                                bytecode.push(Instruction::DivF64);
+                            }
+                            HirTy::UInt64(_) => {
+                                bytecode.push(Instruction::DivU64);
+                            }
+                            _ => unimplemented!("Unsupported type for now"),
+                        }
                     }
                     atlas_hir::expr::HirBinaryOp::Mod => {
-                        bytecode.push(Instruction::ModI64);
+                        match b.ty {
+                            HirTy::Int64(_) => {
+                                bytecode.push(Instruction::ModI64);
+                            }
+                            HirTy::Float64(_) => {
+                                unimplemented!("Modulo not supported for float");
+                            }
+                            HirTy::UInt64(_) => {
+                                bytecode.push(Instruction::ModI64);
+                            }
+                            _ => unimplemented!("Unsupported type for now"),
+                        }
                     }
                     atlas_hir::expr::HirBinaryOp::Eq => {
                         bytecode.push(Instruction::Eq);

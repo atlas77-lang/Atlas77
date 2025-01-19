@@ -1,6 +1,7 @@
-func main() -> f64 {
-    let tmp: i64 = fib(20.0);
-    return fib(20.0);
+import "std/io"
+
+func main()  {
+    print_float(fib(20.0));
 }
 
 func fib(n: f64) -> f64 {

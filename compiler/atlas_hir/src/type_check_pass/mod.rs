@@ -120,16 +120,16 @@ impl<'hir> TypeChecker<'hir> {
         }
     }
 
-    pub fn check(&mut self, hir: &HirModule<'hir>) -> HirResult<()> {
+    pub fn check(&mut self, hir: &mut HirModule<'hir>) -> HirResult<()> {
         self.signature = hir.signature.clone();
-        for func in &hir.body.functions {
+        for func in &mut hir.body.functions {
             self.current_func_name = Some(func.0);
             self.check_func(func.1)?;
         }
         Ok(())
     }
 
-    pub fn check_func(&mut self, func: &HirFunction<'hir>) -> HirResult<()> {
+    pub fn check_func(&mut self, func: &mut HirFunction<'hir>) -> HirResult<()> {
         self.context.push(HashMap::new());
         self.context.last_mut().unwrap().insert(
             self.current_func_name.unwrap().to_string(),
@@ -153,19 +153,19 @@ impl<'hir> TypeChecker<'hir> {
                     },
                 );
         }
-        for stmt in &func.body.statements {
+        for stmt in &mut func.body.statements {
             self.check_stmt(stmt)?;
         }
         Ok(())
     }
-    pub fn check_stmt(&mut self, stmt: &HirStatement<'hir>) -> HirResult<()> {
+    pub fn check_stmt(&mut self, stmt: &mut HirStatement<'hir>) -> HirResult<()> {
         match stmt {
             HirStatement::Expr(e) => {
-                self.check_expr(e.expr)?;
+                self.check_expr(&mut e.expr)?;
                 Ok(())
             }
             HirStatement::Return(r) => {
-                let actual_ret_ty = self.check_expr(r.value)?;
+                let actual_ret_ty = self.check_expr(&mut r.value)?;
                 let func_ret_from = self
                     .signature
                     .functions
@@ -194,7 +194,7 @@ impl<'hir> TypeChecker<'hir> {
                 Ok(())
             }
             HirStatement::While(w) => {
-                let cond_ty = self.check_expr(w.condition)?;
+                let cond_ty = self.check_expr(&mut w.condition)?;
                 if HirTyId::from(cond_ty) != HirTyId::compute_boolean_ty_id() {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{:?}", cond_ty),
@@ -217,7 +217,7 @@ impl<'hir> TypeChecker<'hir> {
                     .get_mut(self.current_func_name.unwrap())
                     .unwrap()
                     .new_scope();
-                for stmt in &w.body.statements {
+                for stmt in &mut w.body.statements {
                     self.check_stmt(stmt)?;
                 }
                 self.context
@@ -230,7 +230,7 @@ impl<'hir> TypeChecker<'hir> {
                 Ok(())
             }
             HirStatement::IfElse(i) => {
-                let cond_ty = self.check_expr(i.condition)?;
+                let cond_ty = self.check_expr(&mut i.condition)?;
                 if HirTyId::from(cond_ty) != HirTyId::compute_boolean_ty_id() {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{:?}", cond_ty),
@@ -253,7 +253,7 @@ impl<'hir> TypeChecker<'hir> {
                     .get_mut(self.current_func_name.unwrap())
                     .unwrap()
                     .new_scope();
-                for stmt in &i.then_branch.statements {
+                for stmt in &mut i.then_branch.statements {
                     self.check_stmt(stmt)?;
                 }
                 self.context
@@ -262,14 +262,14 @@ impl<'hir> TypeChecker<'hir> {
                     .get_mut(self.current_func_name.unwrap())
                     .unwrap()
                     .end_scope();
-                if let Some(else_branch) = &i.else_branch {
+                if let Some(ref mut else_branch) = &mut i.else_branch {
                     self.context
                         .last_mut()
                         .unwrap()
                         .get_mut(self.current_func_name.unwrap())
                         .unwrap()
                         .new_scope();
-                    for stmt in &else_branch.statements {
+                    for stmt in &mut else_branch.statements {
                         self.check_stmt(stmt)?;
                     }
                     self.context
@@ -299,7 +299,7 @@ impl<'hir> TypeChecker<'hir> {
                             span: c.span,
                         },
                     );
-                let ty_value = self.check_expr(c.value)?;
+                let ty_value = self.check_expr(&mut c.value)?;
                 if HirTyId::from(ty_value) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{:?}", ty_value),
@@ -335,7 +335,7 @@ impl<'hir> TypeChecker<'hir> {
                             span: l.span,
                         },
                     );
-                let ty_value = self.check_expr(l.value)?;
+                let ty_value = self.check_expr(&mut l.value)?;
                 if HirTyId::from(ty_value) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{:?}", ty_value),
@@ -358,14 +358,14 @@ impl<'hir> TypeChecker<'hir> {
             }
         }
     }
-    pub fn check_expr(&mut self, expr: &HirExpr<'hir>) -> HirResult<&'hir HirTy<'hir>> {
+    pub fn check_expr(&mut self, expr: &mut HirExpr<'hir>) -> HirResult<&'hir HirTy<'hir>> {
         match expr {
             HirExpr::IntegerLiteral(_) => Ok(self.arena.types().get_integer64_ty()),
             HirExpr::FloatLiteral(_) => Ok(self.arena.types().get_float64_ty()),
             HirExpr::UnsignedIntegererLiteral(_) => Ok(self.arena.types().get_uint64_ty()),
             HirExpr::BooleanLiteral(_) => Ok(self.arena.types().get_boolean_ty()),
             HirExpr::Unary(u) => {
-                let ty = self.check_expr(&u.expr)?;
+                let ty = self.check_expr(&mut u.expr)?;
                 match u.op {
                     Some(expr::UnaryOp::Neg) => {
                         if HirTyId::from(ty) != HirTyId::compute_integer64_ty_id() {
@@ -385,8 +385,9 @@ impl<'hir> TypeChecker<'hir> {
                 }
             }
             HirExpr::HirBinaryOp(b) => {
-                let lhs = self.check_expr(&b.lhs)?;
-                let rhs = self.check_expr(&b.rhs)?;
+                let lhs = self.check_expr(&mut b.lhs)?;
+                b.ty = lhs;
+                let rhs = self.check_expr(&mut b.rhs)?;
                 if HirTyId::from(lhs) != HirTyId::from(rhs) {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{:?}", lhs),
@@ -420,6 +421,7 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::Call(f) => {
                 let callee = f.callee.as_ref();
                 let name = match callee {
+                    //todo: apply the type to the callee (i.ty)
                     HirExpr::Ident(i) => i.name,
                     _ => {
                         todo!("TypeChecker::check_expr")
@@ -450,7 +452,7 @@ impl<'hir> TypeChecker<'hir> {
                     }));
                 }
 
-                for (param, arg) in func.params.iter().zip(f.args.iter()) {
+                for (param, arg) in func.params.iter().zip(f.args.iter_mut()) {
                     let arg_ty = self.check_expr(arg)?;
                     if HirTyId::from(arg_ty) != HirTyId::from(param.ty) {
                         return Err(HirError::TypeMismatch(TypeMismatchError {
@@ -471,47 +473,52 @@ impl<'hir> TypeChecker<'hir> {
 
                 Ok(func.return_ty)
             }
+            //todo: this should have its own function
             HirExpr::Assign(a) => {
                 //first because of the borrow checker
-                let rhs = self.check_expr(&a.rhs)?;
-                let lhs = match a.lhs.as_ref() {
-                    HirExpr::Ident(i) => match self
-                        .context
-                        .last()
-                        .unwrap()
-                        .get(self.current_func_name.unwrap())
-                    {
-                        Some(ctx_func) => {
-                            let ctx_var = ctx_func.get(i.name).unwrap();
-                            if !ctx_var.is_mut {
-                                return Err(HirError::TryingToMutateImmutableVariable(
-                                    TryingToMutateImmutableVariableError {
-                                        const_loc: SourceSpan::new(
-                                            SourceOffset::from(ctx_var.span.start()),
-                                            ctx_var.name_span.end() - ctx_var.span.start(),
-                                        ),
-                                        var_name: i.name.to_string(),
-                                        span: SourceSpan::new(
-                                            SourceOffset::from(a.span.start()),
-                                            a.span.end() - a.span.start(),
-                                        ),
-                                        src: self.src.clone(),
-                                    },
-                                ));
+                let rhs = self.check_expr(&mut a.rhs)?;
+                let lhs = match a.lhs.as_mut() {
+                    HirExpr::Ident(i) => {
+                        match self
+                            .context
+                            .last()
+                            .unwrap()
+                            .get(self.current_func_name.unwrap())
+                        {
+                            Some(ctx_func) => {
+                                let ctx_var = ctx_func.get(i.name).unwrap();
+                                println!("Changing type of {} from {:?} to {:?}", i.name, ctx_var.ty, rhs);
+                                i.ty = ctx_var.ty;
+                                if !ctx_var.is_mut {
+                                    return Err(HirError::TryingToMutateImmutableVariable(
+                                        TryingToMutateImmutableVariableError {
+                                            const_loc: SourceSpan::new(
+                                                SourceOffset::from(ctx_var.span.start()),
+                                                ctx_var.name_span.end() - ctx_var.span.start(),
+                                            ),
+                                            var_name: i.name.to_string(),
+                                            span: SourceSpan::new(
+                                                SourceOffset::from(a.span.start()),
+                                                a.span.end() - a.span.start(),
+                                            ),
+                                            src: self.src.clone(),
+                                        },
+                                    ));
+                                }
+                                ctx_var
                             }
-                            ctx_var
+                            None => {
+                                return Err(HirError::UnknownType(UnknownTypeError {
+                                    name: i.name.to_string(),
+                                    span: SourceSpan::new(
+                                        SourceOffset::from(i.span.start()),
+                                        i.span.end() - i.span.start(),
+                                    ),
+                                    src: self.src.clone(),
+                                }))
+                            }
                         }
-                        None => {
-                            return Err(HirError::UnknownType(UnknownTypeError {
-                                name: i.name.to_string(),
-                                span: SourceSpan::new(
-                                    SourceOffset::from(i.span.start()),
-                                    i.span.end() - i.span.start(),
-                                ),
-                                src: self.src.clone(),
-                            }))
-                        }
-                    },
+                    }
                     _ => {
                         todo!("TypeChecker::check_expr")
                     }
@@ -544,6 +551,8 @@ impl<'hir> TypeChecker<'hir> {
                     .unwrap()
                     .get(i.name)
                 {
+                    println!("Changing type of {} from {:?} to {:?}", i.name, i.ty, ctx_var.ty);
+                    i.ty = ctx_var.ty;
                     Ok(ctx_var.ty)
                 } else {
                     Err(HirError::UnknownType(UnknownTypeError {

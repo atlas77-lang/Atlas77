@@ -1,12 +1,12 @@
 use crate::{
-    memory::{object_map::Object, vm_data::VMData},
-    runtime::{ vm_state::VMState, },
     errors::RuntimeError,
-    CallBack
+    memory::{object_map::Object, vm_data::VMData},
+    runtime::vm_state::VMState,
+    CallBack,
 };
 use rand::{thread_rng, Rng};
 
-pub const MATH_ATLAS: &str = include_str!("../../../../library/std/math.atlas");
+pub const MATH_ATLAS: &str = include_str!("../../../../libraries/std/math.atlas");
 
 pub const MATH_FUNCTIONS: [(&str, CallBack); 7] = [
     ("abs", abs),

@@ -40,13 +40,13 @@ impl Spanned for HirStatement<'_> {
 #[derive(Debug, Clone, Serialize)]
 pub struct HirExprStmt<'hir> {
     pub span: Span,
-    pub expr: &'hir HirExpr<'hir>,
+    pub expr: HirExpr<'hir>,
 }
 #[derive(Debug, Clone, Serialize)]
 pub struct HirWhileStmt<'hir> {
     pub span: Span,
-    pub condition: &'hir HirExpr<'hir>,
-    pub body: &'hir HirBlock<'hir>,
+    pub condition: HirExpr<'hir>,
+    pub body: HirBlock<'hir>,
 }
 
 /// Types will become optional in the future.
@@ -57,24 +57,24 @@ pub struct HirLetStmt<'hir> {
     pub name_span: Span,
     pub ty: &'hir HirTy<'hir>,
     pub ty_span: Span,
-    pub value: &'hir HirExpr<'hir>,
+    pub value: HirExpr<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct HirIfElseStmt<'hir> {
     pub span: Span,
-    pub condition: &'hir HirExpr<'hir>,
-    pub then_branch: &'hir HirBlock<'hir>,
-    pub else_branch: Option<&'hir HirBlock<'hir>>,
+    pub condition: HirExpr<'hir>,
+    pub then_branch: HirBlock<'hir>,
+    pub else_branch: Option<HirBlock<'hir>>,
 }
 #[derive(Debug, Clone, Serialize)]
 pub struct HirReturn<'hir> {
     pub span: Span,
-    pub value: &'hir HirExpr<'hir>,
+    pub value: HirExpr<'hir>,
     pub ty: &'hir HirTy<'hir>,
 }
 #[derive(Debug, Clone, Serialize)]
 pub struct HirBlock<'hir> {
     pub span: Span,
-    pub statements: Vec<&'hir HirStatement<'hir>>,
+    pub statements: Vec<HirStatement<'hir>>,
 }

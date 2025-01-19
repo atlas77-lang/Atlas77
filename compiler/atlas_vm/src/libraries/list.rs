@@ -1,11 +1,11 @@
 use crate::{
-    memory::{object_map::Object, vm_data::VMData},
-    runtime::{ vm_state::VMState, },
     errors::RuntimeError,
-    CallBack
+    memory::{object_map::Object, vm_data::VMData},
+    runtime::vm_state::VMState,
+    CallBack,
 };
 
-pub const LIST_ATLAS: &str = include_str!("../../../../library/std/list.atlas");
+pub const LIST_ATLAS: &str = include_str!("../../../../libraries/std/list.atlas");
 
 pub const LIST_FUNCTIONS: [(&str, CallBack); 7] = [
     ("len", len),

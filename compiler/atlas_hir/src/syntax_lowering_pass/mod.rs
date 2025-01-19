@@ -1,24 +1,22 @@
 use atlas_core::prelude::{Span, Spanned};
 use miette::{SourceOffset, SourceSpan};
 
-
-use atlas_frontend::{
-        parse,
-        parser::{
-            arena::AstArena,
-            ast::{
-                AstBinaryOp, AstBlock, AstExpr, AstFunction, AstImport, AstItem, AstLiteral,
-                AstObjField, AstProgram, AstStatement, AstType, AstUnaryOp,
-            },
-        },
-    };
 use crate::{expr::HirAssignExpr, signature::HirFunctionSignature, stmt::HirLetStmt};
+use atlas_frontend::{
+    parse,
+    parser::{
+        arena::AstArena,
+        ast::{
+            AstBinaryOp, AstBlock, AstExpr, AstFunction, AstImport, AstItem, AstLiteral,
+            AstObjField, AstProgram, AstStatement, AstType, AstUnaryOp,
+        },
+    },
+};
 
-const FILE_ATLAS: &str = include_str!("../../../../library/std/fs.atlas");
-const IO_ATLAS: &str = include_str!("../../../../library/std/io.atlas");
-const MATH_ATLAS: &str = include_str!("../../../../library/std/math.atlas");
-const STRING_ATLAS: &str = include_str!("../../../../library/std/string.atlas");
-
+const FILE_ATLAS: &str = include_str!("../../../../libraries/std/fs.atlas");
+const IO_ATLAS: &str = include_str!("../../../../libraries/std/io.atlas");
+const MATH_ATLAS: &str = include_str!("../../../../libraries/std/math.atlas");
+const STRING_ATLAS: &str = include_str!("../../../../libraries/std/string.atlas");
 
 use crate::{
     arena::HirArena,
@@ -273,16 +271,16 @@ where
         })
     }
 
-    fn visit_stmt(&self, node: &'ast AstStatement<'ast>) -> HirResult<&'hir HirStatement<'hir>> {
+    fn visit_stmt(&self, node: &'ast AstStatement<'ast>) -> HirResult<HirStatement<'hir>> {
         match node {
             AstStatement::While(w) => {
                 let condition = self.visit_expr(w.condition)?;
                 let body = self.visit_block(w.body)?;
-                let hir = self.arena.intern(HirStatement::While(HirWhileStmt {
+                let hir = HirStatement::While(HirWhileStmt {
                     span: node.span(),
                     condition,
-                    body: self.arena.intern(body),
-                }));
+                    body,
+                });
                 Ok(hir)
             }
             AstStatement::Const(c) => {
@@ -292,14 +290,14 @@ where
                     None => self.arena.types().get_uninitialized_ty(),
                 };
                 let value = self.visit_expr(c.value)?;
-                let hir = self.arena.intern(HirStatement::Const(HirLetStmt {
+                let hir = HirStatement::Const(HirLetStmt {
                     span: node.span(),
                     name,
                     name_span: c.name.span,
                     ty,
                     ty_span: c.ty.unwrap().span(),
                     value,
-                }));
+                });
                 Ok(hir)
             }
             AstStatement::Let(l) => {
@@ -309,57 +307,57 @@ where
                     None => self.arena.types().get_uninitialized_ty(),
                 };
                 let value = self.visit_expr(l.value)?;
-                let hir = self.arena.intern(HirStatement::Let(HirLetStmt {
+                let hir = HirStatement::Let(HirLetStmt {
                     span: node.span(),
                     name,
                     name_span: l.name.span,
                     ty,
                     ty_span: l.ty.unwrap().span(),
                     value,
-                }));
+                });
                 Ok(hir)
             }
             AstStatement::IfElse(i) => {
                 let condition = self.visit_expr(i.condition)?;
-                let then_branch = self.arena.intern(self.visit_block(i.body)?);
+                let then_branch = self.visit_block(i.body)?;
                 //If you don't type, the compiler will use it as an "Option<&mut HirBlock<'hir>>"
                 //Which is dumb asf
-                let else_branch: Option<&HirBlock<'hir>> = match i.else_body {
-                    Some(else_body) => Some(self.arena.intern(self.visit_block(else_body)?)),
+                let else_branch: Option<HirBlock<'hir>> = match i.else_body {
+                    Some(else_body) => Some(self.visit_block(else_body)?),
                     None => None,
                 };
-                let hir = self.arena.intern(HirStatement::IfElse(HirIfElseStmt {
+                let hir = HirStatement::IfElse(HirIfElseStmt {
                     span: node.span(),
                     condition,
                     then_branch,
                     else_branch,
-                }));
+                });
                 Ok(hir)
             }
             AstStatement::Break(b) => {
-                let hir = self.arena.intern(HirStatement::Break(b.span));
+                let hir = HirStatement::Break(b.span);
                 Ok(hir)
             }
             AstStatement::Continue(c) => {
-                let hir = self.arena.intern(HirStatement::Continue(c.span));
+                let hir = HirStatement::Continue(c.span);
                 Ok(hir)
             }
             //The parser really need a bit of work
             AstStatement::Return(r) => {
                 let expr = self.visit_expr(r.value)?;
-                let hir = self.arena.intern(HirStatement::Return(HirReturn {
+                let hir = HirStatement::Return(HirReturn {
                     span: node.span(),
-                    value: expr,
                     ty: expr.ty(),
-                }));
+                    value: expr,
+                });
                 Ok(hir)
             }
             AstStatement::Expr(e) => {
                 let expr = self.visit_expr(e)?;
-                let hir = self.arena.intern(HirStatement::Expr(HirExprStmt {
+                let hir = HirStatement::Expr(HirExprStmt {
                     span: node.span(),
                     expr,
-                }));
+                });
                 Ok(hir)
             }
             _ => Err(super::error::HirError::UnsupportedStatement(
@@ -375,36 +373,36 @@ where
         }
     }
 
-    fn visit_expr(&self, node: &'ast AstExpr<'ast>) -> HirResult<&'hir HirExpr<'hir>> {
+    fn visit_expr(&self, node: &'ast AstExpr<'ast>) -> HirResult<HirExpr<'hir>> {
         match node {
             AstExpr::Assign(a) => {
                 let target = self.visit_expr(a.target)?;
                 let value = self.visit_expr(a.value)?;
-                let hir = self.arena.intern(HirExpr::Assign(HirAssignExpr {
+                let hir = HirExpr::Assign(HirAssignExpr {
                     span: node.span(),
                     lhs: Box::new(target.clone()),
                     rhs: Box::new(value.clone()),
                     ty: self.arena.types().get_uninitialized_ty(),
-                }));
+                });
                 Ok(hir)
             }
             AstExpr::BinaryOp(b) => {
                 let lhs = self.visit_expr(b.lhs)?;
                 let rhs = self.visit_expr(b.rhs)?;
                 let op = self.visit_bin_op(&b.op)?;
-                let hir = self.arena.intern(HirExpr::HirBinaryOp(HirBinaryOpExpr {
+                let hir = HirExpr::HirBinaryOp(HirBinaryOpExpr {
                     span: node.span(),
                     op,
                     op_span: Span::empty(),
                     lhs: Box::new(lhs.clone()),
                     rhs: Box::new(rhs.clone()),
                     ty: self.arena.types().get_uninitialized_ty(),
-                }));
+                });
                 Ok(hir)
             }
             AstExpr::UnaryOp(u) => {
                 let expr = self.visit_expr(u.expr)?;
-                let hir = self.arena.intern(HirExpr::Unary(UnaryOpExpr {
+                let hir = HirExpr::Unary(UnaryOpExpr {
                     span: node.span(),
                     op: match u.op {
                         Some(AstUnaryOp::Neg) => Some(UnaryOp::Neg),
@@ -413,7 +411,7 @@ where
                     },
                     expr: Box::new(expr.clone()),
                     ty: expr.ty(),
-                }));
+                });
                 Ok(hir)
             }
             AstExpr::Call(c) => {
@@ -421,60 +419,51 @@ where
                 let args = c
                     .args
                     .iter()
-                    .map(|arg| self.visit_expr(arg).cloned())
+                    .map(|arg| self.visit_expr(arg))
                     .collect::<HirResult<Vec<_>>>()?;
-                let hir = self.arena.intern(HirExpr::Call(HirFunctionCallExpr {
+                let hir = HirExpr::Call(HirFunctionCallExpr {
                     span: node.span(),
                     callee: Box::new(callee.clone()),
                     callee_span: callee.span(),
                     args,
                     args_ty: Vec::new(),
                     ty: self.arena.types().get_uninitialized_ty(),
-                }));
+                });
                 Ok(hir)
             }
             AstExpr::Identifier(i) => {
-                let hir = self.arena.intern(HirExpr::Ident(HirIdentExpr {
+                let hir = HirExpr::Ident(HirIdentExpr {
                     name: self.arena.names().get(i.name),
                     span: i.span,
                     ty: self.arena.types().get_uninitialized_ty(),
-                }));
+                });
                 Ok(hir)
             }
 
             AstExpr::Literal(l) => {
                 let hir = match l {
-                    AstLiteral::Integer(i) => {
-                        self.arena
-                            .intern(HirExpr::IntegerLiteral(HirIntegerLiteralExpr {
-                                span: l.span(),
-                                value: i.value,
-                                ty: self.arena.types().get_integer64_ty(),
-                            }))
-                    }
-                    AstLiteral::Boolean(b) => {
-                        self.arena
-                            .intern(HirExpr::BooleanLiteral(HirBooleanLiteralExpr {
-                                span: l.span(),
-                                value: b.value,
-                                ty: self.arena.types().get_boolean_ty(),
-                            }))
-                    }
-                    AstLiteral::Float(f) => {
-                        self.arena
-                            .intern(HirExpr::FloatLiteral(HirFloatLiteralExpr {
-                                span: l.span(),
-                                value: f.value,
-                                ty: self.arena.types().get_float64_ty(),
-                            }))
-                    }
-                    AstLiteral::UnsignedIntegerer(u) => self.arena.intern(
+                    AstLiteral::Integer(i) => HirExpr::IntegerLiteral(HirIntegerLiteralExpr {
+                        span: l.span(),
+                        value: i.value,
+                        ty: self.arena.types().get_integer64_ty(),
+                    }),
+                    AstLiteral::Boolean(b) => HirExpr::BooleanLiteral(HirBooleanLiteralExpr {
+                        span: l.span(),
+                        value: b.value,
+                        ty: self.arena.types().get_boolean_ty(),
+                    }),
+                    AstLiteral::Float(f) => HirExpr::FloatLiteral(HirFloatLiteralExpr {
+                        span: l.span(),
+                        value: f.value,
+                        ty: self.arena.types().get_float64_ty(),
+                    }),
+                    AstLiteral::UnsignedIntegerer(u) => {
                         HirExpr::UnsignedIntegererLiteral(HirUnsignedIntegerLiteralExpr {
                             span: l.span(),
                             value: u.value,
                             ty: self.arena.types().get_uint64_ty(),
-                        }),
-                    ),
+                        })
+                    }
                     _ => {
                         return Err(super::error::HirError::UnsupportedExpr(UnsupportedExpr {
                             span: SourceSpan::new(

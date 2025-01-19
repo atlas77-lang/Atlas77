@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{memory::vm_data::VMData, errors::RuntimeError};
+use crate::{errors::RuntimeError, memory::vm_data::VMData};
 /// The size of the stack in bytes, 16384 is the maximum before it overflows "thread main"
 ///
 /// I'll try allocating the stack into the heap later on so

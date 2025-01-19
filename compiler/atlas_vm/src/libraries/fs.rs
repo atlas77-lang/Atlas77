@@ -1,11 +1,11 @@
 use crate::{
-    memory::{object_map::Object, vm_data::VMData},
-    runtime::{ vm_state::VMState, },
     errors::RuntimeError,
-    CallBack
+    memory::{object_map::Object, vm_data::VMData},
+    runtime::vm_state::VMState,
+    CallBack,
 };
 
-pub const FILE_ATLAS: &str = include_str!("../../../../library/std/fs.atlas");
+pub const FILE_ATLAS: &str = include_str!("../../../../libraries/std/fs.atlas");
 
 pub const FILE_FUNCTIONS: [(&str, CallBack); 5] = [
     ("read_dir", read_dir),

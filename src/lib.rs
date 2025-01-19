@@ -1,9 +1,8 @@
-
 use atlas_codegen::{arena::CodeGenArena, CodeGenUnit};
 use atlas_frontend::parse;
-use atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass};
 use atlas_frontend::parser::arena::AstArena;
 use atlas_hir::type_check_pass::TypeChecker;
+use atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass};
 use bumpalo::Bump;
 
 use std::{io::Write, path::PathBuf, time::Instant};
@@ -27,11 +26,11 @@ pub fn build(path: String) -> miette::Result<()> {
     //hir
     let hir_arena = HirArena::new();
     let lower = AstSyntaxLoweringPass::new(&hir_arena, &program, &ast_arena, source.clone());
-    let hir = lower.lower()?;
+    let mut hir = lower.lower()?;
 
     //type-check
     let mut type_checker = TypeChecker::new(&hir_arena, source.clone());
-    type_checker.check(&hir)?;
+    type_checker.check(&mut hir)?;
 
     //codegen
     let bump = Bump::new();
@@ -82,11 +81,11 @@ pub fn run(path: String) -> miette::Result<()> {
     //hir
     let hir_arena = HirArena::new();
     let lower = AstSyntaxLoweringPass::new(&hir_arena, &program, &ast_arena, source.clone());
-    let hir = lower.lower()?;
+    let mut hir = lower.lower()?;
 
     //type-check
     let mut type_checker = TypeChecker::new(&hir_arena, source.clone());
-    type_checker.check(&hir)?;
+    type_checker.check(&mut hir)?;
 
     //codegen
     let bump = Bump::new();
