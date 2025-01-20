@@ -241,76 +241,66 @@ where
                 self.generate_bytecode_expr(&b.lhs, bytecode, src.clone())?;
                 self.generate_bytecode_expr(&b.rhs, bytecode, src)?;
                 match b.op {
-                    atlas_hir::expr::HirBinaryOp::Add => {
-                        match b.ty {
-                            HirTy::Int64(_) => {
-                                bytecode.push(Instruction::AddI64);
-                            }
-                            HirTy::Float64(_) => {
-                                bytecode.push(Instruction::AddF64);
-                            }
-                            HirTy::UInt64(_) => {
-                                bytecode.push(Instruction::AddU64);
-                            }
-                            _ => unimplemented!("Unsupported type for now"),
+                    atlas_hir::expr::HirBinaryOp::Add => match b.ty {
+                        HirTy::Int64(_) => {
+                            bytecode.push(Instruction::AddI64);
                         }
-                    }
-                    atlas_hir::expr::HirBinaryOp::Sub => {
-                        match b.ty {
-                            HirTy::Int64(_) => {
-                                bytecode.push(Instruction::SubI64);
-                            }
-                            HirTy::Float64(_) => {
-                                bytecode.push(Instruction::SubF64);
-                            }
-                            HirTy::UInt64(_) => {
-                                bytecode.push(Instruction::SubU64);
-                            }
-                            _ => unimplemented!("Unsupported type for now"),
+                        HirTy::Float64(_) => {
+                            bytecode.push(Instruction::AddF64);
                         }
-                    }
-                    atlas_hir::expr::HirBinaryOp::Mul => {
-                        match b.ty {
-                            HirTy::Int64(_) => {
-                                bytecode.push(Instruction::MulI64);
-                            }
-                            HirTy::Float64(_) => {
-                                bytecode.push(Instruction::MulF64);
-                            }
-                            HirTy::UInt64(_) => {
-                                bytecode.push(Instruction::MulU64);
-                            }
-                            _ => unimplemented!("Unsupported type for now"),
+                        HirTy::UInt64(_) => {
+                            bytecode.push(Instruction::AddU64);
                         }
-                    }
-                    atlas_hir::expr::HirBinaryOp::Div => {
-                        match b.ty {
-                            HirTy::Int64(_) => {
-                                bytecode.push(Instruction::DivI64);
-                            }
-                            HirTy::Float64(_) => {
-                                bytecode.push(Instruction::DivF64);
-                            }
-                            HirTy::UInt64(_) => {
-                                bytecode.push(Instruction::DivU64);
-                            }
-                            _ => unimplemented!("Unsupported type for now"),
+                        _ => unimplemented!("Unsupported type for now"),
+                    },
+                    atlas_hir::expr::HirBinaryOp::Sub => match b.ty {
+                        HirTy::Int64(_) => {
+                            bytecode.push(Instruction::SubI64);
                         }
-                    }
-                    atlas_hir::expr::HirBinaryOp::Mod => {
-                        match b.ty {
-                            HirTy::Int64(_) => {
-                                bytecode.push(Instruction::ModI64);
-                            }
-                            HirTy::Float64(_) => {
-                                unimplemented!("Modulo not supported for float");
-                            }
-                            HirTy::UInt64(_) => {
-                                bytecode.push(Instruction::ModI64);
-                            }
-                            _ => unimplemented!("Unsupported type for now"),
+                        HirTy::Float64(_) => {
+                            bytecode.push(Instruction::SubF64);
                         }
-                    }
+                        HirTy::UInt64(_) => {
+                            bytecode.push(Instruction::SubU64);
+                        }
+                        _ => unimplemented!("Unsupported type for now"),
+                    },
+                    atlas_hir::expr::HirBinaryOp::Mul => match b.ty {
+                        HirTy::Int64(_) => {
+                            bytecode.push(Instruction::MulI64);
+                        }
+                        HirTy::Float64(_) => {
+                            bytecode.push(Instruction::MulF64);
+                        }
+                        HirTy::UInt64(_) => {
+                            bytecode.push(Instruction::MulU64);
+                        }
+                        _ => unimplemented!("Unsupported type for now"),
+                    },
+                    atlas_hir::expr::HirBinaryOp::Div => match b.ty {
+                        HirTy::Int64(_) => {
+                            bytecode.push(Instruction::DivI64);
+                        }
+                        HirTy::Float64(_) => {
+                            bytecode.push(Instruction::DivF64);
+                        }
+                        HirTy::UInt64(_) => {
+                            bytecode.push(Instruction::DivU64);
+                        }
+                        _ => unimplemented!("Unsupported type for now"),
+                    },
+                    atlas_hir::expr::HirBinaryOp::Mod => match b.ty {
+                        HirTy::Int64(_) => {
+                            bytecode.push(Instruction::ModI64);
+                        }
+                        HirTy::Float64(_) => {
+                            unimplemented!("Modulo not supported for float");
+                        }
+                        HirTy::UInt64(_) => {
+                            bytecode.push(Instruction::ModI64);
+                        }
+                        _ => unimplemented!("Unsupported type for now"),
+                    },
                     atlas_hir::expr::HirBinaryOp::Eq => {
                         bytecode.push(Instruction::Eq);
                     }

@@ -1,206 +1,186 @@
 {
-    "name": "Atlas77",
-    "scopeName": "source.atlas77",
-    "fileTypes": ["atlas"],
-    "patterns": [
-      {
-        "include": "#comments"
-      },
-      {
-        "include": "#keywords"
-      },
-      {
-        "include": "#types"
-      },
-      {
-        "include": "#annotations"
-      },
-      {
-        "include": "#functions"
-      },
-      {
-        "include": "#literals"
-      },
-      {
-        "include": "#classes"
-      },
-      {
-        "include": "#constants"
-      }
-    ],
-    "repository": {
-    "comments": {
-      "patterns": [
-        {
-          "name": "comment.line.double-slash.atlas77",
-          "match": "//.*$"
-        }
-      ]
-    },
-    "keywords": {
-      "patterns": [
-        {
-          "name": "keyword.control.atlas77",
-          "match": "\\b(public|private|import|trait|class|struct|enum|while|if|else|match|union|func|return|let|const)\\b"
-        },
-        {
-          "name": "keyword.operator.atlas77",
-          "match": "(::|->|:)\\b"
-        },
-        {
-          "name": "keyword.storage.atlas77",
-          "match": "\\b(self)\\b"
-        }
-      ]
-    },
-    "types": {
-      "patterns": [
-        {
-          "name": "storage.type.atlas77",
-          "match": "\\b(i64|i32|i16|i8|bool|f64|f32|u64|u32|u16|u8|unit)\\b"
-        }
-      ]
-    },
-    "classes": {
-      "patterns": [
-        {
-          "name": "entity.name.class.declaration.atlas77",
-          "match": "\\b(class|public\\s+class)\\s+([A-Z][a-zA-Z0-9_]*)",
-          "captures": {
-            "2": {
-              "name": "entity.name.class.atlas77"
-            }
-          }
-        },
-        {
-          "name": "entity.name.class.inheritance.atlas77",
-          "match": "\\bclass\\s+[A-Z][a-zA-Z0-9_]*\\s*:\\s*([A-Z][a-zA-Z0-9_]*)",
-          "captures": {
-            "1": {
-              "name": "support.class.inheritance.atlas77"
-            }
-          }
-        },
-        {
-          "name": "support.class.usage.atlas77",
-          "match": "\\b([A-Z][a-zA-Z0-9_]*)\\b",
-          "captures": {
-            "1": {
-              "name": "support.class.atlas77"
-            }
-          }
-        }
-      ]
-    },
-    "functions": {
-      "patterns": [
-        {
-          "name": "entity.name.function.declaration.atlas77",
-          "match": "\\bfunc\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\b"
-        },
-        {
-          "name": "entity.name.function.call.atlas77",
-          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
-          "captures": {
-            "1": {
-              "name": "support.function.call.atlas77"
-            }
-          }
-        },
-        {
-          "name": "entity.name.method.call.atlas77",
-          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
-          "captures": {
-            "1": {
-              "name": "support.method.call.atlas77"
-            }
-          }
-        },
-        {
-          "name": "entity.name.method.namespace.atlas77",
-          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)::",
-          "captures": {
-            "1": {
-              "name": "support.method.namespace.atlas77"
-            }
-          }
-        }
-      ]
-    },
-    "annotations": {
-      "patterns": [
-        {
-          "name": "meta.annotation.atlas77",
-          "begin": "#\\[",
-          "end": "\\]",
+  "name": "Atlas77",
+  "scopeName": "source.atlas77",
+  "fileTypes": ["atlas"],
+  "patterns": [
+      { "include": "#comments" },
+      { "include": "#keywords" },
+      { "include": "#types" },
+      { "include": "#annotations" },
+      { "include": "#functions" },
+      { "include": "#literals" },
+      { "include": "#classes" },
+      { "include": "#constants" },
+      { "include": "#fields" }
+  ],
+  "repository": {
+      "comments": {
           "patterns": [
-            {
-              "name": "entity.name.annotation.atlas77",
-              "match": "^[a-zA-Z_][a-zA-Z0-9_]*"
-            },
-            {
-              "name": "meta.annotation.arguments.atlas77",
-              "begin": "\\(",
-              "end": "\\)",
-              "patterns": [
-                {
-                  "name": "meta.annotation.arguments.nested.atlas77",
-                  "begin": "\\(",
-                  "end": "\\)",
-                  "patterns": [
-                    {
-                      "include": "#annotations"
-                    }
-                  ]
-                },
-                {
-                  "name": "support.class.method.atlas77",
+              {
+                  "name": "comment.line.double-slash.atlas77",
+                  "match": "//.*$"
+              }
+          ]
+      },
+      "keywords": {
+          "patterns": [
+              {
+                  "name": "keyword.control.atlas77",
+                  "match": "\\b(public|private|import|trait|class|struct|enum|while|if|else|match|union|func|return|let|const)\\b"
+              },
+              {
+                  "name": "keyword.operator.atlas77",
+                  "match": "(::|->|:)\\b"
+              },
+              {
+                  "name": "keyword.storage.atlas77",
+                  "match": "\\b(self)\\b"
+              }
+          ]
+      },
+      "types": {
+          "patterns": [
+              {
+                  "name": "storage.type.atlas77",
+                  "match": "\\b(i64|i32|i16|i8|bool|f64|f32|u64|u32|u16|u8|unit)\\b"
+              }
+          ]
+      },
+      "classes": {
+          "patterns": [
+              {
+                  "name": "entity.name.class.declaration.atlas77",
+                  "match": "\\b(class|public\\s+class)\\s+([A-Z][a-zA-Z0-9_]*)",
+                  "captures": {
+                      "2": { "name": "entity.name.class.atlas77" }
+                  }
+              },
+              {
+                  "name": "entity.name.class.inheritance.atlas77",
+                  "match": "\\bclass\\s+[A-Z][a-zA-Z0-9_]*\\s*:\\s*([A-Z][a-zA-Z0-9_]*)",
+                  "captures": {
+                      "1": { "name": "support.class.inheritance.atlas77" }
+                  }
+              },
+              {
+                  "name": "support.class.usage.atlas77",
+                  "match": "\\b([A-Z][a-zA-Z0-9_]*)\\b",
+                  "captures": {
+                      "1": { "name": "support.class.atlas77" }
+                  }
+              }
+          ]
+      },
+      "fields": {
+          "patterns": [
+              {
+                  "name": "variable.field.atlas77",
+                  "match": "\\b(self\\.([a-zA-Z_][a-zA-Z0-9_]*))\\b",
+                  "captures": {
+                      "1": { "name": "variable.field.reference.atlas77" },
+                      "2": { "name": "variable.field.name.atlas77" }
+                  }
+              }
+          ]
+      },
+      "functions": {
+          "patterns": [
+              {
+                  "name": "entity.name.function.declaration.atlas77",
+                  "match": "\\bfunc\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\b"
+              },
+              {
+                  "name": "entity.name.function.call.atlas77",
+                  "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+                  "captures": {
+                      "1": { "name": "support.function.call.atlas77" }
+                  }
+              },
+              {
+                  "name": "entity.name.method.call.atlas77",
+                  "match": "\\b(self\\.[a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+                  "captures": {
+                      "1": { "name": "support.method.call.atlas77" }
+                  }
+              },
+              {
+                  "name": "entity.name.method.namespace.atlas77",
                   "match": "\\b([A-Z][a-zA-Z0-9_]*)::([a-zA-Z_][a-zA-Z0-9_]*)\\b",
                   "captures": {
-                    "1": {
-                      "name": "support.class.atlas77"
-                    },
-                    "2": {
-                      "name": "entity.name.function.atlas77"
-                    }
+                      "1": { "name": "support.class.namespace.atlas77" },
+                      "2": { "name": "support.method.namespace.atlas77" }
                   }
-                },
-                {
-                  "name": "constant.language.atlas77",
-                  "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
-                }
-              ]
-            }
+              }
           ]
-        }
-      ]
-    },
-    "constants": {
-      "patterns": [
-        {
-          "name": "constant.language.atlas77",
-          "match": "\\b(true|false)\\b"
-        }
-      ]
-    },
-    "literals": {
-      "patterns": [
-        {
-          "name": "constant.numeric.atlas77",
-          "match": "\\b[0-9]+\\b"
-        },
-        {
-          "name": "string.quoted.double.atlas77",
-          "begin": "\"",
-          "end": "\"",
+      },
+      "annotations": {
           "patterns": [
-            {
-              "name": "constant.character.escape.atlas77",
-              "match": "\\\\."
-            }
+              {
+                  "name": "meta.annotation.atlas77",
+                  "begin": "#\\[",
+                  "end": "\\]",
+                  "patterns": [
+                      {
+                          "name": "entity.name.annotation.atlas77",
+                          "match": "^[a-zA-Z_][a-zA-Z0-9_]*"
+                      },
+                      {
+                          "name": "meta.annotation.arguments.atlas77",
+                          "begin": "\\(",
+                          "end": "\\)",
+                          "patterns": [
+                              {
+                                  "name": "meta.annotation.arguments.nested.atlas77",
+                                  "begin": "\\(",
+                                  "end": "\\)",
+                                  "patterns": [
+                                      { "include": "#annotations" }
+                                  ]
+                              },
+                              {
+                                  "name": "support.class.method.atlas77",
+                                  "match": "\\b([A-Z][a-zA-Z0-9_]*)::([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+                                  "captures": {
+                                      "1": { "name": "support.class.atlas77" },
+                                      "2": { "name": "entity.name.function.atlas77" }
+                                  }
+                              },
+                              {
+                                  "name": "constant.language.atlas77",
+                                  "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+                              }
+                          ]
+                      }
+                  ]
+              }
           ]
-        }
-      ]
-    }
+      },
+      "constants": {
+          "patterns": [
+              {
+                  "name": "constant.language.atlas77",
+                  "match": "\\b(true|false)\\b"
+              }
+          ]
+      },
+      "literals": {
+          "patterns": [
+              {
+                  "name": "constant.numeric.atlas77",
+                  "match": "\\b[0-9]+\\b"
+              },
+              {
+                  "name": "string.quoted.double.atlas77",
+                  "begin": "\"",
+                  "end": "\"",
+                  "patterns": [
+                      {
+                          "name": "constant.character.escape.atlas77",
+                          "match": "\\\\."
+                      }
+                  ]
+              }
+          ]
+      }
   }
 }

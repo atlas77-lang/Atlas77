@@ -45,6 +45,7 @@ impl Stack {
         }
     }
 
+    #[inline]
     pub fn truncate(&mut self, new_top: usize) {
         self.top = new_top;
     }

@@ -26,6 +26,10 @@ enum AtlasRuntimeCLI {
 }
 
 fn main() -> miette::Result<()> {
+    println!(
+        "Size of VMData: {}",
+        std::mem::size_of::<atlas_vm::memory::vm_data::VMData>()
+    );
     //std::env::set_var("RUST_BACKTRACE", "1");
     match AtlasRuntimeCLI::parse() {
         AtlasRuntimeCLI::Run { file_path } => run(file_path),

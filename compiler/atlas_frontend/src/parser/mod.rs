@@ -244,7 +244,7 @@ impl<'ast> Parser<'ast> {
         let start = self.current().span();
         self.expect(TokenKind::KwLet)?;
         let name = self.parse_identifier()?;
-        
+
         let ty: Option<&AstType> = if let TokenKind::Colon = self.current().kind() {
             let _ = self.advance();
             let t = self.parse_type()?;

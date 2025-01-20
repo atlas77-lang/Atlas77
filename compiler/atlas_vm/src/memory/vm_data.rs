@@ -14,12 +14,13 @@ pub union RawVMData {
     as_f64: f64,
     as_bool: bool,
     as_char: char,
+    as_stack_ptr: usize,
     as_object: ObjectIndex,
 }
 
 #[derive(Clone, Copy)]
 pub struct VMData {
-    pub tag: u64,
+    pub tag: u16,
     data: RawVMData,
 }
 
@@ -33,15 +34,15 @@ macro_rules! def_new_vmdata_func {
 }
 
 impl VMData {
-    pub const TAG_UNIT: u64 = 0;
-    pub const TAG_U64: u64 = 4;
-    pub const TAG_I64: u64 = 8;
-    pub const TAG_FLOAT: u64 = 9;
-    pub const TAG_BOOL: u64 = 10;
-    pub const TAG_STR: u64 = 11;
-    pub const TAG_CHAR: u64 = 12;
+    pub const TAG_UNIT: u16 = 0;
+    pub const TAG_U64: u16 = 4;
+    pub const TAG_I64: u16 = 8;
+    pub const TAG_FLOAT: u16 = 9;
+    pub const TAG_BOOL: u16 = 10;
+    pub const TAG_STR: u16 = 11;
+    pub const TAG_CHAR: u16 = 12;
 
-    pub fn new(tag: u64, data: RawVMData) -> Self {
+    pub fn new(tag: u16, data: RawVMData) -> Self {
         Self { tag, data }
     }
 
@@ -52,7 +53,7 @@ impl VMData {
         }
     }
 
-    pub fn new_object(tag: u64, val: ObjectIndex) -> Self {
+    pub fn new_object(tag: u16, val: ObjectIndex) -> Self {
         assert!(tag > 256, "object typeid is within the reserved area");
         Self {
             tag,
@@ -64,7 +65,7 @@ impl VMData {
         Self::new(Self::TAG_STR, RawVMData { as_object: val })
     }
 
-    pub fn new_list(tag: u64, val: ObjectIndex) -> Self {
+    pub fn new_list(tag: u16, val: ObjectIndex) -> Self {
         assert!(tag > 256, "object typeid is within the reserved area");
         Self {
             tag,

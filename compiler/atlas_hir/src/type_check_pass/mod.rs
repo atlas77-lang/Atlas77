@@ -2,9 +2,9 @@
 //As there will only be primitive types to check.
 //A rework of the type checker will be done when structs, classes, enums and unions are added.
 
-use std::collections::HashMap;
 use atlas_core::prelude::{Span, Spanned};
 use miette::{SourceOffset, SourceSpan};
+use std::collections::HashMap;
 
 use super::{
     arena::HirArena,
@@ -301,7 +301,7 @@ impl<'hir> TypeChecker<'hir> {
                             span: c.span,
                         },
                     );
-                
+
                 if HirTyId::from(expr_ty) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{:?}", expr_ty),
@@ -489,7 +489,10 @@ impl<'hir> TypeChecker<'hir> {
                         {
                             Some(ctx_func) => {
                                 let ctx_var = ctx_func.get(i.name).unwrap();
-                                println!("Changing type of {} from {:?} to {:?}", i.name, ctx_var.ty, rhs);
+                                println!(
+                                    "Changing type of {} from {:?} to {:?}",
+                                    i.name, ctx_var.ty, rhs
+                                );
                                 i.ty = ctx_var.ty;
                                 if !ctx_var.is_mut {
                                     return Err(HirError::TryingToMutateImmutableVariable(
@@ -553,7 +556,10 @@ impl<'hir> TypeChecker<'hir> {
                     .unwrap()
                     .get(i.name)
                 {
-                    println!("Changing type of {} from {:?} to {:?}", i.name, i.ty, ctx_var.ty);
+                    println!(
+                        "Changing type of {} from {:?} to {:?}",
+                        i.name, i.ty, ctx_var.ty
+                    );
                     i.ty = ctx_var.ty;
                     Ok(ctx_var.ty)
                 } else {

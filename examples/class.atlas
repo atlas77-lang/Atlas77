@@ -1,7 +1,6 @@
 public trait Shape {
-    func getArea(&self) -> i64;
+    func get_area(&self) -> i64;
 }
-
 
 public class Rectangle : Shape {
     private:
@@ -14,27 +13,27 @@ public class Rectangle : Shape {
                 height: height
             }
         }
-        func setWidth(&self, w: i64) {
+        func set_width(&self, w: i64) {
             self.width = w;
-        }
-        func setHeight(&self, h: i64) {
+}
+        func set_height(&self, h: i64) {
             self.height = h;
         }
-        func getWidth(&self) -> i64 {
+        func get_width(&self) -> i64 {
             return self.width;
         }
-        func getHeight(&self) -> i64 {
+        func get_height(&self) -> i64 {
             return self.height;
         }
-        #[override(Shape::getArea)]
-        func getArea(&self) -> i64 {
+        #[override(Shape::get_area)]
+        func get_area(&self) -> i64 {
             return self.width * self.height;
         }
 }
 
 func main() -> i64 {
     let r = Rectangle::new(10, 20);
-    r.setWidth(30);
-    r.setHeight(40);
-    return r.getArea(); true
+    r.set_width(30);
+    r.set_height(40);
+    return r.get_area(); true
 }

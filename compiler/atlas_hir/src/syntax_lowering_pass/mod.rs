@@ -286,7 +286,7 @@ where
             AstStatement::Const(c) => {
                 let name = self.arena.names().get(c.name.name);
                 let ty = c.ty.map(|ty| self.visit_ty(ty)).transpose()?;
-                
+
                 let value = self.visit_expr(c.value)?;
                 let hir = HirStatement::Const(HirLetStmt {
                     span: node.span(),
@@ -304,7 +304,7 @@ where
             AstStatement::Let(l) => {
                 let name = self.arena.names().get(l.name.name);
                 let ty = l.ty.map(|ty| self.visit_ty(ty)).transpose()?;
-                
+
                 let value = self.visit_expr(l.value)?;
                 let hir = HirStatement::Let(HirLetStmt {
                     span: node.span(),
