@@ -38,7 +38,7 @@ atlas_codegen = { path = "compiler/atlas_codegen", version = "0.5.1" }
 atlas_frontend = { path = "compiler/atlas_frontend", version = "0.5.1" }
 atlas_hir = { path = "compiler/atlas_hir", version = "0.5.1" }
 # That's dumb asf, the vm shouldn't be in the ./compiler directory
-atlas_vm = { path = "compiler/atlas_vm" }
+atlas_vm = { path = "compiler/atlas_vm", version = "0.5.1" }
 
 # For the CLI
 clap = { version = "4.5.26", features = ["derive"] }
