@@ -13,4 +13,4 @@ doctest = false
 
 [dependencies]
 atlas_frontend = { path = "../atlas_frontend", version = "0.5.1" }
-atlas_vm = { path = "../atlas_vm" }
+atlas_vm = { path = "../atlas_vm", version = "0.5.1" }
