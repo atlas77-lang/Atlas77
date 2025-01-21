@@ -146,7 +146,7 @@ where
                     self.ast_arena,
                     IO_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -174,7 +174,7 @@ where
                     self.ast_arena,
                     MATH_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -190,7 +190,7 @@ where
                     self.ast_arena,
                     FILE_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -206,7 +206,7 @@ where
                     self.ast_arena,
                     FILE_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -222,7 +222,7 @@ where
                     self.ast_arena,
                     STRING_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -238,7 +238,7 @@ where
                     self.ast_arena,
                     STRING_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -460,7 +460,7 @@ where
                         ty: self.arena.types().get_float64_ty(),
                     }),
                     AstLiteral::UnsignedIntegerer(u) => {
-                        HirExpr::UnsignedIntegererLiteral(HirUnsignedIntegerLiteralExpr {
+                        HirExpr::UnsignedIntegerLiteral(HirUnsignedIntegerLiteralExpr {
                             span: l.span(),
                             value: u.value,
                             ty: self.arena.types().get_uint64_ty(),

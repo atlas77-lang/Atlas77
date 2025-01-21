@@ -385,7 +385,7 @@ where
             HirExpr::IntegerLiteral(i) => bytecode.push(Instruction::PushInt(i.value)),
             HirExpr::FloatLiteral(f) => bytecode.push(Instruction::PushFloat(f.value)),
             HirExpr::BooleanLiteral(b) => bytecode.push(Instruction::PushBool(b.value)),
-            HirExpr::UnsignedIntegererLiteral(u) => {
+            HirExpr::UnsignedIntegerLiteral(u) => {
                 bytecode.push(Instruction::PushUnsignedInt(u.value))
             }
             _ => {

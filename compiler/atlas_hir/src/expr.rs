@@ -4,6 +4,7 @@ use serde::Serialize;
 use super::ty::HirTy;
 
 #[derive(Debug, Clone, Serialize)]
+//todo: Add arrays/struct & class init literal
 pub enum HirExpr<'hir> {
     Assign(HirAssignExpr<'hir>),
     HirBinaryOp(HirBinaryOpExpr<'hir>),
@@ -13,7 +14,7 @@ pub enum HirExpr<'hir> {
     FloatLiteral(HirFloatLiteralExpr<'hir>),
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
-    UnsignedIntegererLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
+    UnsignedIntegerLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
     _StringLiteral(HirStringLiteralExpr<'hir>),
 }
 
@@ -22,7 +23,7 @@ impl Spanned for HirExpr<'_> {
         match self {
             HirExpr::Ident(expr) => expr.span,
             HirExpr::IntegerLiteral(expr) => expr.span,
-            HirExpr::UnsignedIntegererLiteral(expr) => expr.span,
+            HirExpr::UnsignedIntegerLiteral(expr) => expr.span,
             HirExpr::BooleanLiteral(expr) => expr.span,
             HirExpr::FloatLiteral(expr) => expr.span,
             HirExpr::Unary(expr) => expr.span,
@@ -39,7 +40,7 @@ impl<'hir> HirExpr<'hir> {
         match self {
             HirExpr::Ident(expr) => expr.ty,
             HirExpr::IntegerLiteral(expr) => expr.ty,
-            HirExpr::UnsignedIntegererLiteral(expr) => expr.ty,
+            HirExpr::UnsignedIntegerLiteral(expr) => expr.ty,
             HirExpr::BooleanLiteral(expr) => expr.ty,
             HirExpr::FloatLiteral(expr) => expr.ty,
             HirExpr::Unary(expr) => expr.ty,
@@ -76,6 +77,7 @@ pub struct HirAssignExpr<'hir> {
 #[derive(Debug, Clone, Serialize)]
 pub struct HirFunctionCallExpr<'hir> {
     pub span: Span,
+    /// The callee can be any kind of expression (e.g. ``Rectangle::new()`` or ``MyStruct.some_fn_ptr()`` or ``MyOtherStruct.some_array_of_fn[0]()``)
     pub callee: Box<HirExpr<'hir>>,
     pub callee_span: Span,
     pub args: Vec<HirExpr<'hir>>,

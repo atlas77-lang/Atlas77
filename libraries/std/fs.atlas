@@ -1,3 +1,39 @@
+public class File {
+    public:
+        flag: i64;
+        content: Option<str>;
+        path: str;
+    public:
+        func new() -> File {
+            return File {
+                flag: 0,
+                content: None,
+                path: "",
+            };
+        }
+        func read(path: str) -> File {
+            let file: Self = File::new();
+            file.path = path;
+            file.content = Some(read_file(path));
+            return file;
+        }
+        func write(&self, content: str) {
+            write_file(self.path, content);
+        }
+        func remove(&self) {
+            remove_file(self.path);
+        }
+        func exists(&self) -> bool {
+            return file_exists(self.path);
+        }
+        func read_dir(path: str) -> [str] {
+            return read_dir(path);
+        }
+        func read_file(path: str) -> str {
+            return read_file(path);
+        }
+}
+
 extern read_dir(path: str) -> [str];
 extern read_file(path: str) -> str;
 extern write_file(path: str, content: str);

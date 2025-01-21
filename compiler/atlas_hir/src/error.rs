@@ -1,7 +1,7 @@
 use atlas_macro::declare_error_type;
 use miette::{Diagnostic, SourceSpan as Span};
 use thiserror::Error;
-
+//todo: Implement my own error type, because miette doesn't let me return just warnings
 declare_error_type! {
     #[error("semantic error: {0}")]
     pub enum HirError {

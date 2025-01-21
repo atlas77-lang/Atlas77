@@ -5,9 +5,3 @@ edition = "2021"
 
 [lib]
 doctest = false
-
-[dependencies]
-bumpalo = "3.16.0"
-
-
-atlas-core = "0.7.1"

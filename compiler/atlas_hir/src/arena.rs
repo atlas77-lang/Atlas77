@@ -11,7 +11,7 @@ use super::ty::{
     HirBooleanTy, HirFloatTy, HirIntegerTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy,
     HirUnsignedIntTy,
 };
-
+//todo: Implement my own Arenas (maybe)
 pub struct HirArena<'arena> {
     allocator: Rc<Bump>,
     type_arena: TypeArena<'arena>,

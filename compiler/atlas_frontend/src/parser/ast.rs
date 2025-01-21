@@ -9,16 +9,17 @@ pub struct AstProgram<'ast> {
 }
 
 /// An `Item` is anything that can be declared at the top-level scope of a program.
-/// This currently means variables & structs declarations
+/// This currently means functions, classes & structs declarations
 ///
 /// Enums & unions are also top-level items, but they are not yet supported
 #[derive(Debug, Clone, Serialize, Copy)]
+//todo: Add classes and a trait-ish stuff
 pub enum AstItem<'ast> {
     Struct(AstStruct<'ast>),
     ExternFunction(AstExternFunction<'ast>),
     Func(AstFunction<'ast>),
     _Enum(AstEnum<'ast>),
-    _Union(AstUnion<'ast>),
+    ///Should unions be supported?
     Import(AstImport<'ast>),
 }
 
@@ -29,7 +30,6 @@ impl Spanned for AstItem<'_> {
             AstItem::ExternFunction(v) => v.span,
             AstItem::Func(v) => v.span,
             AstItem::_Enum(v) => v.span,
-            AstItem::_Union(v) => v.span,
             AstItem::Import(v) => v.span,
         }
     }
@@ -42,13 +42,6 @@ pub struct AstFunction<'ast> {
     pub args: &'ast [&'ast AstObjField<'ast>],
     pub ret: &'ast AstType<'ast>,
     pub body: &'ast AstBlock<'ast>,
-}
-
-#[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstUnion<'ast> {
-    pub span: Span,
-    pub name: &'ast AstIdentifier<'ast>,
-    pub variants: &'ast [&'ast AstUnionVariant<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
