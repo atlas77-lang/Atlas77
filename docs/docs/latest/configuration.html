@@ -234,8 +234,14 @@
 </code></pre>
 </li>
 </ul>
+<blockquote>
+<p>NB: This is only for Unix-based systems <em>(or WSL for Windows)</em>. For Windows, you can use <a href="https://scoop.sh/">Scoop</a></p>
+<pre><code class="language-shell">scoop install main/rust
+</code></pre>
+</blockquote>
 <p>Or directly from their website: <a href="https://www.rust-lang.org/tools/install">Rust</a></p>
 <h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
+<p>Once Rust is installed, you can install Atlas77 using Cargo.</p>
 <ol>
 <li>Install it from Cargo
 <pre><code class="language-sh">cargo install atlas_77
@@ -246,6 +252,21 @@
 </code></pre>
 </li>
 <li>Enjoy!</li>
+</ol>
+<p>Or you can clone the repository and build it yourself.</p>
+<ol>
+<li>Clone the repository
+<pre><code class="language-sh">git clone https://github.com/atlas77-lang/atlas77.git &amp;&amp; cd atlas77
+</code></pre>
+</li>
+<li>Build it
+<pre><code class="language-sh">cargo build --release
+</code></pre>
+</li>
+<li>Use it as a CLI
+<pre><code class="language-sh">./target/release/atlas_77 --help
+</code></pre>
+</li>
 </ol>
 
                     </main>

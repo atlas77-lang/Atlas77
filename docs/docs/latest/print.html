@@ -299,12 +299,18 @@ I hope to be able to use it for future projects. Don't expect it to be productio
 </blockquote>
 <h1 id="current-syntax-of-atlas77"><a class="header" href="#current-syntax-of-atlas77">Current Syntax of Atlas77</a></h1>
 <h2 id="1-introduction"><a class="header" href="#1-introduction">1. Introduction</a></h2>
-<p>Atlas77 is a simple, easy-to-use, and powerful programming language. It is designed to be easy to learn and use, while still being powerful enough to handle complex tasks. This document describes the syntax of Atlas77, including the rules for writing code in the language (WIP).</p>
+<p>Atlas77 is a simple, easy-to-use, and powerful programming language. It is designed to be easy to learn and use, while
+still being powerful enough to handle complex tasks. This document describes the syntax of Atlas77, including the rules
+for writing code in the language (WIP).</p>
 <h2 id="2-hello-world"><a class="header" href="#2-hello-world">2. Hello, World!</a></h2>
 <p>Here is a simple "Hello, World!" program written in Atlas77:</p>
 <pre><code class="language-ts">import "std/io"
 
-func main() -&gt; i64 {
+func
+main()
+-&gt;
+i64
+{
     print("Hello, World!")
 }
 </code></pre>
@@ -313,7 +319,8 @@ func main() -&gt; i64 {
 </blockquote>
 <p>Save this code to a <code>.atlas</code> file, then run it directly with <code>atlas run &lt;FILE_PATH&gt;</code></p>
 <h2 id="3-comments"><a class="header" href="#3-comments">3. Comments</a></h2>
-<p>Comments in Atlas77 are similar to comments in other programming languages. There are two types of comments: single-line comments and multi-line comments.</p>
+<p>Comments in Atlas77 are similar to comments in other programming languages. There are two types of comments: single-line
+comments and multi-line comments.</p>
 <h1 id="31-single-line-comments"><a class="header" href="#31-single-line-comments">3.1. Single-line Comments</a></h1>
 <p>Single-line comments start with <code>//</code> and continue until the end of the line. For example:</p>
 <pre><code class="language-rs">// This is a single-line comment
@@ -338,10 +345,16 @@ It can span multiple lines.
 <p>Comments are parsed as tokens by the compiler, to allow future documentation features.</p>
 </blockquote>
 <h2 id="4-variables"><a class="header" href="#4-variables">4. Variables</a></h2>
-<p>Variables in Atlas77 are either mutable or immutable. The design follows in some sense TypeScript/JavaScript, with the <code>const</code> &amp; <code>let</code> keywords. Variables can be declared using the <code>let</code> keyword, which creates a mutable variable, or the <code>const</code> keyword, which creates an immutable variable.</p>
+<p>Variables in Atlas77 are either mutable or immutable. The design follows in some sense TypeScript/JavaScript, with the
+<code>const</code> &amp; <code>let</code> keywords. Variables can be declared using the <code>let</code> keyword, which creates a mutable variable, or the
+<code>const</code> keyword, which creates an immutable variable.</p>
 <pre><code class="language-ts">import "std/io"
 
-func main() -&gt; i64 {
+func
+main()
+-&gt;
+i64
+{
     let x: i64 = 5;
     x = 10;
     print_int(x); // Output: 10
@@ -351,7 +364,8 @@ func main() -&gt; i64 {
 }
 </code></pre>
 <h2 id="5-data-types"><a class="header" href="#5-data-types">5. Data Types</a></h2>
-<p>Atlas77 has several built-in data types, including integers, floating-point numbers, booleans, strings, and arrays. The following table lists the built-in data types in Atlas77:</p>
+<p>Atlas77 has several built-in data types, including integers, floating-point numbers, booleans, strings, and arrays. The
+following table lists the built-in data types in Atlas77:</p>
 <div class="table-wrapper"><table><thead><tr><th>Data Type</th><th>Description</th><th>State</th></tr></thead><tbody>
 <tr><td><code>i8</code></td><td>8-bit signed integer</td><td>💤</td></tr>
 <tr><td><code>i16</code></td><td>16-bit signed integer</td><td>💤</td></tr>
@@ -372,25 +386,51 @@ func main() -&gt; i64 {
 </tbody></table>
 </div>
 <blockquote>
-<p>Note: The <code>str</code> and <code>array</code> types will be mutable and resizable. More powerful types for both Strings and Arrays will be implemented in the future (e.g., <code>Vec&lt;YourType&gt;</code> for arrays &amp; <code>String</code>).</p>
+<p>Note: The <code>str</code> and <code>array</code> types will be mutable and resizable.
+More powerful types for both Strings and Arrays will be implemented in the future (e.g., <code>Vec&lt;YourType&gt;</code> for arrays &amp;
+<code>String</code>).</p>
+</blockquote>
+<blockquote>
 <p>NB: The <code>char</code> type is not implemented yet, but it will be a 32-bit Unicode character.</p>
-<p>NB 2: Since this is a VM-based language, all numeric types smaller than 64 bits (e.g., u8, u16, u32) are internally represented as 64-bit values for simplicity and consistency. However, they will behave as their original types, respecting their size and overflow semantics. In the future, packed types may be introduced to optimize memory usage for arrays (e.g., <code>[u8]</code> could be represented as <code>[u8x8]</code>, <code>[u16]</code> as <code>[u16x4]</code>, etc.). At present, the minimum memory size for numeric types is 8 bytes.</p>
+</blockquote>
+<blockquote>
+<p>NB 2: Since this is a VM-based language,
+all numeric types smaller than 64 bits (e.g., u8, u16, u32)
+are internally represented as 64-bit values for simplicity and consistency.
+However, they will behave as their original types, respecting their size and overflow semantics.
+In the future, packed types may be introduced to optimize memory usage for arrays
+(e.g., <code>[u8]</code> could be represented as <code>[u8x8]</code>, <code>[u16]</code> as <code>[u16x4]</code>, etc.).
+At present, the minimum memory size for numeric types is 8 bytes.</p>
 </blockquote>
 <h2 id="6-functions"><a class="header" href="#6-functions">6. Functions</a></h2>
-<p>Functions in Atlas77 are defined using the <code>func</code> keyword, followed by the function name, parameters, return type, and body. The return type of a function is specified after the <code>-&gt;</code> symbol. For example:</p>
+<p>Functions in Atlas77 are defined using the <code>func</code> keyword, followed by the function name, parameters, return type, and
+body. The return type of a function is specified after the <code>-&gt;</code> symbol. For example:</p>
 <pre><code class="language-ts">import "std/io"
 
-func add(x: i64, y: i64) -&gt; i64 {
+func
+add(x
+:
+i64, y
+:
+i64
+) -&gt;
+i64
+{
     return x + y;
 }
 
-func main() -&gt; i64 {
+func
+main()
+-&gt;
+i64
+{
     let result: i64 = add(5, 10);
     print(result); // Output: 15
 }
 </code></pre>
 <h2 id="7-control-structures"><a class="header" href="#7-control-structures">7. Control Structures</a></h2>
-<p>Atlas77 supports several control structures, including <code>if</code> statements, <code>match</code> expression, <code>while</code> loops, and <code>for</code> loops. The syntax for these control structures is similar to other programming languages. For example:</p>
+<p>Atlas77 supports several control structures, including <code>if</code> statements, <code>match</code> expression, <code>while</code> loops, and <code>for</code>
+loops. The syntax for these control structures is similar to other programming languages. For example:</p>
 <div class="table-wrapper"><table><thead><tr><th>Control Structure</th><th>Description</th><th>State</th></tr></thead><tbody>
 <tr><td><code>if</code> statement</td><td>Conditional statement</td><td>✅</td></tr>
 <tr><td><code>match</code> expression</td><td>Pattern matching expression</td><td>💤</td></tr>
@@ -403,7 +443,11 @@ func main() -&gt; i64 {
 </blockquote>
 <pre><code class="language-ts">import "std/io"
 
-func main() -&gt; i64 {
+func
+main()
+-&gt;
+i64
+{
     let x: i64 = 5;
 
     if x &gt; 0 {
@@ -424,10 +468,16 @@ func main() -&gt; i64 {
 }
 </code></pre>
 <h2 id="8-the-standard-library"><a class="header" href="#8-the-standard-library">8. The standard library</a></h2>
-<p>Atlas77 comes with a relatively small standard library, which includes functions &amp; types for input/output, file handling, string &amp; list manipulation, time &amp; math functions. The standard library is imported using the <code>import</code> keyword, followed by the library name. For example:</p>
+<p>Atlas77 comes with a relatively small standard library, which includes functions &amp; types for input/output, file
+handling, string &amp; list manipulation, time &amp; math functions. The standard library is imported using the <code>import</code>
+keyword, followed by the library name. For example:</p>
 <pre><code class="language-ts">import "std/io"
 
-func main() -&gt; i64 {
+func
+main()
+-&gt;
+i64
+{
     print("Hello, World!");
 }
 </code></pre>
@@ -443,7 +493,76 @@ func main() -&gt; i64 {
 </li>
 </ul>
 <blockquote>
-<p>Yes it is very limited, but tbh <code>str</code>, <code>array</code> &amp; structs are still not implemented, so it's a bit hard to implement more complex functions.</p>
+<p>Yes it is very limited, but tbh <code>str</code>, <code>array</code> &amp; structs are still not implemented,
+so it's a bit hard to implement more complex functions.</p>
+</blockquote>
+<h2 id="9-enums"><a class="header" href="#9-enums">9. Enums</a></h2>
+<blockquote>
+<p>WIP</p>
+</blockquote>
+<p>Example:</p>
+<pre><code class="language-ts">public enum Color {
+    Red = 1,
+    Yellow,
+    Green = 3,
+    Purple,
+    Blue = 5,
+}
+</code></pre>
+<h2 id="10-class--structs"><a class="header" href="#10-class--structs">10. Class &amp; Structs</a></h2>
+<blockquote>
+<p>WIP</p>
+</blockquote>
+<p>Current state of <code>std/fs</code>:</p>
+<pre><code>public class File {
+    private:
+        flag: i64;
+        content: str;
+        path: str;
+    public:
+        func create() -&gt; File {
+            return new File {
+                flag: 0,
+                content: None,
+                path: "",
+            };
+        }
+        func read(path: str) -&gt; File {
+            let file: Self = File::create();
+            file.path = path;
+            file.content = Some(read_file(path));
+            return file;
+        }
+        func write(&amp;self, content: str) {
+            write_file(self.path, content);
+        }
+        func remove(&amp;self) {
+            remove_file(self.path);
+        }
+        func exists(&amp;self) -&gt; bool {
+            return file_exists(self.path);
+        }
+        func read_dir(path: str) -&gt; [str] {
+            return read_dir(path);
+        }
+        func read_file(path: str) -&gt; str {
+            return read_file(path);
+        }
+}
+
+extern read_dir(path: str) -&gt; [str];
+extern read_file(path: str) -&gt; str;
+extern write_file(path: str, content: str);
+extern remove_file(path: str);
+extern file_exists(path: str) -&gt; bool;
+</code></pre>
+<h2 id="11-generics"><a class="header" href="#11-generics">11. Generics</a></h2>
+<blockquote>
+<p>WIP</p>
+</blockquote>
+<h2 id="12-traits"><a class="header" href="#12-traits">12. Traits</a></h2>
+<blockquote>
+<p>The name is still to be decided</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -520,8 +639,14 @@ func main() -&gt; i64 {
 </code></pre>
 </li>
 </ul>
+<blockquote>
+<p>NB: This is only for Unix-based systems <em>(or WSL for Windows)</em>. For Windows, you can use <a href="https://scoop.sh/">Scoop</a></p>
+<pre><code class="language-shell">scoop install main/rust
+</code></pre>
+</blockquote>
 <p>Or directly from their website: <a href="https://www.rust-lang.org/tools/install">Rust</a></p>
 <h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
+<p>Once Rust is installed, you can install Atlas77 using Cargo.</p>
 <ol>
 <li>Install it from Cargo
 <pre><code class="language-sh">cargo install atlas_77
@@ -532,6 +657,21 @@ func main() -&gt; i64 {
 </code></pre>
 </li>
 <li>Enjoy!</li>
+</ol>
+<p>Or you can clone the repository and build it yourself.</p>
+<ol>
+<li>Clone the repository
+<pre><code class="language-sh">git clone https://github.com/atlas77-lang/atlas77.git &amp;&amp; cd atlas77
+</code></pre>
+</li>
+<li>Build it
+<pre><code class="language-sh">cargo build --release
+</code></pre>
+</li>
+<li>Use it as a CLI
+<pre><code class="language-sh">./target/release/atlas_77 --help
+</code></pre>
+</li>
 </ol>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -614,7 +754,8 @@ func main() -&gt; i64 {
 </tbody></table>
 </div>
 <p>As of now only part of the <code>std/io</code> module is implemented and working properly.
-When the <code>v0.5.1</code> will be released, <code>std/fs</code>, <code>std/str</code>, <code>std/io</code>, <code>std/math</code> &amp; <code>std/time</code> should be fully implemented and working.</p>
+When the <code>v0.5.1</code> will be released, <code>std/fs</code>, <code>std/str</code>, <code>std/io</code>, <code>std/math</code> &amp; <code>std/time</code> should be fully implemented
+and working.</p>
 <h2 id="stdio"><a class="header" href="#stdio"><code>std/io</code></a></h2>
 <ul>
 <li><code>print(val: str) -&gt; unit</code>: Print a string to the standard output.</li>

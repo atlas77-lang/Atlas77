@@ -2,17 +2,18 @@
 
 > NB: All the standard library is a work in progress.
 
-| Module | Description |
-| ------ | ----------- |
-| `std/io` | Input/output functions |
-| `std/fs` | File handling functions |
-| `std/str` | String manipulation functions |
-| `std/list` | List manipulation functions |
-| `std/time` | Time functions |
-| `std/math` | Math functions |
+| Module     | Description                   |
+|------------|-------------------------------|
+| `std/io`   | Input/output functions        |
+| `std/fs`   | File handling functions       |
+| `std/str`  | String manipulation functions |
+| `std/list` | List manipulation functions   |
+| `std/time` | Time functions                |
+| `std/math` | Math functions                |
 
 As of now only part of the `std/io` module is implemented and working properly.
-When the `v0.5.1` will be released, `std/fs`, `std/str`, `std/io`, `std/math` & `std/time` should be fully implemented and working.
+When the `v0.5.1` will be released, `std/fs`, `std/str`, `std/io`, `std/math` & `std/time` should be fully implemented
+and working.
 
 ## `std/io`
 
@@ -20,11 +21,12 @@ When the `v0.5.1` will be released, `std/fs`, `std/str`, `std/io`, `std/math` & 
 - `println(val: str) -> unit`: Print a string to the standard output followed by a newline.
 - `input() -> str`: Read a line from the standard input.
 
-
 ## `std/fs`
 
 - `File`: A file type that can be used to read and write files.
+
 > NB: The `File` type is not implemented yet.
+
 - `open(filename: str, mode: str) -> File`: Open a file in the specified mode.
 - `read(file: File) -> str`: Read the content of a file.
 - `write(file: File, content: str) -> unit`: Write content to a file.
@@ -36,7 +38,9 @@ When the `v0.5.1` will be released, `std/fs`, `std/str`, `std/io`, `std/math` & 
 ## `std/str`
 
 - `String`: A string type that can be used to manipulate strings.
+
 > NB: The `String` type is not implemented yet.
+
 - `str_len(s: String) -> u64`: Get the length of a string.
 - `concat(s1: String, s2: String) -> String`: Concatenate two strings.
 - `split(s: String, sep: str) -> List`: Split a string into a list of substrings.
@@ -56,16 +60,17 @@ When the `v0.5.1` will be released, `std/fs`, `std/str`, `std/io`, `std/math` & 
 
 > NB: `std/list` is not implemented yet.
 
-
 ## `std/time`
 
 - `Time`: A time type that can be used to represent time.
+
 ```
 struct Time {
     sec: u64;
     nsect: u64;
 }
 ```
+
 - `now() -> Time`: Get the current time.
 - `format(t: Time, fmt: str) -> str`: Format a time value as a string.
 - `sleep(ms: u64) -> unit`: Sleep for the specified number of milliseconds.
