@@ -1,7 +1,11 @@
 [package]
 name = "atlas_codegen"
-version = "0.0.0"
+version = "0.5.1"
 edition = "2021"
+repository = "https://github.com/atlas77-lang/Atlas77"
+keywords = ["programming", "language", "compiler", "atlas77"]
+categories = ["compilers"]
+homepage = "https://atlas77-lang.github.io/Atlas77/docs/latest/index.html"
 
 [lib]
 doctest = false
@@ -10,7 +14,7 @@ doctest = false
 bumpalo = "3.16.0"
 miette = { version = "7.4.0", features = ["fancy"] }
 
-atlas_hir = { path = "../atlas_hir" }
-atlas_vm = { path = "../atlas_vm" }
+atlas_hir = { path = "../atlas_hir", version = "0.5.1" }
+atlas_vm = { path = "../atlas_vm", version = "0.5.1" }
 
 atlas-core = "0.7.1"

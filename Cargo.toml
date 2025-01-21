@@ -6,7 +6,6 @@ members = [
     "compiler/atlas_macro",
     "compiler/atlas_runtime",
     "compiler/atlas_vm",
-
 ]
 
 [package]
@@ -19,7 +18,7 @@ license = "MIT"
 repository = "https://github.com/atlas77-lang/Atlas77"
 keywords = ["programming", "language", "compiler", "atlas77"]
 categories = ["compilers"]
-homepage = "https://redgear.tk/"
+homepage = "https://atlas77-lang.github.io/Atlas77/docs/latest/index.html"
 readme = "README.md"
 
 [profile.release]
@@ -35,9 +34,9 @@ opt-level = 3
 codegen-units = 1
 
 [dependencies]
-atlas_codegen = { path = "compiler/atlas_codegen" }
-atlas_frontend = { path = "compiler/atlas_frontend" }
-atlas_hir = { path = "compiler/atlas_hir" }
+atlas_codegen = { path = "compiler/atlas_codegen", version = "0.5.1" }
+atlas_frontend = { path = "compiler/atlas_frontend", version = "0.5.1" }
+atlas_hir = { path = "compiler/atlas_hir", version = "0.5.1" }
 # That's dumb asf, the vm shouldn't be in the ./compiler directory
 atlas_vm = { path = "compiler/atlas_vm" }
 

@@ -2,6 +2,10 @@
 name = "atlas_frontend"
 version = "0.0.0"
 edition = "2021"
+repository = "https://github.com/atlas77-lang/Atlas77"
+keywords = ["programming", "language", "compiler", "atlas77"]
+categories = ["compilers"]
+homepage = "https://atlas77-lang.github.io/Atlas77/docs/latest/index.html"
 
 [lib]
 doctest = false
@@ -10,8 +14,8 @@ doctest = false
 bumpalo = "3.16.0"
 thiserror = { version = "2.0.11" }
 miette = { version = "7.4.0", features = ["fancy"] }
-serde = { version =  "1.0.217", features = ["derive"] }
+serde = { version = "1.0.217", features = ["derive"] }
 
-atlas_macro = { path = "../atlas_macro" }
+atlas_macro = { path = "../atlas_macro", version = "0.5.1" }
 atlas-core = "0.7.1"
 

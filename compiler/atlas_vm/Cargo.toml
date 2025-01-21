@@ -1,12 +1,16 @@
 [package]
 name = "atlas_vm"
-version = "0.0.0"
+version = "0.5.1"
 edition = "2021"
+repository = "https://github.com/atlas77-lang/Atlas77"
+keywords = ["programming", "language", "compiler", "atlas77"]
+categories = ["compilers"]
+homepage = "https://atlas77-lang.github.io/Atlas77/docs/latest/index.html"
 
 [lib]
 doctest = false
 
 [dependencies]
-serde = { version =  "1.0.217", features = ["derive"] }
+serde = { version = "1.0.217", features = ["derive"] }
 time = { version = "0.3.37", features = ["formatting"] }
 rand = "0.8.5"
