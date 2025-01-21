@@ -5,8 +5,6 @@ use crate::{
     CallBack,
 };
 
-pub const STRING_ATLAS: &str = include_str!("../../../../libraries/std/string.atlas");
-
 pub const STRING_FUNCTIONS: [(&str, CallBack); 5] = [
     ("str_len", str_len),
     ("trim", trim),

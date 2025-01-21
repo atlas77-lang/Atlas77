@@ -5,8 +5,6 @@ use crate::{
     CallBack,
 };
 
-pub const LIST_ATLAS: &str = include_str!("../../../../libraries/std/list.atlas");
-
 pub const LIST_FUNCTIONS: [(&str, CallBack); 7] = [
     ("len", len),
     ("get", get),

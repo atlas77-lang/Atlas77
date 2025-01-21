@@ -1,12 +1,13 @@
 [package]
 name = "atlas_frontend"
-version = "0.0.0"
+version = "0.5.1"
 edition = "2021"
 repository = "https://github.com/atlas77-lang/Atlas77"
 keywords = ["programming", "language", "compiler", "atlas77"]
 categories = ["compilers"]
 homepage = "https://atlas77-lang.github.io/Atlas77/docs/latest/index.html"
-
+license = "MIT"
+description = "The Atlas77 Frontend (lexer & parser)"
 [lib]
 doctest = false
 

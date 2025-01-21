@@ -11,8 +11,6 @@ use crate::{
 use crate::memory::object_map::Structure;
 use time::{format_description, OffsetDateTime};
 
-pub const TIME_ATLAS: &str = include_str!("../../../../libraries/std/time.atlas");
-
 pub const TIME_FUNCTIONS: [(&str, CallBack); 4] = [
     ("now", now),
     ("format_time_iso", format_time_iso),

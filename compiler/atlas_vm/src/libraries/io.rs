@@ -5,8 +5,6 @@ use crate::{
     CallBack,
 };
 
-pub const IO_ATLAS: &str = include_str!("../../../../libraries/std/io.atlas");
-
 pub const IO_FUNCTIONS: [(&str, CallBack); 7] = [
     ("println", println),
     ("print", print),

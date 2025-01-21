@@ -5,8 +5,6 @@ use crate::{
     CallBack,
 };
 
-pub const FILE_ATLAS: &str = include_str!("../../../../libraries/std/fs.atlas");
-
 pub const FILE_FUNCTIONS: [(&str, CallBack); 5] = [
     ("read_dir", read_dir),
     ("read_file", read_file),

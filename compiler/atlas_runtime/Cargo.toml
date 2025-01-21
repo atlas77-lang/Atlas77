@@ -6,7 +6,8 @@ repository = "https://github.com/atlas77-lang/Atlas77"
 keywords = ["programming", "language", "compiler", "atlas77"]
 categories = ["compilers"]
 homepage = "https://atlas77-lang.github.io/Atlas77/docs/latest/index.html"
-
+license = "MIT"
+description = "The Atlas77 compile time runtime"
 [lib]
 doctest = false
 
