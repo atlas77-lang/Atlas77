@@ -31,6 +31,7 @@ lexer_builder! {
             ';' => Semicolon,
             '\'' => Quote,
             '?' => Interrogation,
+            '@' => Generic,
         },
         Either {
             '=' => '=' => OpEq, OpAssign,
@@ -48,7 +49,9 @@ lexer_builder! {
     Keyword {
         //Items
         "class"     => KwClass,
+        "new"       => KwNew,
         "func"      => KwFunc,
+        "where"     => KwWhere, //Used for generics constraints and bounds (i.e. func foo(arg: @T) -> T where T: Add)
         "extern"    => KwExtern,
         "struct"    => KwStruct,
         "trait"     => KwTrait,
@@ -84,6 +87,7 @@ lexer_builder! {
         "unit"      => UnitTy,
         "char"      => CharTy,
         "bool"      => BoolTy,
+        "self"      => SelfTy,
         //Complex Types
         "str"       => StrTy,
     },

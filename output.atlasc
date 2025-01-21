@@ -72,9 +72,9 @@
             name: "main",
             position: 26,
             body: [
-                PushUnsignedInt(20),
+                PushUnsignedInt(10),
                 CallFunction(
-                    name: "recursive_fib",
+                    name: "iterative_fib",
                     args: 1,
                 ),
                 StoreU64(
@@ -142,4 +142,8 @@
             is_std: true,
         ),
     ],
+    global: (
+        string_pool: [],
+        function_pool: [],
+    ),
 )

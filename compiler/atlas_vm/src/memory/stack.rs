@@ -1,6 +1,7 @@
-use std::fmt::Display;
-
 use crate::{errors::RuntimeError, memory::vm_data::VMData};
+use std::fmt::Display;
+use std::ops::Index;
+
 /// The size of the stack in bytes, 16384 is the maximum before it overflows "thread main"
 ///
 /// I'll try allocating the stack into the heap later on so
@@ -31,7 +32,7 @@ impl Stack {
     pub fn new() -> Self {
         Self {
             values: [VMData::new_unit(); STACK_SIZE],
-            top: 1,
+            top: 0,
         }
     }
 
@@ -45,7 +46,7 @@ impl Stack {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn truncate(&mut self, new_top: usize) {
         self.top = new_top;
     }
@@ -56,7 +57,7 @@ impl Stack {
             let r = self.values[self.top];
             Ok(r)
         } else {
-            Err(RuntimeError::StackUndeflow)
+            Err(RuntimeError::StackUnderflow)
         }
     }
 
@@ -65,7 +66,20 @@ impl Stack {
         if self.top != 0 {
             Ok(&self.values[self.top - 1])
         } else {
-            Err(RuntimeError::StackUndeflow)
+            Err(RuntimeError::StackUnderflow)
+        }
+    }
+
+    pub fn extends(&mut self, values: &[VMData]) -> Result<(), RuntimeError> {
+        if self.top + values.len() < STACK_SIZE {
+            for val in values {
+                println!("current val: {}", val);
+                self.values[self.top] = *val;
+                self.top += 1;
+            }
+            Ok(())
+        } else {
+            Err(RuntimeError::StackOverflow)
         }
     }
 
@@ -75,11 +89,27 @@ impl Stack {
 
     pub fn new_stack_frame(&mut self) {}
 
-    pub fn get(&mut self, _offset: usize) -> Result<VMData, RuntimeError> {
-        unimplemented!("get(&mut self, offset: usize)")
-    }
-
     pub fn set(&mut self, _offset: usize) {}
+
+    pub fn iter(&self) -> std::slice::Iter<VMData> {
+        self.values[..self.top].iter()
+    }
+}
+
+impl IntoIterator for Stack {
+    type Item = VMData;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.values[..self.top].to_vec().into_iter()
+    }
+}
+
+impl Index<usize> for Stack {
+    type Output = VMData;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.values[index]
+    }
 }
 
 impl Display for Stack {

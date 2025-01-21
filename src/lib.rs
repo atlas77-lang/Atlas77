@@ -105,8 +105,7 @@ pub fn run(path: String) -> miette::Result<()> {
     match res {
         Ok(_) => {
             println!(
-                "Program ran successfully: {} (time: {}ms)",
-                vm.stack.pop().unwrap(),
+                "Program ran successfully (time: {}ms)",
                 (end - start).as_millis()
             );
         }

@@ -1,9 +1,4 @@
-use crate::{
-    errors::RuntimeError,
-    memory::vm_data::VMData,
-    runtime::vm_state::VMState,
-    CallBack,
-};
+use crate::{errors::RuntimeError, memory::vm_data::VMData, runtime::vm_state::VMState, CallBack};
 use rand::{thread_rng, Rng};
 
 pub const MATH_FUNCTIONS: [(&str, CallBack); 7] = [

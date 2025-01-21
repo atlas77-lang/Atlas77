@@ -3,7 +3,7 @@ use atlas_vm::memory::vm_data::VMData;
 
 use atlas_frontend::parser::ast::{
     AstBinaryOpExpr, AstBlock, AstCallExpr, AstExpr, AstFieldAccessExpr, AstFunction,
-    AstIdentifier, AstIfElseExpr, AstIndexingExpr, AstLetExpr, AstProgram, AstUnaryOpExpr,
+    AstIdentifier, AstIfElseExpr, AstIndexingExpr, AstLet, AstProgram, AstUnaryOpExpr,
 };
 use atlas_vm::RuntimeResult;
 
@@ -46,7 +46,7 @@ pub(crate) trait _Visitor<'visitor> {
     // Variables and Identifiers
     fn visit_variable_declaration(
         &mut self,
-        variable_declaration: &'visitor AstLetExpr,
+        variable_declaration: &'visitor AstLet,
     ) -> RuntimeResult<VMData>;
     fn visit_identifier(&mut self, identifier: &'visitor AstIdentifier) -> RuntimeResult<VMData>;
     fn visit_literal(&mut self, literal: &'visitor AstLiteral) -> RuntimeResult<VMData>;

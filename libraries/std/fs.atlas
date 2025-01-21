@@ -1,18 +1,18 @@
 public class File {
-    public:
+    private:
         flag: i64;
-        content: Option<str>;
+        content: str;
         path: str;
     public:
-        func new() -> File {
-            return File {
+        func create() -> File {
+            return new File {
                 flag: 0,
                 content: None,
                 path: "",
             };
         }
         func read(path: str) -> File {
-            let file: Self = File::new();
+            let file: Self = File::create();
             file.path = path;
             file.content = Some(read_file(path));
             return file;

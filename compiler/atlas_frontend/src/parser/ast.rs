@@ -15,24 +15,55 @@ pub struct AstProgram<'ast> {
 #[derive(Debug, Clone, Serialize, Copy)]
 //todo: Add classes and a trait-ish stuff
 pub enum AstItem<'ast> {
+    Import(AstImport<'ast>),
+    Enum(AstEnum<'ast>),
+    Class(AstClass<'ast>),
     Struct(AstStruct<'ast>),
     ExternFunction(AstExternFunction<'ast>),
     Func(AstFunction<'ast>),
-    _Enum(AstEnum<'ast>),
-    ///Should unions be supported?
-    Import(AstImport<'ast>),
+}
+
+impl AstItem<'_> {
+    pub fn set_vis(&mut self, vis: AstVisibility) {
+        match self {
+            AstItem::Import(_) => {}
+            AstItem::Enum(v) => v.vis = vis,
+            AstItem::Class(v) => v.vis = vis,
+            AstItem::Struct(v) => v.vis = vis,
+            AstItem::ExternFunction(v) => v.vis = vis,
+            AstItem::Func(v) => v.vis = vis,
+        }
+    }
 }
 
 impl Spanned for AstItem<'_> {
     fn span(&self) -> Span {
         match self {
+            AstItem::Import(v) => v.span,
+            AstItem::Enum(v) => v.span,
+            AstItem::Class(v) => v.span,
             AstItem::Struct(v) => v.span,
             AstItem::ExternFunction(v) => v.span,
             AstItem::Func(v) => v.span,
-            AstItem::_Enum(v) => v.span,
-            AstItem::Import(v) => v.span,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Copy, Default)]
+pub enum AstVisibility {
+    Public,
+    #[default]
+    Private,
+}
+#[derive(Debug, Clone, Serialize, Copy)]
+pub struct AstClass<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub name_span: Span,
+    pub vis: AstVisibility,
+    pub fields: &'ast [&'ast AstObjField<'ast>],
+    pub field_span: Span,
+    pub methods: &'ast [&'ast AstFunction<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
@@ -42,6 +73,7 @@ pub struct AstFunction<'ast> {
     pub args: &'ast [&'ast AstObjField<'ast>],
     pub ret: &'ast AstType<'ast>,
     pub body: &'ast AstBlock<'ast>,
+    pub vis: AstVisibility,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
@@ -56,13 +88,21 @@ pub struct AstEnum<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub variants: &'ast [&'ast AstEnumVariant<'ast>],
+    pub vis: AstVisibility,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
 /// Enums currently don't support associated values
 pub struct AstEnumVariant<'ast> {
     pub span: Span,
+    ///todo: Maybe change from [``AstIdentifier``] to &'ast str
     pub name: &'ast AstIdentifier<'ast>,
+    /// Some(i32) if the user specified a value for the variant
+    ///
+    /// None if the user didn't specify a value
+    ///
+    /// During ast lowering, the compiler will assign a value to the variant
+    pub val: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
@@ -70,13 +110,17 @@ pub struct AstStruct<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub fields: &'ast [&'ast AstObjField<'ast>],
+    pub vis: AstVisibility,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
+///todo: Rename because it's also used by functions
 pub struct AstObjField<'ast> {
     pub span: Span,
+    /// In a function or a struct the visibility is always public
     pub name: &'ast AstIdentifier<'ast>,
     pub ty: &'ast AstType<'ast>,
+    pub vis: AstVisibility,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
@@ -86,6 +130,7 @@ pub struct AstExternFunction<'ast> {
     pub args_name: &'ast [&'ast AstIdentifier<'ast>],
     pub args_ty: &'ast [&'ast AstType<'ast>],
     pub ret: &'ast AstType<'ast>,
+    pub vis: AstVisibility,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
@@ -97,17 +142,16 @@ pub struct AstImport<'ast> {
 
 #[derive(Debug, Clone, Serialize, Copy)]
 pub enum AstStatement<'ast> {
-    Let(AstLetExpr<'ast>),
-    Const(AstConstExpr<'ast>),
+    Let(AstLet<'ast>),
+    Const(AstConst<'ast>),
     IfElse(AstIfElseExpr<'ast>),
-    _InnerFunc(AstFunction<'ast>),
-    _Block(AstBlock<'ast>),
-    _Call(AstCallExpr<'ast>),
+    Block(AstBlock<'ast>),
     While(AstWhileExpr<'ast>),
     Expr(AstExpr<'ast>),
     Break(AstBreakStmt),
     Continue(AstContinueStmt),
     Return(AstReturnStmt<'ast>),
+    _InnerFunc(AstFunction<'ast>),
 }
 
 impl AstStatement<'_> {
@@ -117,8 +161,7 @@ impl AstStatement<'_> {
             AstStatement::Const(e) => e.span,
             AstStatement::IfElse(e) => e.span,
             AstStatement::_InnerFunc(e) => e.span,
-            AstStatement::_Block(e) => e.span,
-            AstStatement::_Call(e) => e.span,
+            AstStatement::Block(e) => e.span,
             AstStatement::While(e) => e.span,
             AstStatement::Expr(e) => e.span(),
             AstStatement::Break(e) => e.span,
@@ -139,7 +182,7 @@ pub struct AstBreakStmt {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstConstExpr<'ast> {
+pub struct AstConst<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub ty: Option<&'ast AstType<'ast>>,
@@ -162,7 +205,6 @@ pub struct AstAssignExpr<'ast> {
 
 #[derive(Debug, Clone, Serialize, Copy)]
 pub enum AstExpr<'ast> {
-    _Let(AstLetExpr<'ast>),
     _Lambda(AstLambdaExpr<'ast>),
     _CompTime(AstCompTimeExpr<'ast>),
     IfElse(AstIfElseExpr<'ast>),
@@ -173,7 +215,8 @@ pub enum AstExpr<'ast> {
     Identifier(AstIdentifier<'ast>),
     Indexing(AstIndexingExpr<'ast>),
     FieldAccess(AstFieldAccessExpr<'ast>),
-    _NewObj(AstNewObjExpr<'ast>),
+    StaticAccess(AstStaticAccessExpr<'ast>),
+    NewObj(AstNewObjExpr<'ast>),
     _Block(AstBlock<'ast>),
     Assign(AstAssignExpr<'ast>),
     //Tuple(AstTupleExpr<'ast>),
@@ -182,7 +225,6 @@ pub enum AstExpr<'ast> {
 impl Spanned for AstExpr<'_> {
     fn span(&self) -> Span {
         match self {
-            AstExpr::_Let(e) => e.span,
             AstExpr::_Lambda(e) => e.span,
             AstExpr::_CompTime(e) => e.span,
             AstExpr::IfElse(e) => e.span,
@@ -193,7 +235,8 @@ impl Spanned for AstExpr<'_> {
             AstExpr::Identifier(e) => e.span,
             AstExpr::Indexing(e) => e.span,
             AstExpr::FieldAccess(e) => e.span,
-            AstExpr::_NewObj(e) => e.span,
+            AstExpr::StaticAccess(e) => e.span,
+            AstExpr::NewObj(e) => e.span,
             AstExpr::_Block(e) => e.span,
             AstExpr::Assign(e) => e.span,
         }
@@ -215,7 +258,7 @@ pub struct AstBlock<'ast> {
 #[derive(Debug, Clone, Serialize, Copy)]
 pub struct AstNewObjExpr<'ast> {
     pub span: Span,
-    pub ty: &'ast AstType<'ast>,
+    pub ty: &'ast AstIdentifier<'ast>,
     pub fields: &'ast [&'ast AstFieldInit<'ast>],
 }
 
@@ -224,6 +267,13 @@ pub struct AstFieldInit<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub value: &'ast AstExpr<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+pub struct AstStaticAccessExpr<'ast> {
+    pub span: Span,
+    pub target: &'ast AstExpr<'ast>,
+    pub field: &'ast AstIdentifier<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
@@ -294,7 +344,7 @@ pub struct AstIfElseExpr<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstLetExpr<'ast> {
+pub struct AstLet<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub ty: Option<&'ast AstType<'ast>>,
@@ -323,22 +373,22 @@ pub struct AstIdentifier<'ast> {
 #[derive(Debug, Clone, Serialize, Copy)]
 pub enum AstLiteral<'ast> {
     Integer(AstIntegerLiteral),
-    UnsignedIntegerer(AstUnsignedIntegerLiteral),
+    UnsignedInteger(AstUnsignedIntegerLiteral),
     Float(AstFloatLiteral),
     String(AstStringLiteral<'ast>),
     Boolean(AstBooleanLiteral),
-    _List(AstListLiteral<'ast>),
+    List(AstListLiteral<'ast>),
 }
 
 impl Spanned for AstLiteral<'_> {
     fn span(&self) -> Span {
         match self {
             AstLiteral::Integer(l) => l.span,
-            AstLiteral::UnsignedIntegerer(l) => l.span,
+            AstLiteral::UnsignedInteger(l) => l.span,
             AstLiteral::Float(l) => l.span,
             AstLiteral::String(l) => l.span,
             AstLiteral::Boolean(l) => l.span,
-            AstLiteral::_List(l) => l.span,
+            AstLiteral::List(l) => l.span,
         }
     }
 }
@@ -385,14 +435,13 @@ pub enum AstType<'ast> {
     Boolean(AstBooleanType),
     Integer(AstIntegerType),
     Float(AstFloatType),
-    UnsignedIntegerer(AstUnsignedIntegerType),
+    UnsignedInteger(AstUnsignedIntegerType),
     String(AstStringType),
     Named(AstNamedType<'ast>),
     Pointer(AstPointerType<'ast>),
     Function(AstFunctionType<'ast>),
-    _List(AstListType<'ast>),
-    _Map(AstMapType<'ast>),
-    //Tuple(AstTupleType<'ast>),
+    List(AstListType<'ast>),
+    Generic(AstGenericType<'ast>),
 }
 
 impl Spanned for AstType<'_> {
@@ -402,31 +451,33 @@ impl Spanned for AstType<'_> {
             AstType::Boolean(t) => t.span,
             AstType::Integer(t) => t.span,
             AstType::Float(t) => t.span,
-            AstType::UnsignedIntegerer(t) => t.span,
+            AstType::UnsignedInteger(t) => t.span,
             AstType::String(t) => t.span,
             AstType::Named(t) => t.span,
             AstType::Pointer(t) => t.span,
             AstType::Function(t) => t.span,
-            AstType::_List(t) => t.span,
-            AstType::_Map(t) => t.span,
+            AstType::List(t) => t.span,
+            AstType::Generic(t) => t.span,
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
-pub struct AstMapType<'ast> {
+/// A generic type in atlas as the form of `@T`
+pub struct AstGenericType<'ast> {
     pub span: Span,
-    pub key: &'ast AstType<'ast>,
-    pub value: &'ast AstType<'ast>,
+    pub name: &'ast AstIdentifier<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
+///A List type in atlas as the form of `[T]`
 pub struct AstListType<'ast> {
     pub span: Span,
     pub inner: &'ast AstType<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
+///todo: Add support for generic types and constraints (i.e. `T: Display`)
 pub struct AstFunctionType<'ast> {
     pub span: Span,
     pub args: &'ast [&'ast AstType<'ast>],
@@ -434,6 +485,7 @@ pub struct AstFunctionType<'ast> {
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]
+///A pointer type in atlas as the form of `&T`
 pub struct AstPointerType<'ast> {
     pub span: Span,
     pub inner: &'ast AstType<'ast>,

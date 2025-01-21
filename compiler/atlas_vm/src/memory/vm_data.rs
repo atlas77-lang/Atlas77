@@ -6,7 +6,6 @@ use std::{
 use super::object_map::ObjectIndex;
 
 #[derive(Clone, Copy)]
-//There might need to be some pointer to the stack
 pub union RawVMData {
     as_unit: (),
     as_i64: i64,
@@ -14,7 +13,10 @@ pub union RawVMData {
     as_f64: f64,
     as_bool: bool,
     as_char: char,
+    /// Pointer to a value in the stack
     as_stack_ptr: usize,
+    /// Absolute pointer to a function in the stack
+    as_fn_ptr: usize,
     as_object: ObjectIndex,
 }
 
@@ -41,6 +43,8 @@ impl VMData {
     pub const TAG_BOOL: u16 = 10;
     pub const TAG_STR: u16 = 11;
     pub const TAG_CHAR: u16 = 12;
+    pub const TAG_STACK_PTR: u16 = 13;
+    pub const TAG_FN_PTR: u16 = 14;
 
     pub fn new(tag: u16, data: RawVMData) -> Self {
         Self { tag, data }
@@ -78,6 +82,8 @@ impl VMData {
     def_new_vmdata_func!(new_f64, as_f64, f64, TAG_FLOAT);
     def_new_vmdata_func!(new_bool, as_bool, bool, TAG_BOOL);
     def_new_vmdata_func!(new_char, as_char, char, TAG_CHAR);
+    def_new_vmdata_func!(new_stack_ptr, as_stack_ptr, usize, TAG_STACK_PTR);
+    def_new_vmdata_func!(new_fn_ptr, as_fn_ptr, usize, TAG_FN_PTR);
 }
 
 impl PartialEq for VMData {
@@ -93,7 +99,7 @@ impl PartialEq for VMData {
             Self::TAG_CHAR => self.as_char() == other.as_char(),
             Self::TAG_UNIT => true,
             _ if self.tag > 256 => self.as_object() == other.as_object(),
-            _ => panic!("Illegal comparison"),
+            _ => panic!("Illegal comparison between {:?} and {:?}", self, other),
         }
     }
 }
@@ -108,7 +114,7 @@ impl PartialOrd for VMData {
             Self::TAG_U64 => self.as_u64().partial_cmp(&other.as_u64()),
             Self::TAG_I64 => self.as_i64().partial_cmp(&other.as_i64()),
             Self::TAG_CHAR => self.as_char().partial_cmp(&other.as_char()),
-            _ => panic!("Illegal comparison"),
+            _ => panic!("Illegal comparison between {:?} and {:?}", self, other),
         }
     }
 }
@@ -121,7 +127,7 @@ impl Add for VMData {
             (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() + other.as_i64()),
             (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() + other.as_u64()),
             (Self::TAG_FLOAT, Self::TAG_FLOAT) => Self::new_f64(self.as_f64() + other.as_f64()),
-            _ => panic!("Illegal addition"),
+            _ => panic!("Illegal addition between {:?} and {:?}", self, other),
         }
     }
 }
@@ -134,7 +140,7 @@ impl Sub for VMData {
             (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() - other.as_i64()),
             (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() - other.as_u64()),
             (Self::TAG_FLOAT, Self::TAG_FLOAT) => Self::new_f64(self.as_f64() - other.as_f64()),
-            _ => panic!("Illegal subtraction"),
+            _ => panic!("Illegal subtraction between {:?} and {:?}", self, other),
         }
     }
 }
@@ -147,7 +153,7 @@ impl Mul for VMData {
             (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() * other.as_i64()),
             (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() * other.as_u64()),
             (Self::TAG_FLOAT, Self::TAG_FLOAT) => Self::new_f64(self.as_f64() * other.as_f64()),
-            _ => panic!("Illegal multiplication"),
+            _ => panic!("Illegal multiplication between {:?} and {:?}", self, other),
         }
     }
 }
@@ -160,7 +166,7 @@ impl Div for VMData {
             (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() / other.as_i64()),
             (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() / other.as_u64()),
             (Self::TAG_FLOAT, Self::TAG_FLOAT) => Self::new_f64(self.as_f64() / other.as_f64()),
-            _ => panic!("Illegal division"),
+            _ => panic!("Illegal division between {:?} and {:?}", self, other),
         }
     }
 }
@@ -172,7 +178,7 @@ impl Rem for VMData {
         match (self.tag, other.tag) {
             (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() % other.as_i64()),
             (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() % other.as_u64()),
-            _ => panic!("Illegal remainder"),
+            _ => panic!("Illegal remainder between {:?} and {:?}", self, other),
         }
     }
 }
@@ -189,6 +195,8 @@ impl Display for VMData {
                 Self::TAG_FLOAT => self.as_f64().to_string(),
                 Self::TAG_BOOL => self.as_bool().to_string(),
                 Self::TAG_CHAR => self.as_char().to_string(),
+                Self::TAG_STACK_PTR => self.as_stack_ptr().to_string(),
+                Self::TAG_FN_PTR => self.as_fn_ptr().to_string(),
                 _ if self.is_object() => self.as_object().to_string(),
                 _ => "reserved".to_string(),
             }
@@ -209,6 +217,8 @@ impl std::fmt::Debug for VMData {
                 Self::TAG_I64 => "i64",
                 Self::TAG_U64 => "u64",
                 Self::TAG_CHAR => "char",
+                Self::TAG_STACK_PTR => "&",
+                Self::TAG_FN_PTR => "fn",
                 _ if self.is_object() => "obj",
                 _ => "res",
             },
@@ -219,6 +229,8 @@ impl std::fmt::Debug for VMData {
                 Self::TAG_FLOAT => self.as_f64().to_string(),
                 Self::TAG_BOOL => self.as_bool().to_string(),
                 Self::TAG_CHAR => self.as_char().to_string(),
+                Self::TAG_STACK_PTR => self.as_stack_ptr().to_string(),
+                Self::TAG_FN_PTR => self.as_fn_ptr().to_string(),
                 _ if self.is_object() => self.as_object().to_string(),
                 _ => "reserved".to_string(),
             }
@@ -249,6 +261,8 @@ impl VMData {
     enum_variant_function!(as_bool, is_bool, TAG_BOOL, bool);
     enum_variant_function!(as_char, is_char, TAG_CHAR, char);
     enum_variant_function!(as_unit, is_unit, TAG_UNIT, ());
+    enum_variant_function!(as_stack_ptr, is_stack_ptr, TAG_STACK_PTR, usize);
+    enum_variant_function!(as_fn_ptr, is_fn_ptr, TAG_FN_PTR, usize);
 
     #[inline(always)]
     #[must_use]

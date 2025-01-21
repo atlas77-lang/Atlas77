@@ -1,5 +1,5 @@
 [workspace]
-members = [
+members = ["compiler/atlas_asm",
     "compiler/atlas_codegen",
     "compiler/atlas_frontend",
     "compiler/atlas_hir",

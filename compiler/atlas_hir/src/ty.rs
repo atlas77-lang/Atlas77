@@ -1,3 +1,5 @@
+use std::fmt;
+use std::fmt::Formatter;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use atlas_core::prelude::Span;
@@ -87,6 +89,29 @@ pub enum HirTy<'hir> {
     Uninitialized(HirUninitializedTy),
 
     _Function(HirFunctionTy<'hir>),
+}
+
+impl fmt::Display for HirTy<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            HirTy::Int64(_) => write!(f, "Int64"),
+            HirTy::Float64(_) => write!(f, "Float64"),
+            HirTy::UInt64(_) => write!(f, "UInt64"),
+            HirTy::Unit(_) => write!(f, "Unit"),
+            HirTy::Boolean(_) => write!(f, "Boolean"),
+            HirTy::_Named(ty) => write!(f, "{}", ty.name),
+            HirTy::Uninitialized(_) => write!(f, "Uninitialized"),
+            HirTy::_Function(func) => {
+                let params = func
+                    .params
+                    .iter()
+                    .map(|p| format!("{}", p))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                write!(f, "({}) -> {}", params, func.ret_ty)
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]

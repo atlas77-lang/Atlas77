@@ -80,7 +80,6 @@ impl Memory {
 }
 
 /// List is imho badly represented, a list should be defined in the language itself as a wrapper around a static array
-///
 #[derive(Clone, Debug)]
 pub enum Object {
     String(String),

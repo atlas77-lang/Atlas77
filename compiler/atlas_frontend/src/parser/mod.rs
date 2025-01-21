@@ -10,16 +10,17 @@ use miette::{SourceOffset, SourceSpan};
 
 use ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType,
-    AstBreakStmt, AstCallExpr, AstConstExpr, AstContinueStmt, AstExpr, AstExternFunction,
+    AstBreakStmt, AstCallExpr, AstConst, AstContinueStmt, AstExpr, AstExternFunction,
     AstFieldAccessExpr, AstFloatLiteral, AstFloatType, AstFunction, AstFunctionType, AstIdentifier,
-    AstIfElseExpr, AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem,
-    AstLetExpr, AstLiteral, AstNamedType, AstObjField, AstPointerType, AstProgram, AstReturnStmt,
-    AstStatement, AstStringLiteral, AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr,
-    AstUnitType, AstUnsignedIntegerLiteral, AstUnsignedIntegerType, AstWhileExpr,
+    AstIfElseExpr, AstImport, AstIndexingExpr, AstIntegerLiteral, AstIntegerType, AstItem, AstLet,
+    AstLiteral, AstNamedType, AstObjField, AstPointerType, AstProgram, AstReturnStmt, AstStatement,
+    AstStringLiteral, AstStringType, AstStruct, AstType, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
+    AstUnsignedIntegerLiteral, AstUnsignedIntegerType, AstWhileExpr,
 };
 use error::{ParseError, ParseResult, UnexpectedTokenError};
 
 use crate::lexer::{Literal, Token, TokenKind, TokenVec};
+use crate::parser::ast::{AstClass, AstNewObjExpr, AstStaticAccessExpr, AstVisibility};
 use arena::AstArena;
 
 pub(crate) struct Parser<'ast> {
@@ -106,6 +107,20 @@ impl<'ast> Parser<'ast> {
             TokenKind::KwImport => Ok(AstItem::Import(self.parse_import()?)),
             TokenKind::KwExtern => Ok(AstItem::ExternFunction(self.parse_extern_function()?)),
             TokenKind::KwFunc => Ok(AstItem::Func(self.parse_func()?)),
+            TokenKind::KwClass => Ok(AstItem::Class(self.parse_class()?)),
+            //This does allow for "private public private func foo() {}" which is bad... but it's a start!
+            TokenKind::KwPublic => {
+                let _ = self.advance();
+                let mut item = self.parse_item()?;
+                item.set_vis(AstVisibility::Public);
+                Ok(item)
+            }
+            TokenKind::KwPrivate => {
+                let _ = self.advance();
+                let mut item = self.parse_item()?;
+                item.set_vis(AstVisibility::Private);
+                Ok(item)
+            }
             //Handling comments
             _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                 token: self.current().clone(),
@@ -115,6 +130,80 @@ impl<'ast> Parser<'ast> {
                 span: SourceSpan::new(SourceOffset::from(start), self.current().end() - start),
                 src: self.src.clone(),
             })),
+        }
+    }
+
+    /// example:
+    /// ```
+    /// public class Foo {
+    ///     public:
+    ///         bar: &str;
+    ///         baz: f64;
+    ///     private:
+    ///         qux: i64;
+    ///     public:
+    ///         func new() -> Foo {
+    ///             Foo {
+    ///                 bar: "Hello World",
+    ///                 baz: 3.14,
+    ///                 qux: 42,
+    ///             }
+    ///         }
+    /// }
+    /// ```
+    fn parse_class(&mut self) -> ParseResult<AstClass<'ast>> {
+        self.expect(TokenKind::KwClass)?;
+        let name = self.parse_identifier()?;
+        self.expect(TokenKind::LBrace)?;
+        let mut fields = vec![];
+        let mut curr_vis = self.parse_current_vis(AstVisibility::Private)?;
+        while self.current().kind() != TokenKind::RBrace {
+            curr_vis = self.parse_current_vis(curr_vis)?;
+            if self.current().kind() == TokenKind::KwFunc {
+                break;
+            }
+            let mut obj_field = self.parse_obj_field()?;
+            obj_field.vis = curr_vis;
+            fields.push(obj_field);
+            self.expect(TokenKind::Semicolon)?;
+        }
+
+        let mut methods = vec![];
+        while self.current().kind() == TokenKind::KwFunc {
+            curr_vis = self.parse_current_vis(curr_vis)?;
+            let mut method = self.parse_func()?;
+            method.vis = curr_vis;
+            methods.push(method);
+        }
+
+        self.expect(TokenKind::RBrace)?;
+
+        let node = AstClass {
+            span: Span::union_span(name.span, self.current().span()),
+            name_span: name.span,
+            name: self.arena.alloc(name),
+            field_span: Span::union_span(fields.first().unwrap().span, fields.last().unwrap().span),
+            fields: self.arena.alloc_vec(fields),
+            methods: self.arena.alloc_vec(methods),
+            vis: AstVisibility::default(),
+        };
+        println!("{:?}", node);
+        Ok(node)
+    }
+
+    fn parse_current_vis(&mut self, previous_vis: AstVisibility) -> ParseResult<AstVisibility> {
+        match self.current().kind() {
+            TokenKind::KwPublic => {
+                let _ = self.advance();
+                self.expect(TokenKind::Colon)?;
+                Ok(AstVisibility::Public)
+            }
+            TokenKind::KwPrivate => {
+                let _ = self.advance();
+                self.expect(TokenKind::Colon)?;
+                Ok(AstVisibility::Private)
+            }
+            _ => Ok(previous_vis)
         }
     }
 
@@ -145,6 +234,7 @@ impl<'ast> Parser<'ast> {
             args: self.arena.alloc_vec(params),
             ret: self.arena.alloc(ret_ty),
             body: self.arena.alloc(body),
+            vis: AstVisibility::default(),
         };
         Ok(node)
     }
@@ -240,7 +330,7 @@ impl<'ast> Parser<'ast> {
         self.parse_binary()
     }
 
-    fn parse_let(&mut self) -> ParseResult<AstLetExpr<'ast>> {
+    fn parse_let(&mut self) -> ParseResult<AstLet<'ast>> {
         let start = self.current().span();
         self.expect(TokenKind::KwLet)?;
         let name = self.parse_identifier()?;
@@ -257,7 +347,7 @@ impl<'ast> Parser<'ast> {
         self.expect(TokenKind::OpAssign)?;
 
         let value = self.parse_binary()?;
-        let node = AstLetExpr {
+        let node = AstLet {
             span: Span::union_span(start, value.span()),
             name: self.arena.alloc(name),
             ty,
@@ -266,7 +356,7 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    fn parse_const(&mut self) -> ParseResult<AstConstExpr<'ast>> {
+    fn parse_const(&mut self) -> ParseResult<AstConst<'ast>> {
         let start = self.current().span();
         self.expect(TokenKind::KwConst)?;
         let name = self.parse_identifier()?;
@@ -278,7 +368,7 @@ impl<'ast> Parser<'ast> {
         self.expect(TokenKind::OpAssign)?;
 
         let value = self.parse_binary()?;
-        let node = AstConstExpr {
+        let node = AstConst {
             span: Span::union_span(start, value.span()),
             name: self.arena.alloc(name),
             ty: Some(self.arena.alloc(ty)),
@@ -420,7 +510,7 @@ impl<'ast> Parser<'ast> {
             }
             TokenKind::Literal(Literal::U64(u)) => {
                 let node =
-                    AstExpr::Literal(AstLiteral::UnsignedIntegerer(AstUnsignedIntegerLiteral {
+                    AstExpr::Literal(AstLiteral::UnsignedInteger(AstUnsignedIntegerLiteral {
                         span: tok.span(),
                         value: u,
                     }));
@@ -460,6 +550,10 @@ impl<'ast> Parser<'ast> {
                 let _ = self.advance();
                 node
             }
+            TokenKind::KwNew => {
+                let node = AstExpr::NewObj(self.parse_new_obj()?);
+                node
+            }
             TokenKind::Literal(Literal::Identifier(_)) => {
                 let mut node = AstExpr::Identifier(self.parse_identifier()?);
 
@@ -480,9 +574,7 @@ impl<'ast> Parser<'ast> {
                             return Ok(node);
                         }
                         TokenKind::DoubleColon => {
-                            unimplemented!(
-                                "double colon path will be implemented later (i.e. std::io::print)"
-                            )
+                            node = AstExpr::StaticAccess(self.parse_static_access(node)?);
                         }
                         _ => {
                             break;
@@ -504,6 +596,48 @@ impl<'ast> Parser<'ast> {
                 }))
             }
         };
+        Ok(node)
+    }
+
+    fn parse_static_access(&mut self, node: AstExpr<'ast>) -> ParseResult<AstStaticAccessExpr<'ast>> {
+        self.expect(TokenKind::DoubleColon)?;
+        let field = self.parse_identifier()?;
+        let node = AstStaticAccessExpr {
+            span: Span::union_span(node.span(), field.span),
+            target: self.arena.alloc(node),
+            field: self.arena.alloc(field),
+        };
+        Ok(node)
+    }
+
+    fn parse_new_obj(&mut self) -> ParseResult<AstNewObjExpr<'ast>> {
+        self.expect(TokenKind::KwNew)?;
+        let name = self.parse_identifier()?;
+
+        self.expect(TokenKind::LBrace)?;
+
+        let mut fields = vec![];
+        while self.current().kind() != TokenKind::RBrace {
+            let field_name = self.parse_identifier()?;
+            self.expect(TokenKind::Colon)?;
+            let field_value = self.parse_expr()?;
+            fields.push(AstObjField {
+                vis: AstVisibility::default(),
+                span: Span::union_span(field_name.span, field_value.span()),
+                name: self.arena.alloc(field_name),
+                ty: self.arena.alloc(AstType::Unit(AstUnitType { span: Span::default() })),
+            });
+            if self.current().kind() == TokenKind::Comma {
+                let _ = self.advance();
+            }
+        }
+        self.expect(TokenKind::RBrace)?;
+        let node = AstNewObjExpr {
+            span: Span::union_span(name.span, self.current().span()),
+            ty: self.arena.alloc(name),
+            fields: self.arena.alloc(vec![]),
+        };
+
         Ok(node)
     }
 
@@ -566,6 +700,7 @@ impl<'ast> Parser<'ast> {
             args_name: self.arena.alloc_vec(args_name),
             args_ty: self.arena.alloc_vec(args_ty),
             ret: self.arena.alloc(ret_ty),
+            vis: AstVisibility::default(),
         };
         Ok(node)
     }
@@ -627,6 +762,7 @@ impl<'ast> Parser<'ast> {
             span: Span::union_span(ident.span, self.current().span()),
             name: self.arena.alloc(ident),
             fields: self.arena.alloc_vec(fields),
+            vis: AstVisibility::default(),
         };
         Ok(node)
     }
@@ -639,6 +775,7 @@ impl<'ast> Parser<'ast> {
         let ty = self.parse_type()?;
 
         let node = AstObjField {
+            vis: AstVisibility::default(),
             span: Span::union_span(name.span, ty.span()),
             name: self.arena.alloc(name),
             ty: self.arena.alloc(ty),
@@ -756,7 +893,7 @@ impl<'ast> Parser<'ast> {
             }
             TokenKind::U64Ty => {
                 let _ = self.advance();
-                let node = AstType::UnsignedIntegerer(AstUnsignedIntegerType {
+                let node = AstType::UnsignedInteger(AstUnsignedIntegerType {
                     span: Span::union_span(start, self.current().span()),
                 });
                 Ok(node)
@@ -850,6 +987,21 @@ mod tests {
         let input = r#"
         import "foo.atlas" as foo
         import "std/io"
+        public class Foo {
+            public:
+                bar: &str;
+                baz: f64;
+            private:
+                qux: i64;
+            public:
+                func create() -> Foo {
+                    return new Foo {
+                        bar: "Hello World",
+                        baz: 3.14,
+                        qux: 42,
+                    };
+                }
+        }
         //struct fields are public by default
         struct Foo {
             bar: &str;
@@ -874,7 +1026,7 @@ mod tests {
             0;
         }
         "#
-        .to_string();
+            .to_string();
         let mut lexer = AtlasLexer::default();
         lexer.set_source(input.to_string());
         let tokens = match lexer.tokenize() {
@@ -924,6 +1076,20 @@ mod tests {
                                     .collect::<String>(),
                                 f.ret,
                                 f.body
+                            );
+                        }
+                        AstItem::Class(c) => {
+                            println!(
+                                "class {:?} ({:?})\n {{\n {:?} \n}}\n",
+                                c.name.name,
+                                c.fields
+                                    .iter()
+                                    .map(|f| format!("{:?}", f))
+                                    .collect::<String>(),
+                                c.methods
+                                    .iter()
+                                    .map(|m| format!("{:?}", m))
+                                    .collect::<String>()
                             );
                         }
                         _ => {}

@@ -1,5 +1,6 @@
 /// Contains the definition of the CodeGenArena
 pub mod arena;
+mod table;
 
 use atlas_hir::{
     error::{HirResult, UnsupportedExpr, UnsupportedStatement},
@@ -11,6 +12,7 @@ use atlas_hir::{
 };
 use atlas_vm::runtime::instruction::{ImportedLibrary, Instruction, Label, Program};
 
+use crate::table::Table;
 use arena::CodeGenArena;
 use atlas_core::prelude::Spanned;
 use miette::{SourceOffset, SourceSpan};
@@ -24,9 +26,14 @@ where
     'gen: 'hir,
 {
     hir: HirModule<'hir>,
-    program: Program<'gen>,
+    program: Program,
     arena: CodeGenArena<'gen>,
+    //simulate a var_map so the codegen can translate it into stack operations
+    _variables: Table<&'hir str>,
+    //store the function position
+    _global: Table<&'hir str>,
     current_pos: usize,
+    //todo: remove this
     src: String,
 }
 
@@ -39,8 +46,10 @@ where
         Self {
             hir,
             program: Program::new(),
-            current_pos: 0,
             arena,
+            _variables: Table::new(),
+            _global: Table::new(),
+            current_pos: 0,
             src,
         }
     }
@@ -49,6 +58,7 @@ where
         let mut labels: Vec<Label> = Vec::new();
         for func in self.hir.body.functions.clone() {
             let mut bytecode = Vec::new();
+            //self.global.insert(func.0);
 
             let params = func.1.signature.params.clone();
             self.generate_bytecode_args(params, &mut bytecode)?;
@@ -62,13 +72,13 @@ where
             labels.push(Label {
                 name: func.0.to_string(),
                 position: self.current_pos,
-                body: self.arena.alloc_vec(bytecode),
+                body: bytecode,
             });
 
             self.current_pos += len;
         }
-        self.program.entry_point = "main";
-        self.program.labels = self.arena.alloc_vec(labels);
+        self.program.entry_point = String::from("main");
+        self.program.labels = labels;
         let libraries = self
             .hir
             .body
@@ -79,12 +89,19 @@ where
                 is_std: true,
             })
             .collect::<Vec<_>>();
-        self.program.libraries = self.arena.alloc_vec(libraries);
-        Ok(self.program)
+        self.program.libraries = libraries;
+        /*for fn_name in self.global.into_iter() {}
+        self.program.global.function_pool = self
+            .global
+            .items
+            .iter()
+            .map(|s| self.global.get_index(*s).unwrap())
+            .collect::<Vec<_>>();*/
+        Ok(self.program.clone())
     }
 
     fn generate_bytecode_block(
-        &self,
+        &mut self,
         block: &HirBlock<'hir>,
         bytecode: &mut Vec<Instruction>,
         src: String,
@@ -96,7 +113,7 @@ where
     }
 
     fn generate_bytecode_stmt(
-        &self,
+        &mut self,
         stmt: &HirStatement<'hir>,
         bytecode: &mut Vec<Instruction>,
         src: String,
@@ -188,7 +205,7 @@ where
     }
 
     fn generate_bytecode_expr(
-        &self,
+        &mut self,
         expr: &HirExpr<'hir>,
         bytecode: &mut Vec<Instruction>,
         src: String,
@@ -323,7 +340,7 @@ where
                 }
             }
             HirExpr::Unary(u) => {
-                //The operator are not yet implemented
+                //The operators are not yet implemented
                 self.generate_bytecode_expr(&u.expr, bytecode, src)?;
             }
             //This need to be thoroughly tested
@@ -341,6 +358,18 @@ where
                                 args: f.args.len() as u8,
                             });
                         } else {
+                            /*if let Some(pos) = self.global.get_index(i.name) {
+                                bytecode.push(Instruction::DirectCall {
+                                    pos,
+                                    args: f.args.len() as u8,
+                                })
+                            } else {
+                                self.global.insert(i.name);
+                                bytecode.push(Instruction::DirectCall {
+                                    pos: self.global.len() - 1,
+                                    args: f.args.len() as u8,
+                                })
+                            }*/
                             bytecode.push(Instruction::CallFunction {
                                 name: i.name.to_string(),
                                 args: f.args.len() as u8,

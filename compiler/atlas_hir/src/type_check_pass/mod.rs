@@ -490,7 +490,7 @@ impl<'hir> TypeChecker<'hir> {
                             Some(ctx_func) => {
                                 let ctx_var = ctx_func.get(i.name).unwrap();
                                 println!(
-                                    "Changing type of {} from {:?} to {:?}",
+                                    "Changing type of {} from {} to {}",
                                     i.name, ctx_var.ty, rhs
                                 );
                                 i.ty = ctx_var.ty;
@@ -557,7 +557,7 @@ impl<'hir> TypeChecker<'hir> {
                     .get(i.name)
                 {
                     println!(
-                        "Changing type of {} from {:?} to {:?}",
+                        "Changing type of {} from {} to {}",
                         i.name, i.ty, ctx_var.ty
                     );
                     i.ty = ctx_var.ty;
