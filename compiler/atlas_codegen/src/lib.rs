@@ -15,6 +15,7 @@ use atlas_vm::runtime::instruction::{ImportedLibrary, Instruction, Label, Progra
 use crate::table::Table;
 use arena::CodeGenArena;
 use atlas_core::prelude::Spanned;
+use atlas_hir::expr::UnaryOp;
 use miette::{SourceOffset, SourceSpan};
 
 /// Result of codegen
@@ -340,8 +341,46 @@ where
                 }
             }
             HirExpr::Unary(u) => {
-                //The operators are not yet implemented
-                self.generate_bytecode_expr(&u.expr, bytecode, src)?;
+                //There is no unary instruction, so -x is the same as 0 - x
+                //And !x is the same as x == 0
+                self.generate_bytecode_expr(&u.expr, bytecode, src.clone())?;
+                if let Some(op) = &u.op {
+                    match op {
+                        UnaryOp::Neg => {
+                            match u.expr.ty() {
+                                HirTy::Int64(_) => {
+                                    bytecode.push(Instruction::PushInt(0));
+                                    bytecode.push(Instruction::SubI64);
+                                }
+                                HirTy::Float64(_) => {
+                                    bytecode.push(Instruction::PushFloat(0.0));
+                                    bytecode.push(Instruction::SubF64);
+                                }
+                                _ => {
+                                    return Err(atlas_hir::error::HirError::UnsupportedExpr(
+                                        UnsupportedExpr {
+                                            span: SourceSpan::new(
+                                                SourceOffset::from(expr.span().start()),
+                                                expr.span().end() - expr.span().start(),
+                                            ),
+                                            expr: format!("Can't negate: {:?}", expr),
+                                            src,
+                                        },
+                                    ))
+                                }
+                            }
+                        }
+                        UnaryOp::Not => {
+                            match u.expr.ty() {
+                                HirTy::Boolean(_) => {
+                                    bytecode.push(Instruction::PushBool(false));
+                                    bytecode.push(Instruction::Eq);
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
             }
             //This need to be thoroughly tested
             HirExpr::Call(f) => {
