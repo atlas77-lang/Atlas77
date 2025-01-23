@@ -29,7 +29,7 @@ pub struct Atlas77VM<'run> {
     pub pc: usize,
 }
 
-impl<'run> Atlas77VM<'run> {
+impl Atlas77VM<'_> {
     pub fn new(program: Program) -> Self {
         let mut extern_fn: HashMap<&str, CallBack> = HashMap::new();
         program.libraries.iter().for_each(|lib| {
@@ -184,58 +184,58 @@ impl<'run> Atlas77VM<'run> {
             Instruction::Jmp { pos } => {
                 self.pc = (self.pc as isize + pos) as usize;
             }
-            Instruction::StoreI64 { var_name } => {
+            Instruction::StoreInteger { var_name } => {
                 let val = self.stack.pop()?;
                 self.varmap.last_mut().unwrap().insert(var_name, val);
                 self.pc += 1;
             }
-            Instruction::StoreF64 { var_name } => {
+            Instruction::StoreFloat { var_name } => {
                 let val = self.stack.pop()?;
                 self.varmap.last_mut().unwrap().insert(var_name, val);
                 self.pc += 1;
             }
-            Instruction::StoreU64 { var_name } => {
+            Instruction::StoreUnsignedInteger { var_name } => {
                 let val = self.stack.pop()?;
                 self.varmap.last_mut().unwrap().insert(var_name, val);
                 self.pc += 1;
             }
-            Instruction::LoadI64 { var_name } => {
+            Instruction::LoadInteger { var_name } => {
                 let val = self.varmap.last().unwrap().get(&var_name).unwrap();
                 self.stack.push(*val)?;
                 self.pc += 1;
             }
-            Instruction::LoadF64 { var_name } => {
+            Instruction::LoadFloat { var_name } => {
                 let val = self.varmap.last().unwrap().get(&var_name).unwrap();
                 self.stack.push(*val)?;
                 self.pc += 1;
             }
-            Instruction::LoadU64 { var_name } => {
+            Instruction::LoadUnsignedInteger { var_name } => {
                 let val = self.varmap.last().unwrap().get(&var_name).unwrap();
                 self.stack.push(*val)?;
                 self.pc += 1;
             }
-            Instruction::MulI64 => {
+            Instruction::IMul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() * a.as_i64());
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::MulF64 => {
+            Instruction::FMul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() * a.as_f64());
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::MulU64 => {
+            Instruction::UIMul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() * a.as_u64());
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::DivI64 => {
+            Instruction::IDiv => {
                 let a = self.stack.pop()?;
                 if a == VMData::new_i64(0) {
                     return Err(RuntimeError::DivisionByZero);
@@ -245,7 +245,7 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::DivF64 => {
+            Instruction::FDiv => {
                 let a = self.stack.pop()?;
                 if a == VMData::new_f64(0.0) {
                     return Err(RuntimeError::DivisionByZero);
@@ -255,7 +255,7 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::DivU64 => {
+            Instruction::UIDiv => {
                 let a = self.stack.pop()?;
                 if a == VMData::new_u64(0) {
                     return Err(RuntimeError::DivisionByZero);
@@ -265,49 +265,49 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::AddI64 => {
+            Instruction::IAdd => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() + a.as_i64());
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::AddF64 => {
+            Instruction::FAdd => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() + a.as_f64());
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::AddU64 => {
+            Instruction::UIAdd => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() + a.as_u64());
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::SubI64 => {
+            Instruction::ISub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() - a.as_i64());
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::SubF64 => {
+            Instruction::FSub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() - a.as_f64());
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::SubU64 => {
+            Instruction::UISub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() - a.as_u64());
                 self.stack.push(res)?;
                 self.pc += 1;
             }
-            Instruction::ModI64 => {
+            Instruction::IMod => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() % a.as_i64());

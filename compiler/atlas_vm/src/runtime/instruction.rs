@@ -14,23 +14,23 @@ pub enum Instruction {
     PushStr(String),
     PushUnit,
 
-    ///Store will replace StoreI64, StoreF64, StoreU64, StoreBool and will stop using the var_map and favor the stack instead
+    ///Store will replace StoreInteger, StoreFloat, StoreUnsignedInteger, StoreBool and will stop using the var_map and favor the stack instead
     Store(usize),
-    ///Load will replace LoadI64, LoadF64, LoadU64, LoadBool and will stop using the var_map and favor the stack instead
+    ///Load will replace LoadInteger, LoadFloat, LoadUnsignedInteger, LoadBool and will stop using the var_map and favor the stack instead
     Get(usize),
 
     Pop,
 
     /// Store an i64 value in a variable from the stack
-    StoreI64 {
+    StoreInteger {
         var_name: String,
     },
     /// Store a f64 value in a variable from the stack
-    StoreF64 {
+    StoreFloat {
         var_name: String,
     },
     /// Store an u64 value in a variable from the stack
-    StoreU64 {
+    StoreUnsignedInteger {
         var_name: String,
     },
     StoreBool {
@@ -38,15 +38,15 @@ pub enum Instruction {
     },
 
     /// Load an i64 value from a variable to the stack
-    LoadI64 {
+    LoadInteger {
         var_name: String,
     },
     /// Load a f64 value from a variable to the stack
-    LoadF64 {
+    LoadFloat {
         var_name: String,
     },
     /// Load an u64 value from a variable to the stack
-    LoadU64 {
+    LoadUnsignedInteger {
         var_name: String,
     },
     LoadBool {
@@ -54,25 +54,25 @@ pub enum Instruction {
     },
 
     //Math
-    AddI64,
-    AddF64,
-    AddU64,
+    IAdd,
+    FAdd,
+    UIAdd,
 
-    SubI64,
-    SubF64,
-    SubU64,
+    ISub,
+    FSub,
+    UISub,
 
-    MulI64,
-    MulF64,
-    MulU64,
+    IMul,
+    FMul,
+    UIMul,
 
-    DivI64,
-    DivF64,
-    DivU64,
+    IDiv,
+    FDiv,
+    UIDiv,
 
-    ModI64,
-    ModF64,
-    ModU64,
+    IMod,
+    FMod,
+    UIMod,
 
     Eq,
     Neq,

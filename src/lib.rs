@@ -8,6 +8,7 @@ use bumpalo::Bump;
 use std::{io::Write, path::PathBuf, time::Instant};
 
 //todo: The pipeline of the compiler should be more straightforward and should include the "debug" and "release" modes
+//todo: There should also be a function for each stage of the pipeline
 pub fn build(path: String) -> miette::Result<()> {
     let mut path_buf = PathBuf::from(path.clone());
     if let Ok(current_dir) = std::env::current_dir() {

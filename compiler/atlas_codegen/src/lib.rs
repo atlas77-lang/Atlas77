@@ -15,6 +15,7 @@ use atlas_vm::runtime::instruction::{ImportedLibrary, Instruction, Label, Progra
 use crate::table::Table;
 use arena::CodeGenArena;
 use atlas_core::prelude::Spanned;
+use atlas_hir::error::UnknownTypeError;
 use atlas_hir::expr::UnaryOp;
 use miette::{SourceOffset, SourceSpan};
 
@@ -28,7 +29,7 @@ where
 {
     hir: HirModule<'hir>,
     program: Program,
-    arena: CodeGenArena<'gen>,
+    _arena: CodeGenArena<'gen>,
     //simulate a var_map so the codegen can translate it into stack operations
     _variables: Table<&'hir str>,
     //store the function position
@@ -43,11 +44,11 @@ where
     'gen: 'hir,
 {
     /// Create a new CodeGenUnit
-    pub fn new(hir: HirModule<'hir>, arena: CodeGenArena<'gen>, src: String) -> Self {
+    pub fn new(hir: HirModule<'hir>, _arena: CodeGenArena<'gen>, src: String) -> Self {
         Self {
             hir,
             program: Program::new(),
-            arena,
+            _arena,
             _variables: Table::new(),
             _global: Table::new(),
             current_pos: 0,
@@ -167,17 +168,17 @@ where
                 });
                 match ty {
                     HirTy::Int64(_) => {
-                        value.push(Instruction::StoreI64 {
+                        value.push(Instruction::StoreInteger {
                             var_name: l.name.to_string(),
                         });
                     }
                     HirTy::Float64(_) => {
-                        value.push(Instruction::StoreF64 {
+                        value.push(Instruction::StoreFloat {
                             var_name: l.name.to_string(),
                         });
                     }
                     HirTy::UInt64(_) => {
-                        value.push(Instruction::StoreU64 {
+                        value.push(Instruction::StoreUnsignedInteger {
                             var_name: l.name.to_string(),
                         });
                     }
@@ -216,29 +217,31 @@ where
                 let lhs = a.lhs.as_ref();
                 match lhs {
                     HirExpr::Ident(i) => {
-                        self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
+                        self.generate_bytecode_expr(&a.rhs, bytecode, src.clone())?;
                         match i.ty {
                             HirTy::Int64(_) => {
-                                bytecode.push(Instruction::StoreI64 {
+                                bytecode.push(Instruction::StoreInteger {
                                     var_name: i.name.to_string(),
                                 });
                             }
                             HirTy::Float64(_) => {
-                                bytecode.push(Instruction::StoreF64 {
+                                bytecode.push(Instruction::StoreFloat {
                                     var_name: i.name.to_string(),
                                 });
                             }
                             HirTy::UInt64(_) => {
-                                bytecode.push(Instruction::StoreU64 {
+                                bytecode.push(Instruction::StoreUnsignedInteger {
                                     var_name: i.name.to_string(),
                                 });
                             }
-                            HirTy::Uninitialized(_) => {
-                                bytecode.push(Instruction::StoreI64 {
-                                    var_name: i.name.to_string(),
-                                });
-                            }
-                            _ => unimplemented!("Unsupported type for now {:?}", i.ty),
+                            _ => return Err(atlas_hir::error::HirError::UnknownType(UnknownTypeError {
+                                span: SourceSpan::new(
+                                    SourceOffset::from(expr.span().start()),
+                                    expr.span().end() - expr.span().start(),
+                                ),
+                                name: i.name.to_string(),
+                                src,
+                            })),
                         }
                     }
                     _ => {
@@ -261,61 +264,61 @@ where
                 match b.op {
                     atlas_hir::expr::HirBinaryOp::Add => match b.ty {
                         HirTy::Int64(_) => {
-                            bytecode.push(Instruction::AddI64);
+                            bytecode.push(Instruction::IAdd);
                         }
                         HirTy::Float64(_) => {
-                            bytecode.push(Instruction::AddF64);
+                            bytecode.push(Instruction::FAdd);
                         }
                         HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::AddU64);
+                            bytecode.push(Instruction::UIAdd);
                         }
                         _ => unimplemented!("Unsupported type for now"),
                     },
                     atlas_hir::expr::HirBinaryOp::Sub => match b.ty {
                         HirTy::Int64(_) => {
-                            bytecode.push(Instruction::SubI64);
+                            bytecode.push(Instruction::ISub);
                         }
                         HirTy::Float64(_) => {
-                            bytecode.push(Instruction::SubF64);
+                            bytecode.push(Instruction::FSub);
                         }
                         HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::SubU64);
+                            bytecode.push(Instruction::UISub);
                         }
                         _ => unimplemented!("Unsupported type for now"),
                     },
                     atlas_hir::expr::HirBinaryOp::Mul => match b.ty {
                         HirTy::Int64(_) => {
-                            bytecode.push(Instruction::MulI64);
+                            bytecode.push(Instruction::IMul);
                         }
                         HirTy::Float64(_) => {
-                            bytecode.push(Instruction::MulF64);
+                            bytecode.push(Instruction::FMul);
                         }
                         HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::MulU64);
+                            bytecode.push(Instruction::UIMul);
                         }
                         _ => unimplemented!("Unsupported type for now"),
                     },
                     atlas_hir::expr::HirBinaryOp::Div => match b.ty {
                         HirTy::Int64(_) => {
-                            bytecode.push(Instruction::DivI64);
+                            bytecode.push(Instruction::IDiv);
                         }
                         HirTy::Float64(_) => {
-                            bytecode.push(Instruction::DivF64);
+                            bytecode.push(Instruction::FDiv);
                         }
                         HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::DivU64);
+                            bytecode.push(Instruction::UIDiv);
                         }
                         _ => unimplemented!("Unsupported type for now"),
                     },
                     atlas_hir::expr::HirBinaryOp::Mod => match b.ty {
                         HirTy::Int64(_) => {
-                            bytecode.push(Instruction::ModI64);
+                            bytecode.push(Instruction::IMod);
                         }
                         HirTy::Float64(_) => {
                             unimplemented!("Modulo not supported for float");
                         }
                         HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::ModI64);
+                            bytecode.push(Instruction::IMod);
                         }
                         _ => unimplemented!("Unsupported type for now"),
                     },
@@ -350,11 +353,11 @@ where
                             match u.expr.ty() {
                                 HirTy::Int64(_) => {
                                     bytecode.push(Instruction::PushInt(0));
-                                    bytecode.push(Instruction::SubI64);
+                                    bytecode.push(Instruction::ISub);
                                 }
                                 HirTy::Float64(_) => {
                                     bytecode.push(Instruction::PushFloat(0.0));
-                                    bytecode.push(Instruction::SubF64);
+                                    bytecode.push(Instruction::FSub);
                                 }
                                 _ => {
                                     return Err(atlas_hir::error::HirError::UnsupportedExpr(
@@ -371,12 +374,20 @@ where
                             }
                         }
                         UnaryOp::Not => {
-                            match u.expr.ty() {
-                                HirTy::Boolean(_) => {
-                                    bytecode.push(Instruction::PushBool(false));
-                                    bytecode.push(Instruction::Eq);
-                                }
-                                _ => {}
+                            if let HirTy::Boolean(_) = u.expr.ty() {
+                                bytecode.push(Instruction::PushBool(false));
+                                bytecode.push(Instruction::Eq);
+                            } else {
+                                return Err(atlas_hir::error::HirError::UnsupportedExpr(
+                                    UnsupportedExpr {
+                                        span: SourceSpan::new(
+                                            SourceOffset::from(expr.span().start()),
+                                            expr.span().end() - expr.span().start(),
+                                        ),
+                                        expr: format!("Can't negate: {:?}", expr),
+                                        src,
+                                    },
+                                ));
                             }
                         }
                     }
@@ -431,22 +442,22 @@ where
             }
             HirExpr::Ident(i) => match i.ty {
                 HirTy::Int64(_) => {
-                    bytecode.push(Instruction::LoadI64 {
+                    bytecode.push(Instruction::LoadInteger {
                         var_name: i.name.to_string(),
                     });
                 }
                 HirTy::Float64(_) => {
-                    bytecode.push(Instruction::LoadF64 {
+                    bytecode.push(Instruction::LoadFloat {
                         var_name: i.name.to_string(),
                     });
                 }
                 HirTy::UInt64(_) => {
-                    bytecode.push(Instruction::LoadU64 {
+                    bytecode.push(Instruction::LoadUnsignedInteger {
                         var_name: i.name.to_string(),
                     });
                 }
-                //By default it will be an integer
-                _ => bytecode.push(Instruction::LoadI64 {
+                //By default, it will be an integer
+                _ => bytecode.push(Instruction::LoadInteger {
                     var_name: i.name.to_string(),
                 }),
             },
@@ -481,17 +492,17 @@ where
         for arg in args {
             match arg.ty {
                 HirTy::Int64(_) => {
-                    bytecode.push(Instruction::StoreI64 {
+                    bytecode.push(Instruction::StoreInteger {
                         var_name: arg.name.to_string(),
                     });
                 }
                 HirTy::Float64(_) => {
-                    bytecode.push(Instruction::StoreF64 {
+                    bytecode.push(Instruction::StoreFloat {
                         var_name: arg.name.to_string(),
                     });
                 }
                 HirTy::UInt64(_) => {
-                    bytecode.push(Instruction::StoreU64 {
+                    bytecode.push(Instruction::StoreUnsignedInteger {
                         var_name: arg.name.to_string(),
                     });
                 }

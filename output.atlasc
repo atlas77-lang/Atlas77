@@ -4,65 +4,65 @@
             name: "iterative_fib",
             position: 0,
             body: [
-                StoreU64(
+                StoreInteger(
                     var_name: "n",
                 ),
-                PushUnsignedInt(0),
-                StoreU64(
+                PushInt(0),
+                StoreInteger(
                     var_name: "a",
                 ),
-                PushUnsignedInt(1),
-                StoreU64(
+                PushInt(1),
+                StoreInteger(
                     var_name: "b",
                 ),
-                PushUnsignedInt(0),
-                StoreU64(
+                PushInt(0),
+                StoreInteger(
                     var_name: "i",
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "i",
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "n",
                 ),
                 Lt,
                 JmpZ(
                     pos: 13,
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "a",
                 ),
-                StoreU64(
+                StoreInteger(
                     var_name: "temp",
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "b",
                 ),
-                StoreU64(
+                StoreInteger(
                     var_name: "a",
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "temp",
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "b",
                 ),
-                AddU64,
-                StoreU64(
+                IAdd,
+                StoreInteger(
                     var_name: "b",
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "i",
                 ),
-                PushUnsignedInt(1),
-                AddU64,
-                StoreU64(
+                PushInt(1),
+                IAdd,
+                StoreInteger(
                     var_name: "i",
                 ),
                 Jmp(
                     pos: -16,
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "a",
                 ),
                 Return,
@@ -72,19 +72,21 @@
             name: "main",
             position: 26,
             body: [
-                PushUnsignedInt(10),
+                PushInt(80),
                 CallFunction(
                     name: "iterative_fib",
                     args: 1,
                 ),
-                StoreU64(
-                    var_name: "fib_20",
+                StoreInteger(
+                    var_name: "fib_80",
                 ),
-                LoadU64(
-                    var_name: "fib_20",
+                LoadInteger(
+                    var_name: "fib_80",
                 ),
+                PushInt(0),
+                ISub,
                 ExternCall(
-                    name: "print_uint",
+                    name: "print_int",
                     args: 1,
                 ),
                 Halt,
@@ -92,45 +94,45 @@
         ),
         (
             name: "recursive_fib",
-            position: 32,
+            position: 34,
             body: [
-                StoreU64(
+                StoreInteger(
                     var_name: "n",
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "n",
                 ),
-                PushUnsignedInt(1),
+                PushInt(1),
                 Lte,
                 JmpZ(
                     pos: 3,
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "n",
                 ),
                 Return,
                 Jmp(
                     pos: 11,
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "n",
                 ),
-                PushUnsignedInt(1),
-                SubU64,
+                PushInt(1),
+                ISub,
                 CallFunction(
                     name: "recursive_fib",
                     args: 1,
                 ),
-                LoadU64(
+                LoadInteger(
                     var_name: "n",
                 ),
-                PushUnsignedInt(2),
-                SubU64,
+                PushInt(2),
+                ISub,
                 CallFunction(
                     name: "recursive_fib",
                     args: 1,
                 ),
-                AddU64,
+                IAdd,
                 Return,
             ],
         ),

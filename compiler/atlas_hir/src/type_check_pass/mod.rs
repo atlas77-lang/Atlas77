@@ -282,7 +282,7 @@ impl<'hir> TypeChecker<'hir> {
             }
             HirStatement::Const(c) => {
                 let expr_ty = self.check_expr(&mut c.value)?;
-                let const_ty = c.ty.unwrap_or_else(|| expr_ty);
+                let const_ty = c.ty.unwrap_or(expr_ty);
                 c.ty = Some(const_ty);
                 let ty = HirTyId::from(const_ty);
                 self.context
@@ -296,7 +296,7 @@ impl<'hir> TypeChecker<'hir> {
                             _name: c.name,
                             name_span: c.name_span,
                             ty: const_ty,
-                            ty_span: c.ty_span.unwrap_or_else(|| c.name_span),
+                            ty_span: c.ty_span.unwrap_or(c.name_span),
                             is_mut: false,
                             span: c.span,
                         },
@@ -321,7 +321,7 @@ impl<'hir> TypeChecker<'hir> {
             }
             HirStatement::Let(l) => {
                 let expr_ty = self.check_expr(&mut l.value)?;
-                let var_ty = l.ty.unwrap_or_else(|| expr_ty);
+                let var_ty = l.ty.unwrap_or(expr_ty);
                 l.ty = Some(var_ty);
                 let ty = HirTyId::from(var_ty);
                 self.context
@@ -335,7 +335,7 @@ impl<'hir> TypeChecker<'hir> {
                             _name: l.name,
                             name_span: l.name_span,
                             ty: var_ty,
-                            ty_span: l.ty_span.unwrap_or_else(|| l.name_span),
+                            ty_span: l.ty_span.unwrap_or(l.name_span),
                             is_mut: true,
                             span: l.span,
                         },

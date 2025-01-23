@@ -146,7 +146,7 @@ where
                     self.ast_arena,
                     IO_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -174,7 +174,7 @@ where
                     self.ast_arena,
                     MATH_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -190,7 +190,7 @@ where
                     self.ast_arena,
                     FILE_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -206,7 +206,7 @@ where
                     self.ast_arena,
                     FILE_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -222,7 +222,7 @@ where
                     self.ast_arena,
                     STRING_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -238,7 +238,7 @@ where
                     self.ast_arena,
                     STRING_ATLAS.to_string(),
                 )
-                .unwrap();
+                    .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
                 let hir = self.arena.intern(AstSyntaxLoweringPass::<'ast, 'hir>::new(
                     self.arena,
@@ -293,10 +293,7 @@ where
                     name,
                     name_span: c.name.span,
                     ty,
-                    ty_span: match ty {
-                        Some(_) => Some(c.ty.unwrap().span()),
-                        None => None,
-                    },
+                    ty_span: ty.map(|_| c.ty.unwrap().span()),
                     value,
                 });
                 Ok(hir)
@@ -311,10 +308,7 @@ where
                     name,
                     name_span: l.name.span,
                     ty,
-                    ty_span: match ty {
-                        Some(_) => Some(l.ty.unwrap().span()),
-                        None => None,
-                    },
+                    ty_span: ty.map(|_| l.ty.unwrap().span()),
                     value,
                 });
                 Ok(hir)

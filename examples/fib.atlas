@@ -1,47 +1,27 @@
 import "std/io"
 
 func main()  {
-    let fib_20 = iterative_fib(10_u64);
-    print_uint(fib_20);
+    let fib_80 = iterative_fib(80);
+    print_int(-fib_80);
 }
 
-func recursive_fib(n: u64) -> u64 {
-    if n <= 1_u64 {
+func recursive_fib(n: i64) -> i64 {
+    if n <= 1 {
         return n;
     } else {
-        return recursive_fib(n - 1_u64) + recursive_fib(n - 2_u64);
+        return recursive_fib(n - 1) + recursive_fib(n - 2);
     }
 }
 
-func iterative_fib(n: u64) -> u64 {
-    let a = 0_u64;
-    let b = 1_u64;
-    let i = 0_u64;
+func iterative_fib(n: i64) -> i64 {
+    let a = 0;
+    let b = 1;
+    let i = 0;
     while i < n {
         let temp = a;
         a = b;
         b = temp + b;
-        i = i + 1_u64;
+        i = i + 1;
     }
     return a;
-}
-
-class SomeGeneric<T> {
-    private:
-        value: T;
-    public:
-        func new(value: T) -> SomeGeneric<T> {
-            return SomeGeneric {
-                value: value,
-            };
-        }
-        func get(&self) -> T {
-            return self.value;
-        }
-}
-
-enum Option
-where @T: Printable {
-    Some(@T),
-    None,
 }
