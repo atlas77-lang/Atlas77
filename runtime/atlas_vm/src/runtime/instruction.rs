@@ -35,6 +35,8 @@ pub enum Instruction {
     Get(usize),
 
     Pop,
+    Swap,
+    Dup,
 
     Store {
         var_name: String,

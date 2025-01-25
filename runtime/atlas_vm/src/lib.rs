@@ -261,6 +261,18 @@ impl Atlas77VM<'_> {
                 self.stack.push(*val)?;
                 self.pc += 1;
             }
+            Instruction::Swap => {
+                let val1 = self.stack.pop()?;
+                let val2 = self.stack.pop()?;
+                self.stack.push(val1)?;
+                self.stack.push(val2)?;
+                self.pc += 1;
+            }
+            Instruction::Dup => {
+                let val = self.stack.last()?.clone();
+                self.stack.push(val)?;
+                self.pc += 1;
+            }
             Instruction::IMul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;

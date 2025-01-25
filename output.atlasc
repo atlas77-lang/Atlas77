@@ -84,16 +84,18 @@
                     var_name: "fib_80",
                 ),
                 PushInt(0),
+                Swap,
                 ISub,
                 CastTo(String),
                 ExternCall(
                     name: "println",
                     args: 1,
                 ),
-                ExternCall(
-                    name: "input",
-                    args: 0,
-                ),
+                PushInt(1),
+                PushInt(0),
+                Swap,
+                ISub,
+                CastTo(String),
                 ExternCall(
                     name: "println",
                     args: 1,
@@ -103,7 +105,7 @@
         ),
         (
             name: "recursive_fib",
-            position: 37,
+            position: 42,
             body: [
                 Store(
                     var_name: "n",

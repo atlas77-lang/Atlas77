@@ -311,10 +311,12 @@ where
                             match u.expr.ty() {
                                 HirTy::Int64(_) => {
                                     bytecode.push(Instruction::PushInt(0));
+                                    bytecode.push(Instruction::Swap);
                                     bytecode.push(Instruction::ISub);
                                 }
                                 HirTy::Float64(_) => {
                                     bytecode.push(Instruction::PushFloat(0.0));
+                                    bytecode.push(Instruction::Swap);
                                     bytecode.push(Instruction::FSub);
                                 }
                                 _ => {
