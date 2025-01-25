@@ -20,7 +20,7 @@ use ast::{
 };
 
 use crate::atlas_frontend::lexer::{Literal, Token, TokenKind, TokenVec};
-use crate::atlas_frontend::parser::ast::{AstClass, AstNewObjExpr, AstStaticAccessExpr, AstVisibility};
+use crate::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstNewObjExpr, AstStaticAccessExpr, AstVisibility};
 use arena::AstArena;
 
 pub(crate) struct Parser<'ast> {
@@ -425,7 +425,7 @@ impl<'ast> Parser<'ast> {
     }
     //Condition should be switched with parse_binary (because it's the lowest precedence)
     fn parse_condition(&mut self) -> ParseResult<AstExpr<'ast>> {
-        let left = AstExpr::UnaryOp(self.parse_unary()?);
+        let left = self.parse_casting()?;
 
         match self.current().kind() {
             TokenKind::OpEq
@@ -451,6 +451,24 @@ impl<'ast> Parser<'ast> {
                     lhs: self.arena.alloc(left),
                     rhs: self.arena.alloc(right),
                 });
+                Ok(node)
+            }
+            _ => Ok(left),
+        }
+    }
+
+    fn parse_casting(&mut self) -> ParseResult<AstExpr<'ast>> {
+        let left = AstExpr::UnaryOp(self.parse_unary()?);
+        match self.current().kind() {
+            TokenKind::KwAs => {
+                self.expect(TokenKind::KwAs)?;
+                let ty = self.parse_type()?;
+                let node = AstExpr::Casting(AstCastingExpr {
+                    span: Span::union_span(left.span(), ty.span()),
+                    value: self.arena.alloc(left),
+                    ty: self.arena.alloc(ty),
+                });
+
                 Ok(node)
             }
             _ => Ok(left),
@@ -1023,7 +1041,12 @@ mod tests {
             }
             print("Hello World");
             index[0];
-            0;
+            0 as i64;
+        }
+        func cast() -> i64 {
+            let a: i64 = 42;
+            let b: f64 = a as f64;
+            return b as i64;
         }
         "#
             .to_string();

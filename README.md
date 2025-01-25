@@ -112,27 +112,17 @@ Or directly from their website: [Rust](https://www.rust-lang.org/tools/install)
 
 ### Fibonacci Example
 
-```ts
+```
 import "std/io"
 
-func
-fib(n
-:
-i64
-) ->
-i64
-{
+func fib(n: i64) -> i64 {
     if n <= 1 {
         return n;
     }
     return fib(n - 1) + fib(n - 2);
 }
 
-func
-main()
-->
-i64
-{
+func main() -> i64 {
     let n: i64 = 10;
     print_int(fib(n));
 }
@@ -150,14 +140,14 @@ _For more examples, please refer to the [examples folder](./examples/README.MD)_
 
 ### v0.3 "Foundation"
 
-> Deprecated, if you wanna know more about the v0.3.x, check the releases page.
+> Deprecated, if you want to know more about the v0.3.x, check the releases page.
 
 - [v0.3](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3)
 - [v0.3.1](https://github.com/atlas77-lang/Atlas77/releases/tag/v0.3.1)
 
 ### v0.4 "Keystone"
 
-> Deprecated, if you wanna know more about the v0.4, check the releases page.
+> Deprecated, if you want to know more about the v0.4, check the releases page.
 
 - [v0.4 "Keystone"](https://github.com/atlas77-lang/Atlas77/tag/v0.4)
 
@@ -166,7 +156,9 @@ _For more examples, please refer to the [examples folder](./examples/README.MD)_
 The v0.5 is a complete rewrite of Atlas77, it aligns better with the end goal of the language (see [_Goal of the
 language_](#goal-of-the-language)).
 > NB: up until the v1.0 the language will always be in alpha, tho I'll try to make every release as stable as possible.
-> I hope I can release the v0.5 this month
+> I hope I can release the v0.5 this month (January 2025).
+>
+> [Temporary documentation](https://atlas77-lang.github.io/atlas77-docs/docs/latest/index.html)
 
 | Feature                  | Expected Version | Description                                                             | Status |
 |--------------------------|------------------|-------------------------------------------------------------------------|--------|
@@ -179,6 +171,7 @@ language_](#goal-of-the-language)).
 | Structs                  | **v0.5.1**       | User-defined types with named fields                                    | 🔧     |
 | Unions                   | **v0.5.1**       | Low-level data structures allowing overlapping memory layouts           | 💤     |
 | Enums                    | **v0.5.1**       | Enumerations with optional associated data for flexible value sets      | 🔧     |
+| Garbage Collection       | **v0.5.1**       | Automatic memory management using Reference Counting                    | 💤     |
 | Lambdas & Closures       | **v0.5.2**       | Inline, anonymous functions with captured variables                     | 🔧     |
 | Classes                  | **v0.5.2**       | Object-oriented programming support                                     | 🔧     |
 | Traits                   | **v0.5.2**       | Interfaces for defining shared behavior                                 | 🔧     |
@@ -187,6 +180,7 @@ language_](#goal-of-the-language)).
 | Imports                  | **v0.5.2**       | Importing code from other files                                         | 🔧     |
 | Generics                 | **v0.5.x**       | Type parameters for writing reusable code                               | 🔧     |
 | Standard Library         | **v0.5.x**       | A comprehensive standard library                                        | 💭     |
+| UFCS                     | **v0.5.x**       | Universal Function Call Syntax (i.e. `foo.bar()` becomes `bar(foo)`)    | 💭     |
 | Package Manager          | **unknown**      | A package manager for sharing code                                      | 💤     |
 | Language Server Protocol | **unknown**      | Editor support for code completion, diagnostics, and more               | 💤     |
 | Cranelift JIT            | **unknown**      | Just-in-time compilation for faster execution                           | 💤     |

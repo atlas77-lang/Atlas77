@@ -36,6 +36,12 @@ pub struct ContextFunction<'hir> {
     pub scopes: Vec<ContextScope<'hir>>,
 }
 
+impl Default for ContextFunction<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'hir> ContextFunction<'hir> {
     pub fn new() -> Self {
         Self {
@@ -389,6 +395,31 @@ impl<'hir> TypeChecker<'hir> {
                     _ => Ok(ty),
                 }
             }
+            HirExpr::Casting(c) => {
+                let expr_ty = self.check_expr(&mut c.expr)?;
+                let can_cast = match expr_ty {
+                    HirTy::Int64(_) | HirTy::Float64(_) | HirTy::UInt64(_) | HirTy::Boolean(_) | HirTy::String(_) => true,
+                    _ => false
+                };
+                if !can_cast {
+                    return Err(HirError::TypeMismatch(TypeMismatchError {
+                        actual_type: format!("{:?}", expr_ty),
+                        actual_loc: SourceSpan::new(
+                            SourceOffset::from(c.expr.start()),
+                            c.expr.end() - c.expr.start(),
+                        ),
+                        expected_type: "Int64, Float64, UInt64, Boolean or String".to_string(),
+                        expected_loc: SourceSpan::new(
+                            SourceOffset::from(c.expr.start()),
+                            c.expr.end() - c.expr.start(),
+                        ),
+                        src: self.src.clone(),
+                    }));
+                }
+
+
+                Ok(c.ty)
+            }
             HirExpr::HirBinaryOp(b) => {
                 let lhs = self.check_expr(&mut b.lhs)?;
                 b.ty = lhs;
@@ -573,9 +604,6 @@ impl<'hir> TypeChecker<'hir> {
                         src: self.src.clone(),
                     }))
                 }
-            }
-            _ => {
-                todo!("TypeChecker::check_expr")
             }
         }
     }

@@ -219,6 +219,7 @@ pub enum AstExpr<'ast> {
     NewObj(AstNewObjExpr<'ast>),
     _Block(AstBlock<'ast>),
     Assign(AstAssignExpr<'ast>),
+    Casting(AstCastingExpr<'ast>),
     //Tuple(AstTupleExpr<'ast>),
 }
 
@@ -239,8 +240,17 @@ impl Spanned for AstExpr<'_> {
             AstExpr::NewObj(e) => e.span,
             AstExpr::_Block(e) => e.span,
             AstExpr::Assign(e) => e.span,
+            AstExpr::Casting(e) => e.span,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Copy)]
+/// i.e. ``5 as f64``
+pub struct AstCastingExpr<'ast> {
+    pub span: Span,
+    pub ty: &'ast AstType<'ast>,
+    pub value: &'ast AstExpr<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize, Copy)]

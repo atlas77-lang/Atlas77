@@ -2,9 +2,4 @@
 
 extern println(s: str) -> unit
 extern print(s: str) -> unit
-extern print_int(i: i64) -> unit
-extern print_float(f: f64) -> unit
-extern print_uint(u: u64) -> unit
-//extern print_char(c: char) -> unit
-extern print_bool(b: bool) -> unit
-//extern input() -> str
+extern input() -> str

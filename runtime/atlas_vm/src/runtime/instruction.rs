@@ -5,6 +5,16 @@ use std::ops::Index;
 
 use serde::{Deserialize, Serialize};
 
+#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub enum Type {
+    Integer,
+    Float,
+    UnsignedInteger,
+    Boolean,
+    String,
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Instruction {
     PushInt(i64),
@@ -14,6 +24,9 @@ pub enum Instruction {
     /// Push a string from the constant pool
     /// The string is directly put in the memory and its pointer is pushed to the stack
     PushStr(usize),
+    /// Push a list from the constant pool
+    /// The list is directly put in the memory and its pointer is pushed to the stack
+    PushList(usize),
     PushUnit,
 
     ///Store will replace StoreInteger, StoreFloat, StoreUnsignedInteger, StoreBool and will stop using the var_map and favor the stack instead
@@ -31,6 +44,9 @@ pub enum Instruction {
         var_name: String,
     },
 
+    ListIndex(usize),
+
+    CastTo(Type),
     //Math
     IAdd,
     FAdd,

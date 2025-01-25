@@ -10,7 +10,7 @@ use crate::atlas_hir::{
     ty::HirTy,
     HirModule,
 };
-use atlas_vm::runtime::instruction::{ImportedLibrary, Instruction, Label, Program};
+use atlas_vm::runtime::instruction::{ImportedLibrary, Instruction, Label, Program, Type};
 
 use crate::atlas_codegen::table::Table;
 use crate::atlas_hir;
@@ -163,9 +163,6 @@ where
             HirStatement::Let(l) => {
                 let mut value = Vec::new();
                 self.generate_bytecode_expr(&l.value, &mut value, src)?;
-                let ty = l.ty.unwrap_or_else(|| {
-                    unimplemented!("{} should have a type", l.name);
-                });
                 value.push(Instruction::Store {
                     var_name: l.name.to_string(),
                 });
@@ -275,6 +272,7 @@ where
                             bytecode.push(Instruction::IMod);
                         }
                         HirTy::Float64(_) => {
+                            //Should be a proper error
                             unimplemented!("Modulo not supported for float");
                         }
                         HirTy::UInt64(_) => {
@@ -353,6 +351,38 @@ where
                     }
                 }
             }
+            HirExpr::Casting(c) => {
+                self.generate_bytecode_expr(&c.expr, bytecode, src.clone())?;
+                match c.ty {
+                    HirTy::Int64(_) => {
+                        bytecode.push(Instruction::CastTo(Type::Integer));
+                    }
+                    HirTy::Float64(_) => {
+                        bytecode.push(Instruction::CastTo(Type::Float));
+                    }
+                    HirTy::UInt64(_) => {
+                        bytecode.push(Instruction::CastTo(Type::UnsignedInteger));
+                    }
+                    HirTy::Boolean(_) => {
+                        bytecode.push(Instruction::CastTo(Type::Boolean));
+                    }
+                    HirTy::String(_) => {
+                        bytecode.push(Instruction::CastTo(Type::String));
+                    }
+                    _ => {
+                        return Err(atlas_hir::error::HirError::UnsupportedExpr(
+                            UnsupportedExpr {
+                                span: SourceSpan::new(
+                                    SourceOffset::from(expr.span().start()),
+                                    expr.span().end() - expr.span().start(),
+                                ),
+                                expr: format!("Can't cast: {:?}", expr),
+                                src,
+                            },
+                        ))
+                    }
+                }
+            }
             //This need to be thoroughly tested
             HirExpr::Call(f) => {
                 for arg in &f.args {
@@ -412,18 +442,6 @@ where
                 bytecode.push(Instruction::PushStr(index));
             }
             HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: i.name.to_string() }),
-            _ => {
-                return Err(atlas_hir::error::HirError::UnsupportedExpr(
-                    UnsupportedExpr {
-                        span: SourceSpan::new(
-                            SourceOffset::from(expr.span().start()),
-                            expr.span().end() - expr.span().start(),
-                        ),
-                        expr: format!("{:?}", expr),
-                        src: src.clone(),
-                    },
-                ))
-            }
         }
         Ok(())
     }

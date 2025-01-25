@@ -1,6 +1,7 @@
 [package]
 name = "atlas_lib"
-version = "0.1.0"
+version = "0.5.1"
 edition = "2021"
+include = ["/libraries/std/*.atlas"]
 
 [dependencies]

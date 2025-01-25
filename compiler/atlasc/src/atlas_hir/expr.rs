@@ -11,6 +11,7 @@ pub enum HirExpr<'hir> {
     Call(HirFunctionCallExpr<'hir>),
     Ident(HirIdentExpr<'hir>),
     Unary(UnaryOpExpr<'hir>),
+    Casting(HirCastExpr<'hir>),
     FloatLiteral(HirFloatLiteralExpr<'hir>),
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
@@ -27,6 +28,7 @@ impl Spanned for HirExpr<'_> {
             HirExpr::BooleanLiteral(expr) => expr.span,
             HirExpr::FloatLiteral(expr) => expr.span,
             HirExpr::Unary(expr) => expr.span,
+            HirExpr::Casting(expr) => expr.span,
             HirExpr::HirBinaryOp(expr) => expr.span,
             HirExpr::Call(expr) => expr.span,
             HirExpr::Assign(expr) => expr.span,
@@ -44,12 +46,20 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::BooleanLiteral(expr) => expr.ty,
             HirExpr::FloatLiteral(expr) => expr.ty,
             HirExpr::Unary(expr) => expr.ty,
+            HirExpr::Casting(expr) => expr.ty,
             HirExpr::HirBinaryOp(expr) => expr.ty,
             HirExpr::Call(expr) => expr.ty,
             HirExpr::Assign(expr) => expr.ty,
             HirExpr::StringLiteral(expr) => expr.ty,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirCastExpr<'hir> {
+    pub span: Span,
+    pub expr: Box<HirExpr<'hir>>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]

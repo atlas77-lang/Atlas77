@@ -16,6 +16,12 @@ pub struct HirArena<'arena> {
     phantom: PhantomData<&'arena ()>,
 }
 
+impl Default for HirArena<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'arena> HirArena<'arena> {
     pub fn new() -> Self {
         let allocator = Rc::new(Bump::new());

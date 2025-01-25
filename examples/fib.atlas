@@ -2,7 +2,8 @@ import "std/io"
 
 func main()  {
     let fib_80 = iterative_fib(80);
-    print_int(-fib_80);
+    println(-fib_80 as str);
+    println(input());
 }
 
 func recursive_fib(n: i64) -> i64 {

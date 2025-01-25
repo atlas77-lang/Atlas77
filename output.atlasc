@@ -1,110 +1,160 @@
 (
     labels: [
         (
-            name: "main",
+            name: "iterative_fib",
             position: 0,
             body: [
+                Store(
+                    var_name: "n",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "a",
+                ),
+                PushInt(1),
+                Store(
+                    var_name: "b",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "n",
+                ),
+                Lt,
+                JmpZ(
+                    pos: 13,
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                Store(
+                    var_name: "temp",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                Store(
+                    var_name: "a",
+                ),
+                Load(
+                    var_name: "temp",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                IAdd,
+                Store(
+                    var_name: "b",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                PushInt(1),
+                IAdd,
+                Store(
+                    var_name: "i",
+                ),
+                Jmp(
+                    pos: -16,
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "main",
+            position: 26,
+            body: [
+                PushInt(80),
                 CallFunction(
-                    name: "test",
+                    name: "iterative_fib",
+                    args: 1,
+                ),
+                Store(
+                    var_name: "fib_80",
+                ),
+                Load(
+                    var_name: "fib_80",
+                ),
+                PushInt(0),
+                ISub,
+                CastTo(String),
+                ExternCall(
+                    name: "println",
+                    args: 1,
+                ),
+                ExternCall(
+                    name: "input",
                     args: 0,
+                ),
+                ExternCall(
+                    name: "println",
+                    args: 1,
                 ),
                 Halt,
             ],
         ),
         (
-            name: "test",
-            position: 2,
+            name: "recursive_fib",
+            position: 37,
             body: [
-                PushStr(0),
                 Store(
-                    var_name: "s",
+                    var_name: "n",
                 ),
                 Load(
-                    var_name: "s",
+                    var_name: "n",
                 ),
-                ExternCall(
-                    name: "str_len",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "len",
+                PushInt(1),
+                Lte,
+                JmpZ(
+                    pos: 3,
                 ),
                 Load(
-                    var_name: "len",
+                    var_name: "n",
                 ),
-                ExternCall(
-                    name: "print_uint",
-                    args: 1,
-                ),
-                Load(
-                    var_name: "s",
-                ),
-                ExternCall(
-                    name: "trim",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "trimmed",
+                Return,
+                Jmp(
+                    pos: 11,
                 ),
                 Load(
-                    var_name: "trimmed",
+                    var_name: "n",
                 ),
-                ExternCall(
-                    name: "println",
+                PushInt(1),
+                ISub,
+                CallFunction(
+                    name: "recursive_fib",
                     args: 1,
                 ),
                 Load(
-                    var_name: "s",
+                    var_name: "n",
                 ),
-                ExternCall(
-                    name: "to_upper",
+                PushInt(2),
+                ISub,
+                CallFunction(
+                    name: "recursive_fib",
                     args: 1,
                 ),
-                Store(
-                    var_name: "upper",
-                ),
-                Load(
-                    var_name: "upper",
-                ),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Load(
-                    var_name: "s",
-                ),
-                ExternCall(
-                    name: "to_lower",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "lower",
-                ),
-                Load(
-                    var_name: "lower",
-                ),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
+                IAdd,
+                Return,
             ],
         ),
     ],
     entry_point: "main",
     libraries: [
         (
-            name: "std/string",
-            is_std: true,
-        ),
-        (
             name: "std/io",
             is_std: true,
         ),
     ],
     global: (
-        string_pool: [
-            "  Hello World!",
-        ],
+        string_pool: [],
         function_pool: [],
     ),
 )

@@ -1,4 +1,4 @@
-# atlasc
+# Atlas77 Compiler
 
 This is the compiler for the atlas77 language. Here's a list of all the modules in the compiler:
 

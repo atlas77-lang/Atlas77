@@ -4,14 +4,10 @@ use crate::memory::vm_data::VMData;
 use crate::runtime::vm_state::VMState;
 use crate::CallBack;
 
-pub const IO_FUNCTIONS: [(&str, CallBack); 7] = [
+pub const IO_FUNCTIONS: [(&str, CallBack); 3] = [
     ("println", println),
     ("print", print),
     ("input", input),
-    ("print_int", println),
-    ("print_float", println),
-    ("print_bool", println),
-    ("print_uint", println),
 ];
 pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;

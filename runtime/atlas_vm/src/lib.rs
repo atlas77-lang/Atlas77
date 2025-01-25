@@ -8,7 +8,7 @@ use libraries::{
     fs::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
     string::STRING_FUNCTIONS, time::TIME_FUNCTIONS,
 };
-use runtime::instruction::{Instruction, Program};
+use runtime::instruction::{Instruction, Program, Type};
 use std::collections::HashMap;
 
 use crate::memory::object_map::Object;
@@ -187,6 +187,66 @@ impl Atlas77VM<'_> {
                 } else {
                     self.pc += 1;
                 }
+            }
+            Instruction::CastTo(t) => {
+                let val = self.stack.pop()?;
+                let res = match t {
+                    Type::String => {
+                        let string = val.to_string();
+                        let ptr = match self.object_map.put(Object::String(string)) {
+                            Ok(ptr) => ptr,
+                            Err(_) => return Err(RuntimeError::OutOfMemory),
+                        };
+                        VMData::new_string(ptr)
+                    }
+                    Type::Boolean => {
+                        match val.tag {
+                            VMData::TAG_STR => {
+                                let string = self.object_map.get(val.as_object()).string();
+                                VMData::new_bool(string.parse::<bool>().unwrap())
+                            }
+                            _ => VMData::new_bool(val.as_bool()),
+                        }
+                    }
+                    Type::Float => {
+                        match val.tag {
+                            VMData::TAG_STR => {
+                                let string = self.object_map.get(val.as_object()).string();
+                                VMData::new_f64(string.parse::<f64>().unwrap())
+                            }
+                            VMData::TAG_U64 => VMData::new_f64(val.as_u64() as f64),
+                            VMData::TAG_I64 => VMData::new_f64(val.as_i64() as f64),
+                            VMData::TAG_BOOL => VMData::new_f64(val.as_bool() as i64 as f64),
+                            _ => unreachable!("Invalid cast to float"),
+                        }
+                    }
+                    Type::Integer => {
+                        match val.tag {
+                            VMData::TAG_STR => {
+                                let string = self.object_map.get(val.as_object()).string();
+                                VMData::new_i64(string.parse::<i64>().unwrap())
+                            }
+                            VMData::TAG_U64 => VMData::new_i64(val.as_u64() as i64),
+                            VMData::TAG_FLOAT => VMData::new_i64(val.as_f64() as i64),
+                            VMData::TAG_BOOL => VMData::new_i64(val.as_bool() as i64),
+                            _ => unreachable!("Invalid cast to integer"),
+                        }
+                    }
+                    Type::UnsignedInteger => {
+                        match val.tag {
+                            VMData::TAG_STR => {
+                                let string = self.object_map.get(val.as_object()).string();
+                                VMData::new_u64(string.parse::<u64>().unwrap())
+                            }
+                            VMData::TAG_I64 => VMData::new_u64(val.as_i64() as u64),
+                            VMData::TAG_FLOAT => VMData::new_u64(val.as_f64() as u64),
+                            VMData::TAG_BOOL => VMData::new_u64(val.as_bool() as u64),
+                            _ => unreachable!("Invalid cast to unsigned integer"),
+                        }
+                    }
+                };
+                self.stack.push(res)?;
+                self.pc += 1;
             }
             Instruction::Jmp { pos } => {
                 self.pc = (self.pc as isize + pos) as usize;
