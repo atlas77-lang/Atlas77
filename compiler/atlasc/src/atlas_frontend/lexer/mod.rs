@@ -81,9 +81,9 @@ lexer_builder! {
         "true"      => KwTrue, //should be fixed
         "false"     => KwFalse,
         //Primitive Types
-        "i64"       => I64Ty,
-        "f64"       => F64Ty,
-        "u64"       => U64Ty,
+        "int64"     => Int64Ty,
+        "float64"   => Float64Ty,
+        "uint64"    => UInt64Ty,
         "unit"      => UnitTy,
         "char"      => CharTy,
         "bool"      => BoolTy,

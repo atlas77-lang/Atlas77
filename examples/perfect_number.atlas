@@ -1,32 +1,32 @@
 import "std/io"
 
-func check_perfect_number(n: i64) -> i64 {
-    let sum: i64 = sum_of_divisors(n, n - 1, 0);
+func check_perfect_number(n: int64) -> int64 {
+    let sum: int64 = sum_of_divisors(n, n - 1, 0);
     if n == sum {
         print_int(sum);
     }
     return -1; // Dummy return value
 }
 
-func main() -> i64 {
+func main() -> int64 {
     //To big for the current stack implementation
     //Mostly because of the amount of recursive calls
     //Sub 10000 values are fine
     return test_numbers(500);
 }
 
-func sum_of_divisors(n: i64, divisor: i64, sum: i64) -> i64 {
+func sum_of_divisors(n: int64, divisor: int64, sum: int64) -> int64 {
     if divisor == 0 {
         return sum;
     }
-    let mod_res: i64 = n % divisor;
+    let mod_res: int64 = n % divisor;
     if mod_res == 0 {
         return sum_of_divisors(n, divisor - 1, sum + divisor);
     }
     return sum_of_divisors(n, divisor - 1, sum);
 }
 
-func test_numbers(n: i64) -> i64 {
+func test_numbers(n: int64) -> int64 {
     if n == 0 {
         return -1; // Return dummy value for the base case
     }

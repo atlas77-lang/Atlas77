@@ -2,8 +2,8 @@ import "std/math"
 
 
 func main() {
-    let secret: i64 = random(1, 100);
-    let guess: i64 = 0;
+    let secret: int64 = random(1, 100);
+    let guess = 0;
     while guess != secret {
         print("Guess the number: ");
         guess = input();

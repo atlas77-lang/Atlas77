@@ -3,16 +3,16 @@
 //The list is immutable.
 //
 
-extern len<T>(l: [T]) -> u64;
-extern get<T>(l: [T], i: u64) -> T;
-extern set<T>(l: [T], i: u64, v: T) -> [T];
-extern slice<T>(l: [T], start: u64, end: u64) -> [T];
+extern len<T>(l: [T]) -> uint64;
+extern get<T>(l: [T], i: uint64) -> T;
+extern set<T>(l: [T], i: uint64, v: T) -> [T];
+extern slice<T>(l: [T], start: uint64, end: uint64) -> [T];
 
 public class Vec<T> {
     private:
         data: [T];
-        len: u64;
-        cap: u64;
+        len: uint64;
+        cap: uint64;
     public:
         func create() -> Vec<T> {
             return new Vec<T> {
@@ -21,15 +21,15 @@ public class Vec<T> {
                 len: 4
             }
         }
-        func len() -> u64 {
+        func len() -> uint64 {
             return this.len;
         }
         //#[override(Index::get)]
-        func get(i: u64) -> T {
+        func get(i: uint64) -> T {
             return this.data[i];
         }
         //#[override(Index::set)]
-        func set(i: u64, v: T) {
+        func set(i: uint64, v: T) {
             this.data[i] = v;
         }
         func push(v: T) {

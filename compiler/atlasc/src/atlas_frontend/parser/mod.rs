@@ -895,21 +895,21 @@ impl<'ast> Parser<'ast> {
         let token = self.current();
         let start = self.current().span();
         match token.kind() {
-            TokenKind::I64Ty => {
+            TokenKind::Int64Ty => {
                 let _ = self.advance();
                 let node = AstType::Integer(AstIntegerType {
                     span: Span::union_span(start, self.current().span()),
                 });
                 Ok(node)
             }
-            TokenKind::F64Ty => {
+            TokenKind::Float64Ty => {
                 let _ = self.advance();
                 let node = AstType::Float(AstFloatType {
                     span: Span::union_span(start, self.current().span()),
                 });
                 Ok(node)
             }
-            TokenKind::U64Ty => {
+            TokenKind::UInt64Ty => {
                 let _ = self.advance();
                 let node = AstType::UnsignedInteger(AstUnsignedIntegerType {
                     span: Span::union_span(start, self.current().span()),

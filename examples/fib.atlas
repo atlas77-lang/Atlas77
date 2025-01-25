@@ -6,7 +6,7 @@ func main()  {
     println(-1 as str);
 }
 
-func recursive_fib(n: i64) -> i64 {
+func recursive_fib(n: int64) -> int64 {
     if n <= 1 {
         return n;
     } else {
@@ -14,7 +14,7 @@ func recursive_fib(n: i64) -> i64 {
     }
 }
 
-func iterative_fib(n: i64) -> i64 {
+func iterative_fib(n: int64) -> int64 {
     let a = 0;
     let b = 1;
     let i = 0;

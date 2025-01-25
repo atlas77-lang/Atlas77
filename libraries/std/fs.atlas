@@ -1,6 +1,6 @@
 public class File {
     private:
-        flag: i64;
+        flag: int64;
         content: str;
         path: str;
     public:

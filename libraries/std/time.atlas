@@ -1,6 +1,6 @@
 struct Time {
-    sec: i64;
-    nsec: i64;
+    sec: int64;
+    nsec: int64;
 }
 
 extern now() -> Time;

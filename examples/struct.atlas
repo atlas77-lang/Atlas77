@@ -1,9 +1,9 @@
 //Should work in Atlas v0.5.1 and later
 
 struct Vector3 {
-    x: f32;
-    y: f32;
-    z: f32;
+    x: float64;
+    y: float64;
+    z: float64;
 }
 
 func main() {

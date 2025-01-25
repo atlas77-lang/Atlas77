@@ -1,5 +1,5 @@
-func main() -> i64 {
-    let my_list: [i64] = [1, 2, 3, 4, 5];
+func main() -> int64 {
+    let my_list: [int64] = [1, 2, 3, 4, 5];
     print(my_list);
     print(my_list[0]);
 }

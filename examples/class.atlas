@@ -1,37 +1,37 @@
 public trait Shape {
-    func get_area(&self) -> i64;
+    func get_area(&self) -> int64;
 }
 
 public class Rectangle : Shape {
     private:
-        width: i64;
-        height: i64;
+        width: int64;
+        height: int64;
     public:
-        func new(width: i64, height: i64) -> Rectangle {
+        func new(width: int64, height: int64) -> Rectangle {
             return Rectangle {
                 width: width,
                 height: height
             }
         }
-        func set_width(&self, w: i64) {
+        func set_width(&self, w: int64) {
             self.width = w;
 }
-        func set_height(&self, h: i64) {
+        func set_height(&self, h: int64) {
             self.height = h;
         }
-        func get_width(&self) -> i64 {
+        func get_width(&self) -> int64 {
             return self.width;
         }
-        func get_height(&self) -> i64 {
+        func get_height(&self) -> int64 {
             return self.height;
         }
         #[override(Shape::get_area)]
-        func get_area(&self) -> i64 {
+        func get_area(&self) -> int64 {
             return self.width * self.height;
         }
 }
 
-func main() -> i64 {
+func main() -> int64 {
     let r = Rectangle::new(10, 20);
     r.set_width(30);
     r.set_height(40);
