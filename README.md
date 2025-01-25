@@ -91,6 +91,11 @@ Or directly from their website: [Rust](https://www.rust-lang.org/tools/install)
     ```sh
     cargo install atlas_77
     ```
+
+> [!Note]
+> I recommend you to build it yourself, as the version on Cargo is not always up to date.
+> There are also some bugs in the current version on Cargo.
+
 2. Use it as a CLI
     ```sh
     atlas_77 --help

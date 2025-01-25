@@ -1,11 +1,8 @@
 [workspace]
-members = ["compiler/atlas_asm",
-    "compiler/atlas_codegen",
-    "compiler/atlas_frontend",
-    "compiler/atlas_hir",
-    "compiler/atlas_macro",
-    "compiler/atlas_runtime",
-    "compiler/atlas_vm",
+members = [
+    "compiler/atlasc",
+    "libraries/atlas_lib",
+    "runtime/atlas_vm",
 ]
 
 [package]
@@ -34,11 +31,8 @@ opt-level = 3
 codegen-units = 1
 
 [dependencies]
-atlas_codegen = { path = "compiler/atlas_codegen", version = "0.5.1" }
-atlas_frontend = { path = "compiler/atlas_frontend", version = "0.5.1" }
-atlas_hir = { path = "compiler/atlas_hir", version = "0.5.1" }
-# That's dumb asf, the vm shouldn't be in the ./compiler directory
-atlas_vm = { path = "compiler/atlas_vm", version = "0.5.1" }
+atlasc = { path = "compiler/atlasc", version = "0.5.1" }
+atlas_vm = { path = "runtime/atlas_vm", version = "0.5.1" }
 
 # For the CLI
 clap = { version = "4.5.26", features = ["derive"] }

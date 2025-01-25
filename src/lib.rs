@@ -1,8 +1,8 @@
-use atlas_codegen::{arena::CodeGenArena, CodeGenUnit};
-use atlas_frontend::parse;
-use atlas_frontend::parser::arena::AstArena;
-use atlas_hir::type_check_pass::TypeChecker;
-use atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass};
+use atlasc::atlas_codegen::{arena::CodeGenArena, CodeGenUnit};
+use atlasc::atlas_frontend::parse;
+use atlasc::atlas_frontend::parser::arena::AstArena;
+use atlasc::atlas_hir::type_check_pass::TypeChecker;
+use atlasc::atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass};
 use bumpalo::Bump;
 
 use std::{io::Write, path::PathBuf, time::Instant};
