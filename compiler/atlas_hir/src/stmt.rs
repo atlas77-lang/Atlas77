@@ -49,7 +49,6 @@ pub struct HirWhileStmt<'hir> {
     pub body: HirBlock<'hir>,
 }
 
-/// Types will become optional in the future.
 #[derive(Debug, Clone, Serialize)]
 pub struct HirLetStmt<'hir> {
     pub span: Span,

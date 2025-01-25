@@ -18,6 +18,7 @@ const IO_ATLAS: &str = include_str!("../../../../libraries/std/io.atlas");
 const MATH_ATLAS: &str = include_str!("../../../../libraries/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../../libraries/std/string.atlas");
 
+use crate::expr::HirStringLiteralExpr;
 use crate::{
     arena::HirArena,
     error::{HirError, HirResult, UnsupportedExpr, UnsupportedStatement},
@@ -69,7 +70,6 @@ where
         for item in self.ast.items {
             items.push(self.visit_item(&mut module_body, &mut module_signature, item)?);
         }
-        //println!("{:#?}", module_signature);
         Ok(HirModule {
             body: module_body,
             signature: module_signature,
@@ -138,6 +138,7 @@ where
         Ok(())
     }
 
+    //This needs to be generalized
     fn visit_import(&self, node: &'ast AstImport<'ast>) -> HirResult<HirModule<'hir>> {
         match node.path.split("/").last().unwrap() {
             "io" => {
@@ -230,7 +231,20 @@ where
                     self.ast_arena,
                     IO_ATLAS.to_string(),
                 ));
-                hir.lower()
+
+                let mut lower = hir.lower()?;
+
+                let hir_import: &'hir HirImport<'_> = self.arena.intern(HirImport {
+                    span: node.span,
+                    path: node.path,
+                    path_span: node.span,
+                    alias: None,
+                    alias_span: None,
+                });
+
+                lower.body.imports.push(hir_import);
+
+                Ok(lower)
             }
             "time" => {
                 let ast: AstProgram<'ast> = parse(
@@ -460,6 +474,13 @@ where
                             ty: self.arena.types().get_uint64_ty(),
                         })
                     }
+                    AstLiteral::String(s) => {
+                        HirExpr::StringLiteral(HirStringLiteralExpr {
+                            span: l.span(),
+                            value: s.value,
+                            ty: self.arena.types().get_str_ty(),
+                        })
+                    }
                     _ => {
                         return Err(super::error::HirError::UnsupportedExpr(UnsupportedExpr {
                             span: SourceSpan::new(
@@ -573,6 +594,7 @@ where
             AstType::Float(_) => self.arena.types().get_float64_ty(),
             AstType::UnsignedInteger(_) => self.arena.types().get_uint64_ty(),
             AstType::Unit(_) => self.arena.types().get_unit_ty(),
+            AstType::String(_) => self.arena.types().get_str_ty(),
             _ => unimplemented!("visit_ty, {:?}", node),
         };
         Ok(ty)

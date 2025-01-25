@@ -7,10 +7,7 @@ use std::{
 
 use bumpalo::Bump;
 
-use super::ty::{
-    HirBooleanTy, HirFloatTy, HirIntegerTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy,
-    HirUnsignedIntTy,
-};
+use super::ty::{HirBooleanTy, HirFloatTy, HirIntegerTy, HirStringTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirUnsignedIntTy};
 //todo: Implement my own Arenas (maybe)
 pub struct HirArena<'arena> {
     allocator: Rc<Bump>,
@@ -113,6 +110,14 @@ impl<'arena> TypeArena<'arena> {
             .borrow_mut()
             .entry(id)
             .or_insert_with(|| self.allocator.alloc(HirTy::Boolean(HirBooleanTy {})))
+    }
+
+    pub fn get_str_ty(&'arena self) -> &'arena HirTy<'arena> {
+        let id = HirTyId::compute_str_ty_id();
+        self.intern
+            .borrow_mut()
+            .entry(id)
+            .or_insert_with(|| self.allocator.alloc(HirTy::String(HirStringTy {})))
     }
 
     pub fn get_unit_ty(&'arena self) -> &'arena HirTy<'arena> {

@@ -11,45 +11,23 @@ pub enum Instruction {
     PushFloat(f64),
     PushUnsignedInt(u64),
     PushBool(bool),
-    PushStr(String),
+    /// Push a string from the constant pool
+    /// The string is directly put in the memory and its pointer is pushed to the stack
+    PushStr(usize),
     PushUnit,
 
     ///Store will replace StoreInteger, StoreFloat, StoreUnsignedInteger, StoreBool and will stop using the var_map and favor the stack instead
-    Store(usize),
+    //Store(usize),
     ///Load will replace LoadInteger, LoadFloat, LoadUnsignedInteger, LoadBool and will stop using the var_map and favor the stack instead
     Get(usize),
 
     Pop,
 
-    /// Store an i64 value in a variable from the stack
-    StoreInteger {
-        var_name: String,
-    },
-    /// Store a f64 value in a variable from the stack
-    StoreFloat {
-        var_name: String,
-    },
-    /// Store an u64 value in a variable from the stack
-    StoreUnsignedInteger {
-        var_name: String,
-    },
-    StoreBool {
+    Store {
         var_name: String,
     },
 
-    /// Load an i64 value from a variable to the stack
-    LoadInteger {
-        var_name: String,
-    },
-    /// Load a f64 value from a variable to the stack
-    LoadFloat {
-        var_name: String,
-    },
-    /// Load an u64 value from a variable to the stack
-    LoadUnsignedInteger {
-        var_name: String,
-    },
-    LoadBool {
+    Load {
         var_name: String,
     },
 

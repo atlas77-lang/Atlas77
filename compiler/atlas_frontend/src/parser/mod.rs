@@ -142,8 +142,8 @@ impl<'ast> Parser<'ast> {
     ///     private:
     ///         qux: i64;
     ///     public:
-    ///         func new() -> Foo {
-    ///             Foo {
+    ///         func create() -> Foo {
+    ///             return new Foo {
     ///                 bar: "Hello World",
     ///                 baz: 3.14,
     ///                 qux: 42,

@@ -15,7 +15,6 @@ use atlas_vm::runtime::instruction::{ImportedLibrary, Instruction, Label, Progra
 use crate::table::Table;
 use arena::CodeGenArena;
 use atlas_core::prelude::Spanned;
-use atlas_hir::error::UnknownTypeError;
 use atlas_hir::expr::UnaryOp;
 use miette::{SourceOffset, SourceSpan};
 
@@ -166,27 +165,9 @@ where
                 let ty = l.ty.unwrap_or_else(|| {
                     unimplemented!("{} should have a type", l.name);
                 });
-                match ty {
-                    HirTy::Int64(_) => {
-                        value.push(Instruction::StoreInteger {
-                            var_name: l.name.to_string(),
-                        });
-                    }
-                    HirTy::Float64(_) => {
-                        value.push(Instruction::StoreFloat {
-                            var_name: l.name.to_string(),
-                        });
-                    }
-                    HirTy::UInt64(_) => {
-                        value.push(Instruction::StoreUnsignedInteger {
-                            var_name: l.name.to_string(),
-                        });
-                    }
-                    HirTy::Boolean(_) => value.push(Instruction::StoreBool {
-                        var_name: l.name.to_string(),
-                    }),
-                    _ => unimplemented!("Unsupported type for now"),
-                }
+                value.push(Instruction::Store {
+                    var_name: l.name.to_string(),
+                });
                 bytecode.append(&mut value);
             }
             HirStatement::Expr(e) => self.generate_bytecode_expr(&e.expr, bytecode, src)?,
@@ -218,31 +199,9 @@ where
                 match lhs {
                     HirExpr::Ident(i) => {
                         self.generate_bytecode_expr(&a.rhs, bytecode, src.clone())?;
-                        match i.ty {
-                            HirTy::Int64(_) => {
-                                bytecode.push(Instruction::StoreInteger {
-                                    var_name: i.name.to_string(),
-                                });
-                            }
-                            HirTy::Float64(_) => {
-                                bytecode.push(Instruction::StoreFloat {
-                                    var_name: i.name.to_string(),
-                                });
-                            }
-                            HirTy::UInt64(_) => {
-                                bytecode.push(Instruction::StoreUnsignedInteger {
-                                    var_name: i.name.to_string(),
-                                });
-                            }
-                            _ => return Err(atlas_hir::error::HirError::UnknownType(UnknownTypeError {
-                                span: SourceSpan::new(
-                                    SourceOffset::from(expr.span().start()),
-                                    expr.span().end() - expr.span().start(),
-                                ),
-                                name: i.name.to_string(),
-                                src,
-                            })),
-                        }
+                        bytecode.push(Instruction::Store {
+                            var_name: i.name.to_string(),
+                        });
                     }
                     _ => {
                         return Err(atlas_hir::error::HirError::UnsupportedExpr(
@@ -440,33 +399,18 @@ where
                     }
                 }
             }
-            HirExpr::Ident(i) => match i.ty {
-                HirTy::Int64(_) => {
-                    bytecode.push(Instruction::LoadInteger {
-                        var_name: i.name.to_string(),
-                    });
-                }
-                HirTy::Float64(_) => {
-                    bytecode.push(Instruction::LoadFloat {
-                        var_name: i.name.to_string(),
-                    });
-                }
-                HirTy::UInt64(_) => {
-                    bytecode.push(Instruction::LoadUnsignedInteger {
-                        var_name: i.name.to_string(),
-                    });
-                }
-                //By default, it will be an integer
-                _ => bytecode.push(Instruction::LoadInteger {
-                    var_name: i.name.to_string(),
-                }),
-            },
             HirExpr::IntegerLiteral(i) => bytecode.push(Instruction::PushInt(i.value)),
             HirExpr::FloatLiteral(f) => bytecode.push(Instruction::PushFloat(f.value)),
             HirExpr::BooleanLiteral(b) => bytecode.push(Instruction::PushBool(b.value)),
             HirExpr::UnsignedIntegerLiteral(u) => {
                 bytecode.push(Instruction::PushUnsignedInt(u.value))
             }
+            HirExpr::StringLiteral(s) => {
+                self.program.global.string_pool.push(s.value.to_string());
+                let index = self.program.global.string_pool.len() - 1;
+                bytecode.push(Instruction::PushStr(index));
+            }
+            HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: i.name.to_string() }),
             _ => {
                 return Err(atlas_hir::error::HirError::UnsupportedExpr(
                     UnsupportedExpr {
@@ -490,24 +434,9 @@ where
     ) -> HirResult<()> {
         let args = args.iter().rev().cloned().collect::<Vec<_>>();
         for arg in args {
-            match arg.ty {
-                HirTy::Int64(_) => {
-                    bytecode.push(Instruction::StoreInteger {
-                        var_name: arg.name.to_string(),
-                    });
-                }
-                HirTy::Float64(_) => {
-                    bytecode.push(Instruction::StoreFloat {
-                        var_name: arg.name.to_string(),
-                    });
-                }
-                HirTy::UInt64(_) => {
-                    bytecode.push(Instruction::StoreUnsignedInteger {
-                        var_name: arg.name.to_string(),
-                    });
-                }
-                _ => unimplemented!("Unsupported argument type for now"),
-            }
+            bytecode.push(Instruction::Store {
+                var_name: arg.name.to_string(),
+            });
         }
         Ok(())
     }

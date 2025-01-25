@@ -39,6 +39,12 @@ impl HirTyId {
         Self(hasher.finish())
     }
 
+    pub fn compute_str_ty_id() -> Self {
+        let mut hasher = DefaultHasher::new();
+        0x10.hash(&mut hasher);
+        Self(hasher.finish())
+    }
+
     pub fn compute_function_ty_id(ret_ty: &HirTyId, params: &[HirTyId]) -> Self {
         let mut hasher = DefaultHasher::new();
 
@@ -67,6 +73,7 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
             HirTy::UInt64(_) => Self::compute_uint64_ty_id(),
             HirTy::Boolean(_) => Self::compute_boolean_ty_id(),
             HirTy::Unit(_) => Self::compute_unit_ty_id(),
+            HirTy::String(_) => Self::compute_str_ty_id(),
             HirTy::_Named(ty) => HirTyId::compute_name_ty_id(ty.name),
             HirTy::Uninitialized(_) => Self::compute_uninitialized_ty_id(),
             HirTy::_Function(f) => {
@@ -85,6 +92,7 @@ pub enum HirTy<'hir> {
     UInt64(HirUnsignedIntTy),
     Unit(HirUnitTy),
     Boolean(HirBooleanTy),
+    String(HirStringTy),
     _Named(HirNamedTy<'hir>),
     Uninitialized(HirUninitializedTy),
 
@@ -99,6 +107,7 @@ impl fmt::Display for HirTy<'_> {
             HirTy::UInt64(_) => write!(f, "UInt64"),
             HirTy::Unit(_) => write!(f, "Unit"),
             HirTy::Boolean(_) => write!(f, "Boolean"),
+            HirTy::String(_) => write!(f, "Str"),
             HirTy::_Named(ty) => write!(f, "{}", ty.name),
             HirTy::Uninitialized(_) => write!(f, "Uninitialized"),
             HirTy::_Function(func) => {
@@ -131,6 +140,9 @@ pub struct HirUnitTy {}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct HirBooleanTy {}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirStringTy {}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct HirFunctionTy<'hir> {

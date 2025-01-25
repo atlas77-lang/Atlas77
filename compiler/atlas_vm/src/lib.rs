@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use errors::RuntimeError;
 use runtime::instruction::{Instruction, Program};
 
+use crate::memory::object_map::Object;
 use crate::{
     libraries::{
         fs::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
@@ -23,7 +24,7 @@ pub struct Atlas77VM<'run> {
     pub program: Program,
     pub stack: Stack,
     stack_frame: Vec<(usize, usize)>, //previous pc and previous stack top
-    pub(crate) _object_map: Memory,
+    pub(crate) object_map: Memory,
     pub varmap: Vec<HashMap<String, VMData>>, //need to be changed
     pub extern_fn: HashMap<&'run str, CallBack>,
     pub pc: usize,
@@ -74,7 +75,7 @@ impl Atlas77VM<'_> {
             program,
             stack: Stack::new(),
             stack_frame: Vec::new(),
-            _object_map: Memory::new(1024),
+            object_map: Memory::new(1024),
             varmap: vec![HashMap::new()],
             extern_fn,
             pc: 0,
@@ -131,6 +132,15 @@ impl Atlas77VM<'_> {
                 self.stack.push(val)?;
                 self.pc += 1;
             }
+            Instruction::PushStr(u) => {
+                let string = self.program.global.string_pool[u].clone();
+                let ptr = match self.object_map.put(Object::String(string)) {
+                    Ok(ptr) => ptr,
+                    Err(_) => return Err(RuntimeError::OutOfMemory),
+                };
+                self.stack.push(VMData::new_string(ptr))?;
+                self.pc += 1;
+            }
             Instruction::Lt => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
@@ -184,32 +194,12 @@ impl Atlas77VM<'_> {
             Instruction::Jmp { pos } => {
                 self.pc = (self.pc as isize + pos) as usize;
             }
-            Instruction::StoreInteger { var_name } => {
+            Instruction::Store { var_name } => {
                 let val = self.stack.pop()?;
                 self.varmap.last_mut().unwrap().insert(var_name, val);
                 self.pc += 1;
             }
-            Instruction::StoreFloat { var_name } => {
-                let val = self.stack.pop()?;
-                self.varmap.last_mut().unwrap().insert(var_name, val);
-                self.pc += 1;
-            }
-            Instruction::StoreUnsignedInteger { var_name } => {
-                let val = self.stack.pop()?;
-                self.varmap.last_mut().unwrap().insert(var_name, val);
-                self.pc += 1;
-            }
-            Instruction::LoadInteger { var_name } => {
-                let val = self.varmap.last().unwrap().get(&var_name).unwrap();
-                self.stack.push(*val)?;
-                self.pc += 1;
-            }
-            Instruction::LoadFloat { var_name } => {
-                let val = self.varmap.last().unwrap().get(&var_name).unwrap();
-                self.stack.push(*val)?;
-                self.pc += 1;
-            }
-            Instruction::LoadUnsignedInteger { var_name } => {
+            Instruction::Load { var_name } => {
                 let val = self.varmap.last().unwrap().get(&var_name).unwrap();
                 self.stack.push(*val)?;
                 self.pc += 1;
@@ -318,7 +308,7 @@ impl Atlas77VM<'_> {
                 let consts = HashMap::new();
                 let vm_state = runtime::vm_state::VMState::new(
                     &mut self.stack,
-                    &mut self._object_map,
+                    &mut self.object_map,
                     &consts,
                     self.varmap.last().unwrap(),
                 );

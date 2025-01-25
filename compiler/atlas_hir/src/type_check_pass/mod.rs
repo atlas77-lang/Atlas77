@@ -368,6 +368,7 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::FloatLiteral(_) => Ok(self.arena.types().get_float64_ty()),
             HirExpr::UnsignedIntegerLiteral(_) => Ok(self.arena.types().get_uint64_ty()),
             HirExpr::BooleanLiteral(_) => Ok(self.arena.types().get_boolean_ty()),
+            HirExpr::StringLiteral(_) => Ok(self.arena.types().get_str_ty()),
             HirExpr::Unary(u) => {
                 let ty = self.check_expr(&mut u.expr)?;
                 match u.op {

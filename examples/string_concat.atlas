@@ -1,11 +1,18 @@
-include "std/io"
-include "std/string"
+import "std/string"
+import "std/io"
+
+func test() {
+    let s = "  Hello World!";
+    let len = str_len(s);
+    print_uint(len);
+    let trimmed = trim(s);
+    println(trimmed);
+    let upper = to_upper(s);
+    println(upper);
+    let lower = to_lower(s);
+    println(lower);
+}
 
 func main() {
-    let my_string: string = "Hello ";
-    let my_string_two: string = "world!";
-    let my_string_three: string = my_string + my_string_two;
-    println(my_string_three);
-    let length: i64 = str_len(my_string_three);
-    println(length);
+    test();
 }

@@ -15,7 +15,7 @@ pub enum HirExpr<'hir> {
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
     UnsignedIntegerLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
-    _StringLiteral(HirStringLiteralExpr<'hir>),
+    StringLiteral(HirStringLiteralExpr<'hir>),
 }
 
 impl Spanned for HirExpr<'_> {
@@ -30,7 +30,7 @@ impl Spanned for HirExpr<'_> {
             HirExpr::HirBinaryOp(expr) => expr.span,
             HirExpr::Call(expr) => expr.span,
             HirExpr::Assign(expr) => expr.span,
-            HirExpr::_StringLiteral(expr) => expr.span,
+            HirExpr::StringLiteral(expr) => expr.span,
         }
     }
 }
@@ -47,7 +47,7 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::HirBinaryOp(expr) => expr.ty,
             HirExpr::Call(expr) => expr.ty,
             HirExpr::Assign(expr) => expr.ty,
-            HirExpr::_StringLiteral(expr) => expr.ty,
+            HirExpr::StringLiteral(expr) => expr.ty,
         }
     }
 }
