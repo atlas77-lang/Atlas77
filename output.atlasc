@@ -74,6 +74,104 @@
                 Halt,
             ],
         ),
+        (
+            name: "test_ret_list",
+            position: 35,
+            body: [
+                NewList(
+                    size: 4,
+                ),
+                Dup,
+                NewList(
+                    size: 1,
+                ),
+                Dup,
+                NewList(
+                    size: 1,
+                ),
+                Dup,
+                PushFloat(1.0),
+                ListStore(
+                    index: 0,
+                ),
+                ListStore(
+                    index: 0,
+                ),
+                ListStore(
+                    index: 0,
+                ),
+                Dup,
+                NewList(
+                    size: 1,
+                ),
+                Dup,
+                NewList(
+                    size: 1,
+                ),
+                Dup,
+                PushFloat(2.0),
+                ListStore(
+                    index: 0,
+                ),
+                ListStore(
+                    index: 0,
+                ),
+                ListStore(
+                    index: 1,
+                ),
+                Dup,
+                NewList(
+                    size: 2,
+                ),
+                Dup,
+                NewList(
+                    size: 1,
+                ),
+                Dup,
+                PushFloat(3.0),
+                ListStore(
+                    index: 0,
+                ),
+                ListStore(
+                    index: 0,
+                ),
+                Dup,
+                NewList(
+                    size: 1,
+                ),
+                Dup,
+                PushFloat(4.0),
+                ListStore(
+                    index: 0,
+                ),
+                ListStore(
+                    index: 1,
+                ),
+                ListStore(
+                    index: 2,
+                ),
+                Dup,
+                NewList(
+                    size: 1,
+                ),
+                Dup,
+                NewList(
+                    size: 1,
+                ),
+                Dup,
+                PushFloat(5.0),
+                ListStore(
+                    index: 0,
+                ),
+                ListStore(
+                    index: 0,
+                ),
+                ListStore(
+                    index: 3,
+                ),
+                Return,
+            ],
+        ),
     ],
     entry_point: "main",
     libraries: [

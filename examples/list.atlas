@@ -1,6 +1,6 @@
 import "std/io"
 
-func main()  {
+func main() -> [int64] {
     let my_list: [int64] = [1, 2, 3, 4, 5];
 
     let i = 0;
@@ -8,4 +8,9 @@ func main()  {
         println(my_list[i as uint64] as str);
         i = i + 1;
     }
+
+}
+
+func test_ret_list() -> [[[float64]]] { //it works, damn
+    return [[[1.0]], [[2.0]], [[3.0], [4.0]], [[5.0]]];
 }

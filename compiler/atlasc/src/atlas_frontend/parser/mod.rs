@@ -1005,7 +1005,7 @@ impl<'ast> Parser<'ast> {
             _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                 token: self.current().clone(),
                 expected: TokenVec(vec![
-                    TokenKind::Literal(Literal::Identifier("h".to_string())),
+                    TokenKind::Literal(Literal::Identifier(String::from("Type (e.g. i64, f64, str)"))),
                     token.kind(),
                 ]),
                 span: SourceSpan::new(

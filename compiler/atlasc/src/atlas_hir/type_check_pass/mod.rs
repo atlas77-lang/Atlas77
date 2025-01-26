@@ -179,12 +179,12 @@ impl<'hir> TypeChecker<'hir> {
                 let expected_ret_ty = func_ret_from.return_ty;
                 if HirTyId::from(actual_ret_ty) != HirTyId::from(expected_ret_ty) {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", actual_ret_ty),
+                        actual_type: format!("{}", actual_ret_ty),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(r.value.start()),
                             r.value.end() - r.value.start(),
                         ),
-                        expected_type: format!("{:?}", expected_ret_ty),
+                        expected_type: format!("{}", expected_ret_ty),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(
                                 func_ret_from.return_ty_span.unwrap_or(r.span).start(),
@@ -202,12 +202,12 @@ impl<'hir> TypeChecker<'hir> {
                 let cond_ty = self.check_expr(&mut w.condition)?;
                 if HirTyId::from(cond_ty) != HirTyId::compute_boolean_ty_id() {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", cond_ty),
+                        actual_type: format!("{}", cond_ty),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(w.condition.start()),
                             w.condition.end() - w.condition.start(),
                         ),
-                        expected_type: format!("{:?}", self.arena.types().get_boolean_ty()),
+                        expected_type: format!("{}", self.arena.types().get_boolean_ty()),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(w.condition.start()),
                             w.condition.end() - w.condition.start(),
@@ -238,12 +238,12 @@ impl<'hir> TypeChecker<'hir> {
                 let cond_ty = self.check_expr(&mut i.condition)?;
                 if HirTyId::from(cond_ty) != HirTyId::compute_boolean_ty_id() {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", cond_ty),
+                        actual_type: format!("{}", cond_ty),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(i.condition.start()),
                             i.condition.end() - i.condition.start(),
                         ),
-                        expected_type: format!("{:?}", self.arena.types().get_boolean_ty()),
+                        expected_type: format!("{}", self.arena.types().get_boolean_ty()),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(i.condition.start()),
                             i.condition.end() - i.condition.start(),
@@ -310,12 +310,12 @@ impl<'hir> TypeChecker<'hir> {
 
                 if HirTyId::from(expr_ty) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", expr_ty),
+                        actual_type: format!("{}", expr_ty),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(c.value.start()),
                             c.value.end() - c.value.start(),
                         ),
-                        expected_type: format!("{:?}", c.ty),
+                        expected_type: format!("{}", const_ty),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(c.span.start()),
                             c.name_span.end() - c.span.start(),
@@ -348,12 +348,12 @@ impl<'hir> TypeChecker<'hir> {
                     );
                 if HirTyId::from(expr_ty) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", expr_ty),
+                        actual_type: format!("{}", expr_ty),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(l.value.start()),
                             l.value.end() - l.value.start(),
                         ),
-                        expected_type: format!("{:?}", l.ty),
+                        expected_type: format!("{}", var_ty),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(l.name_span.start()),
                             l.name_span.end() - l.name_span.start(),
@@ -390,12 +390,12 @@ impl<'hir> TypeChecker<'hir> {
                     let e_ty = self.check_expr(e)?;
                     if HirTyId::from(e_ty) != HirTyId::from(ty) {
                         return Err(HirError::TypeMismatch(TypeMismatchError {
-                            actual_type: format!("{:?}", e_ty),
+                            actual_type: format!("{}", e_ty),
                             actual_loc: SourceSpan::new(
                                 SourceOffset::from(e.start()),
                                 e.end() - e.start(),
                             ),
-                            expected_type: format!("{:?}", ty),
+                            expected_type: format!("{}", ty),
                             expected_loc: SourceSpan::new(
                                 SourceOffset::from(l.span.start()),
                                 l.span.end() - l.span.start(),
@@ -483,12 +483,12 @@ impl<'hir> TypeChecker<'hir> {
                 let rhs = self.check_expr(&mut b.rhs)?;
                 if HirTyId::from(lhs) != HirTyId::from(rhs) {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", lhs),
+                        actual_type: format!("{}", lhs),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(b.lhs.start()),
                             b.lhs.end() - b.lhs.start(),
                         ),
-                        expected_type: format!("{:?}", rhs),
+                        expected_type: format!("{}", rhs),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(b.rhs.start()),
                             b.rhs.end() - b.rhs.start(),
@@ -548,12 +548,12 @@ impl<'hir> TypeChecker<'hir> {
                     let arg_ty = self.check_expr(arg)?;
                     if HirTyId::from(arg_ty) != HirTyId::from(param.ty) {
                         return Err(HirError::TypeMismatch(TypeMismatchError {
-                            actual_type: format!("{:?}", arg_ty),
+                            actual_type: format!("{}", arg_ty),
                             actual_loc: SourceSpan::new(
                                 SourceOffset::from(arg.start()),
                                 arg.end() - arg.start(),
                             ),
-                            expected_type: format!("{:?}", param.ty),
+                            expected_type: format!("{}", param.ty),
                             expected_loc: SourceSpan::new(
                                 SourceOffset::from(param.span.start()),
                                 param.span.end() - param.span.start(),
@@ -620,12 +620,12 @@ impl<'hir> TypeChecker<'hir> {
 
                 if HirTyId::from(lhs.ty) != HirTyId::from(rhs) {
                     Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", rhs),
+                        actual_type: format!("{}", rhs),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(a.lhs.start()),
                             a.rhs.end() - a.lhs.start(),
                         ),
-                        expected_type: format!("{:?}", lhs.ty),
+                        expected_type: format!("{}", lhs.ty),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(lhs.name_span.start()),
                             lhs.ty_span.end() - lhs.name_span.start(),
