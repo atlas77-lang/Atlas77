@@ -2,10 +2,6 @@
 //As there will only be primitive types to check.
 //A rework of the type checker will be done when structs, classes, enums and unions are added.
 
-use atlas_core::prelude::{Span, Spanned};
-use miette::{SourceOffset, SourceSpan};
-use std::collections::HashMap;
-
 use super::{
     arena::HirArena,
     error::{
@@ -18,6 +14,10 @@ use super::{
     ty::{HirTy, HirTyId},
     HirFunction, HirModule, HirModuleSignature,
 };
+use crate::atlas_hir::error::EmptyListLiteralError;
+use atlas_core::prelude::{Span, Spanned};
+use miette::{SourceOffset, SourceSpan};
+use std::collections::HashMap;
 
 pub struct TypeChecker<'hir> {
     arena: &'hir HirArena<'hir>,
@@ -375,6 +375,37 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::UnsignedIntegerLiteral(_) => Ok(self.arena.types().get_uint64_ty()),
             HirExpr::BooleanLiteral(_) => Ok(self.arena.types().get_boolean_ty()),
             HirExpr::StringLiteral(_) => Ok(self.arena.types().get_str_ty()),
+            HirExpr::ListLiteral(l) => {
+                if l.items.len() == 0 {
+                    return Err(HirError::EmptyListLiteral(EmptyListLiteralError {
+                        span: SourceSpan::new(
+                            SourceOffset::from(l.span.start()),
+                            l.span.end() - l.span.start(),
+                        ),
+                        src: self.src.clone(),
+                    }));
+                }
+                let ty = self.check_expr(&mut l.items[0])?;
+                for e in &mut l.items {
+                    let e_ty = self.check_expr(e)?;
+                    if HirTyId::from(e_ty) != HirTyId::from(ty) {
+                        return Err(HirError::TypeMismatch(TypeMismatchError {
+                            actual_type: format!("{:?}", e_ty),
+                            actual_loc: SourceSpan::new(
+                                SourceOffset::from(e.start()),
+                                e.end() - e.start(),
+                            ),
+                            expected_type: format!("{:?}", ty),
+                            expected_loc: SourceSpan::new(
+                                SourceOffset::from(l.span.start()),
+                                l.span.end() - l.span.start(),
+                            ),
+                            src: self.src.clone(),
+                        }));
+                    }
+                }
+                Ok(self.arena.types().get_list_ty(ty))
+            }
             HirExpr::Unary(u) => {
                 let ty = self.check_expr(&mut u.expr)?;
                 match u.op {
@@ -403,12 +434,12 @@ impl<'hir> TypeChecker<'hir> {
                 };
                 if !can_cast {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
-                        actual_type: format!("{:?}", expr_ty),
+                        actual_type: format!("{}", expr_ty),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(c.expr.start()),
                             c.expr.end() - c.expr.start(),
                         ),
-                        expected_type: "Int64, Float64, UInt64, Boolean or String".to_string(),
+                        expected_type: "int64, float64, uint64, Bool or str".to_string(),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(c.expr.start()),
                             c.expr.end() - c.expr.start(),
@@ -419,6 +450,32 @@ impl<'hir> TypeChecker<'hir> {
 
 
                 Ok(c.ty)
+            }
+            HirExpr::Indexing(i) => {
+                let target = self.check_expr(&mut i.target)?;
+                let index = self.check_expr(&mut i.index)?;
+                if HirTyId::from(index) != HirTyId::compute_uint64_ty_id() {
+                    return Err(HirError::TypeMismatch(TypeMismatchError {
+                        actual_type: format!("{}", index),
+                        actual_loc: SourceSpan::new(
+                            SourceOffset::from(i.index.start()),
+                            i.index.end() - i.index.start(),
+                        ),
+                        expected_type: format!("{}", self.arena.types().get_uint64_ty()),
+                        expected_loc: SourceSpan::new(
+                            SourceOffset::from(i.index.start()),
+                            i.index.end() - i.index.start(),
+                        ),
+                        src: self.src.clone(),
+                    }));
+                }
+
+                match target {
+                    HirTy::List(l) => Ok(l.ty),
+                    _ => {
+                        todo!("TypeChecker::check_expr")
+                    }
+                }
             }
             HirExpr::HirBinaryOp(b) => {
                 let lhs = self.check_expr(&mut b.lhs)?;

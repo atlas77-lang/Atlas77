@@ -385,6 +385,11 @@ where
                     }
                 }
             }
+            HirExpr::Indexing(i) => {
+                self.generate_bytecode_expr(&i.target, bytecode, src.clone())?;
+                self.generate_bytecode_expr(&i.index, bytecode, src)?;
+                bytecode.push(Instruction::ListLoad);
+            }
             //This need to be thoroughly tested
             HirExpr::Call(f) => {
                 for arg in &f.args {
@@ -442,6 +447,17 @@ where
                 self.program.global.string_pool.push(s.value.to_string());
                 let index = self.program.global.string_pool.len() - 1;
                 bytecode.push(Instruction::PushStr(index));
+            }
+            HirExpr::ListLiteral(l) => {
+                bytecode.push(Instruction::NewList { size: l.items.len() });
+                l.items.iter().enumerate().for_each(|(u, i)| {
+                    //Duplicate the list reference
+                    bytecode.push(Instruction::Dup);
+                    //Generate the expression
+                    self.generate_bytecode_expr(i, bytecode, src.clone()).unwrap();
+                    //Store the value in the list
+                    bytecode.push(Instruction::ListStore { index: u });
+                });
             }
             HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: i.name.to_string() }),
         }

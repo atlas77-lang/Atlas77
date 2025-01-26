@@ -1,19 +1,39 @@
 (
     labels: [
         (
-            name: "iterative_fib",
+            name: "main",
             position: 0,
             body: [
-                Store(
-                    var_name: "n",
+                NewList(
+                    size: 5,
                 ),
-                PushInt(0),
-                Store(
-                    var_name: "a",
-                ),
+                Dup,
                 PushInt(1),
+                ListStore(
+                    index: 0,
+                ),
+                Dup,
+                PushInt(2),
+                ListStore(
+                    index: 1,
+                ),
+                Dup,
+                PushInt(3),
+                ListStore(
+                    index: 2,
+                ),
+                Dup,
+                PushInt(4),
+                ListStore(
+                    index: 3,
+                ),
+                Dup,
+                PushInt(5),
+                ListStore(
+                    index: 4,
+                ),
                 Store(
-                    var_name: "b",
+                    var_name: "my_list",
                 ),
                 PushInt(0),
                 Store(
@@ -22,129 +42,36 @@
                 Load(
                     var_name: "i",
                 ),
-                Load(
-                    var_name: "n",
-                ),
+                PushInt(5),
                 Lt,
                 JmpZ(
-                    pos: 13,
-                ),
-                Load(
-                    var_name: "a",
-                ),
-                Store(
-                    var_name: "temp",
-                ),
-                Load(
-                    var_name: "b",
-                ),
-                Store(
-                    var_name: "a",
-                ),
-                Load(
-                    var_name: "temp",
-                ),
-                Load(
-                    var_name: "b",
-                ),
-                IAdd,
-                Store(
-                    var_name: "b",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "i",
-                ),
-                Jmp(
-                    pos: -16,
-                ),
-                Load(
-                    var_name: "a",
-                ),
-                Return,
-            ],
-        ),
-        (
-            name: "main",
-            position: 26,
-            body: [
-                PushInt(80),
-                CallFunction(
-                    name: "iterative_fib",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "fib_80",
-                ),
-                Load(
-                    var_name: "fib_80",
-                ),
-                PushInt(0),
-                Swap,
-                ISub,
-                CastTo(String),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                PushInt(1),
-                PushInt(0),
-                Swap,
-                ISub,
-                CastTo(String),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Halt,
-            ],
-        ),
-        (
-            name: "recursive_fib",
-            position: 42,
-            body: [
-                Store(
-                    var_name: "n",
-                ),
-                Load(
-                    var_name: "n",
-                ),
-                PushInt(1),
-                Lte,
-                JmpZ(
-                    pos: 3,
-                ),
-                Load(
-                    var_name: "n",
-                ),
-                Return,
-                Jmp(
                     pos: 11,
                 ),
                 Load(
-                    var_name: "n",
+                    var_name: "my_list",
                 ),
-                PushInt(1),
-                ISub,
-                CallFunction(
-                    name: "recursive_fib",
+                Load(
+                    var_name: "i",
+                ),
+                CastTo(UnsignedInteger),
+                ListLoad,
+                CastTo(String),
+                ExternCall(
+                    name: "println",
                     args: 1,
                 ),
                 Load(
-                    var_name: "n",
+                    var_name: "i",
                 ),
-                PushInt(2),
-                ISub,
-                CallFunction(
-                    name: "recursive_fib",
-                    args: 1,
-                ),
+                PushInt(1),
                 IAdd,
-                Return,
+                Store(
+                    var_name: "i",
+                ),
+                Jmp(
+                    pos: -14,
+                ),
+                Halt,
             ],
         ),
     ],
@@ -157,6 +84,7 @@
     ],
     global: (
         string_pool: [],
+        list_pool: [],
         function_pool: [],
     ),
 )

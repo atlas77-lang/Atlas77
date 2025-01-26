@@ -373,6 +373,31 @@ impl Atlas77VM<'_> {
                 self.stack.push(res)?;
                 self.pc += 1;
             }
+            Instruction::ListLoad => {
+                let index = self.stack.pop()?;
+                let list_ptr = self.stack.pop()?;
+                let list = self.object_map.get(list_ptr.as_object()).list();
+                let val = list[index.as_u64() as usize];
+                self.stack.push(val)?;
+                self.pc += 1;
+            }
+            Instruction::ListStore { index } => {
+                let val = self.stack.pop()?;
+                let list_ptr = self.stack.pop()?;
+                let list = self.object_map.get_mut(list_ptr.as_object()).list_mut();
+                list[index] = val;
+                self.pc += 1;
+            }
+            Instruction::NewList { size } => {
+                let list = vec![VMData::new_unit(); size];
+                let ptr = match self.object_map.put(Object::List(list)) {
+                    Ok(ptr) => ptr,
+                    Err(_) => return Err(RuntimeError::OutOfMemory),
+                };
+                //I should drop the tag system for objects
+                self.stack.push(VMData::new_object(280, ptr))?;
+                self.pc += 1;
+            }
             Instruction::ExternCall { name, .. } => {
                 let consts = HashMap::new();
                 let vm_state = runtime::vm_state::VMState::new(

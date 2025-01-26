@@ -17,7 +17,7 @@ const IO_ATLAS: &str = include_str!("../../../../../libraries/std/io.atlas");
 const MATH_ATLAS: &str = include_str!("../../../../../libraries/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../../../libraries/std/string.atlas");
 
-use crate::atlas_hir::expr::{HirCastExpr, HirStringLiteralExpr};
+use crate::atlas_hir::expr::{HirCastExpr, HirIndexingExpr, HirListLiteralExpr, HirStringLiteralExpr};
 use crate::atlas_hir::{
     arena::HirArena,
     error::{HirError, HirResult, UnsupportedExpr, UnsupportedStatement},
@@ -433,6 +433,17 @@ where
                 });
                 Ok(hir)
             }
+            AstExpr::Indexing(c) => {
+                let target = self.visit_expr(c.target)?;
+                let index = self.visit_expr(c.index)?;
+                let hir = HirExpr::Indexing(HirIndexingExpr {
+                    span: node.span(),
+                    target: Box::new(target.clone()),
+                    index: Box::new(index.clone()),
+                    ty: self.arena.types().get_uninitialized_ty(),
+                });
+                Ok(hir)
+            }
             AstExpr::Call(c) => {
                 let callee = self.visit_expr(c.callee)?;
                 let args = c
@@ -488,6 +499,18 @@ where
                             span: l.span(),
                             value: s.value,
                             ty: self.arena.types().get_str_ty(),
+                        })
+                    }
+                    AstLiteral::List(l) => {
+                        let elements = l
+                            .items
+                            .iter()
+                            .map(|e| self.visit_expr(e))
+                            .collect::<HirResult<Vec<_>>>()?;
+                        HirExpr::ListLiteral(HirListLiteralExpr {
+                            span: l.span,
+                            items: elements,
+                            ty: self.arena.types().get_uninitialized_ty(),
                         })
                     }
                     _ => {
@@ -604,6 +627,10 @@ where
             AstType::UnsignedInteger(_) => self.arena.types().get_uint64_ty(),
             AstType::Unit(_) => self.arena.types().get_unit_ty(),
             AstType::String(_) => self.arena.types().get_str_ty(),
+            AstType::List(l) => {
+                let ty = self.visit_ty(l.inner)?;
+                self.arena.types().get_list_ty(ty)
+            }
             _ => unimplemented!("visit_ty, {:?}", node),
         };
         Ok(ty)

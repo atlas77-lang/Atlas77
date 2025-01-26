@@ -52,6 +52,12 @@ impl HirTyId {
         Self(hasher.finish())
     }
 
+    pub fn compute_list_ty_id(ty: &HirTyId) -> Self {
+        let mut hasher = DefaultHasher::new();
+        (0x30, ty).hash(&mut hasher);
+        Self(hasher.finish())
+    }
+
     pub fn compute_uninitialized_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
         0x50.hash(&mut hasher);
@@ -74,6 +80,7 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
             HirTy::Boolean(_) => Self::compute_boolean_ty_id(),
             HirTy::Unit(_) => Self::compute_unit_ty_id(),
             HirTy::String(_) => Self::compute_str_ty_id(),
+            HirTy::List(ty) => HirTyId::compute_list_ty_id(&HirTyId::from(ty.ty)),
             HirTy::_Named(ty) => HirTyId::compute_name_ty_id(ty.name),
             HirTy::Uninitialized(_) => Self::compute_uninitialized_ty_id(),
             HirTy::_Function(f) => {
@@ -93,6 +100,7 @@ pub enum HirTy<'hir> {
     Unit(HirUnitTy),
     Boolean(HirBooleanTy),
     String(HirStringTy),
+    List(HirListTy<'hir>),
     _Named(HirNamedTy<'hir>),
     Uninitialized(HirUninitializedTy),
 
@@ -102,14 +110,15 @@ pub enum HirTy<'hir> {
 impl fmt::Display for HirTy<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            HirTy::Int64(_) => write!(f, "Int64"),
-            HirTy::Float64(_) => write!(f, "Float64"),
-            HirTy::UInt64(_) => write!(f, "UInt64"),
-            HirTy::Unit(_) => write!(f, "Unit"),
-            HirTy::Boolean(_) => write!(f, "Boolean"),
-            HirTy::String(_) => write!(f, "Str"),
+            HirTy::Int64(_) => write!(f, "int64"),
+            HirTy::Float64(_) => write!(f, "float64"),
+            HirTy::UInt64(_) => write!(f, "uint64"),
+            HirTy::Unit(_) => write!(f, "unit"),
+            HirTy::Boolean(_) => write!(f, "bool"),
+            HirTy::String(_) => write!(f, "str"),
+            HirTy::List(ty) => write!(f, "[{}]", ty),
             HirTy::_Named(ty) => write!(f, "{}", ty.name),
-            HirTy::Uninitialized(_) => write!(f, "Uninitialized"),
+            HirTy::Uninitialized(_) => write!(f, "uninitialized"),
             HirTy::_Function(func) => {
                 let params = func
                     .params
@@ -120,6 +129,16 @@ impl fmt::Display for HirTy<'_> {
                 write!(f, "({}) -> {}", params, func.ret_ty)
             }
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirListTy<'hir> {
+    pub ty: &'hir HirTy<'hir>,
+}
+impl fmt::Display for HirListTy<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.ty)
     }
 }
 

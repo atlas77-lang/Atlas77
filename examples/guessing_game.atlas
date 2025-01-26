@@ -1,7 +1,7 @@
 import "std/math"
 
 
-func main() {
+func main()  {
     let secret: int64 = random(1, 100);
     let guess = 0;
     while guess != secret {

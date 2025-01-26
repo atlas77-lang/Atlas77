@@ -20,7 +20,7 @@ use ast::{
 };
 
 use crate::atlas_frontend::lexer::{Literal, Token, TokenKind, TokenVec};
-use crate::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstNewObjExpr, AstStaticAccessExpr, AstVisibility};
+use crate::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstListLiteral, AstListType, AstNewObjExpr, AstStaticAccessExpr, AstVisibility};
 use arena::AstArena;
 
 pub(crate) struct Parser<'ast> {
@@ -572,6 +572,22 @@ impl<'ast> Parser<'ast> {
                 let node = AstExpr::NewObj(self.parse_new_obj()?);
                 node
             }
+            TokenKind::LBracket => {
+                let start = self.advance();
+                let mut elements = vec![];
+                while self.current().kind() != TokenKind::RBracket {
+                    elements.push(self.parse_expr()?);
+                    if self.current().kind() == TokenKind::Comma {
+                        let _ = self.advance();
+                    }
+                }
+                self.expect(TokenKind::RBracket)?;
+                let node = AstExpr::Literal(AstLiteral::List(AstListLiteral {
+                    span: start.span(),
+                    items: self.arena.alloc_vec(elements),
+                }));
+                node
+            }
             TokenKind::Literal(Literal::Identifier(_)) => {
                 let mut node = AstExpr::Identifier(self.parse_identifier()?);
 
@@ -951,6 +967,16 @@ impl<'ast> Parser<'ast> {
                 let node = AstType::Named(AstNamedType {
                     span: Span::union_span(start, self.current().span()),
                     name: self.arena.alloc(name),
+                });
+                Ok(node)
+            }
+            TokenKind::LBracket => {
+                let _ = self.advance();
+                let ty = self.parse_type()?;
+                self.expect(TokenKind::RBracket)?;
+                let node = AstType::List(AstListType {
+                    span: Span::union_span(start, self.current().span()),
+                    inner: self.arena.alloc(ty),
                 });
                 Ok(node)
             }

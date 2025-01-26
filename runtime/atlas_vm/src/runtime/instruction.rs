@@ -46,6 +46,20 @@ pub enum Instruction {
         var_name: String,
     },
 
+    /// Load a value from a list at the top of the stack
+    /// The top of the stack is the index
+    /// The value under the index is the list pointer
+    /// The value is pushed to the stack
+    ListLoad,
+    /// Store a value in a list at the top of the stack
+    /// The top of the stack is the list pointer
+    /// The value is popped from the stack
+    ListStore {
+        index: usize,
+    },
+    NewList {
+        size: usize,
+    },
     ListIndex(usize),
 
     CastTo(Type),
@@ -158,6 +172,7 @@ impl Program {
             entry_point: String::new(),
             global: ConstantPool {
                 string_pool: vec![],
+                list_pool: vec![],
                 function_pool: vec![],
             },
             libraries: vec![],
@@ -168,7 +183,19 @@ impl Program {
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct ConstantPool {
     pub string_pool: Vec<String>,
+    pub list_pool: Vec<Constant>,
     pub function_pool: Vec<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+//Temporary solution to the constant pool
+pub enum Constant {
+    String(String),
+    List(Vec<Constant>),
+    Integer(i64),
+    Float(f64),
+    UnsignedInteger(u64),
+    Bool(bool),
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]

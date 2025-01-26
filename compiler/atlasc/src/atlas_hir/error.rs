@@ -14,11 +14,21 @@ declare_error_type! {
         UnsupportedExpr(UnsupportedExpr),
         TryingToNegateUnsigned(TryingToNegateUnsignedError),
         TryingToMutateImmutableVariable(TryingToMutateImmutableVariableError),
+        EmptyListLiteral(EmptyListLiteralError),
     }
 }
 
 /// Handy type alias for all HIR-related errors.
 pub type HirResult<T> = Result<T, HirError>;
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::empty_list_literal))]
+#[error("empty list literals are not allowed")]
+pub struct EmptyListLiteralError {
+    pub span: Span,
+    #[source_code]
+    pub src: String,
+}
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(code(sema::trying_to_mutate_immutable))]

@@ -1,5 +1,11 @@
-func main() -> int64 {
+import "std/io"
+
+func main()  {
     let my_list: [int64] = [1, 2, 3, 4, 5];
-    print(my_list);
-    print(my_list[0]);
+
+    let i = 0;
+    while i < 5 {
+        println(my_list[i as uint64] as str);
+        i = i + 1;
+    }
 }
