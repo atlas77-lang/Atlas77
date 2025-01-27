@@ -1,7 +1,6 @@
-use atlas_core::prelude::{Span, Spanned};
-use serde::Serialize;
-
 use super::{expr::HirExpr, ty::HirTy};
+use crate::atlas_span::{Span, Spanned};
+use serde::Serialize;
 
 /// Most of the statements could actually be replaced with
 ///

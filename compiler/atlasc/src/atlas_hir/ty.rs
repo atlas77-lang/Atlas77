@@ -2,7 +2,7 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use atlas_core::prelude::Span;
+use crate::atlas_span::Span;
 use serde::Serialize;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Copy)]
@@ -142,6 +142,7 @@ impl fmt::Display for HirListTy<'_> {
     }
 }
 
+// all the types should hold a span
 #[derive(Debug, Clone, Serialize)]
 pub struct HirUninitializedTy {}
 

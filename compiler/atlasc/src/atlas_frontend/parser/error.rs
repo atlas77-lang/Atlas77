@@ -1,7 +1,7 @@
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
-use crate::atlas_frontend::lexer::Token;
+use crate::atlas_frontend::lexer::token::Token;
 use crate::declare_error_type;
 
 declare_error_type! {

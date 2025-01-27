@@ -1,7 +1,6 @@
-use atlas_core::prelude::Span;
-use serde::Serialize;
-
 use super::{signature::HirFunctionSignature, stmt::HirBlock};
+use crate::atlas_span::Span;
+use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct HirFunction<'hir> {

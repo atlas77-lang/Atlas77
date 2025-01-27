@@ -16,7 +16,6 @@ use crate::atlas_codegen::table::Table;
 use crate::atlas_hir;
 use crate::atlas_hir::expr::UnaryOp;
 use arena::CodeGenArena;
-use atlas_core::prelude::Spanned;
 use miette::{SourceOffset, SourceSpan};
 
 /// Result of codegen

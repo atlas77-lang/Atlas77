@@ -1,7 +1,6 @@
-use atlas_core::prelude::{Span, Spanned};
-use serde::Serialize;
-
 use super::ty::HirTy;
+use logos::Span;
+use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 //todo: Add arrays/struct & class init literal
@@ -21,22 +20,22 @@ pub enum HirExpr<'hir> {
     ListLiteral(HirListLiteralExpr<'hir>),
 }
 
-impl Spanned for HirExpr<'_> {
+impl HirExpr<'_> {
     fn span(&self) -> Span {
         match self {
-            HirExpr::Ident(expr) => expr.span,
-            HirExpr::IntegerLiteral(expr) => expr.span,
-            HirExpr::UnsignedIntegerLiteral(expr) => expr.span,
-            HirExpr::BooleanLiteral(expr) => expr.span,
-            HirExpr::FloatLiteral(expr) => expr.span,
-            HirExpr::Unary(expr) => expr.span,
-            HirExpr::Casting(expr) => expr.span,
-            HirExpr::Indexing(expr) => expr.span,
-            HirExpr::HirBinaryOp(expr) => expr.span,
-            HirExpr::Call(expr) => expr.span,
-            HirExpr::Assign(expr) => expr.span,
-            HirExpr::StringLiteral(expr) => expr.span,
-            HirExpr::ListLiteral(expr) => expr.span,
+            HirExpr::Ident(expr) => expr.span.clone(),
+            HirExpr::IntegerLiteral(expr) => expr.span.clone(),
+            HirExpr::UnsignedIntegerLiteral(expr) => expr.span.clone(),
+            HirExpr::BooleanLiteral(expr) => expr.span.clone(),
+            HirExpr::FloatLiteral(expr) => expr.span.clone(),
+            HirExpr::Unary(expr) => expr.span.clone(),
+            HirExpr::Casting(expr) => expr.span.clone(),
+            HirExpr::Indexing(expr) => expr.span.clone(),
+            HirExpr::HirBinaryOp(expr) => expr.span.clone(),
+            HirExpr::Call(expr) => expr.span.clone(),
+            HirExpr::Assign(expr) => expr.span.clone(),
+            HirExpr::StringLiteral(expr) => expr.span.clone(),
+            HirExpr::ListLiteral(expr) => expr.span.clone(),
         }
     }
 }

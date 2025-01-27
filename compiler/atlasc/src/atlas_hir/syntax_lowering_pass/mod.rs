@@ -1,4 +1,3 @@
-use atlas_core::prelude::{Span, Spanned};
 use miette::{SourceOffset, SourceSpan};
 
 use crate::atlas_frontend::{
@@ -32,6 +31,7 @@ use crate::atlas_hir::{
     ty::HirTy,
     HirImport, HirModule, HirModuleBody,
 };
+use crate::atlas_span::{Span, Spanned};
 
 pub struct AstSyntaxLoweringPass<'ast, 'hir> {
     arena: &'hir HirArena<'hir>,

@@ -15,7 +15,7 @@ use super::{
     HirFunction, HirModule, HirModuleSignature,
 };
 use crate::atlas_hir::error::EmptyListLiteralError;
-use atlas_core::prelude::{Span, Spanned};
+use crate::atlas_span::{Span, Spanned};
 use miette::{SourceOffset, SourceSpan};
 use std::collections::HashMap;
 
@@ -181,16 +181,16 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", actual_ret_ty),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(r.value.start()),
-                            r.value.end() - r.value.start(),
+                            SourceOffset::from(r.value.start() as usize),
+                            (r.value.end() - r.value.start()) as usize,
                         ),
                         expected_type: format!("{}", expected_ret_ty),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(
-                                func_ret_from.return_ty_span.unwrap_or(r.span).start(),
+                                func_ret_from.return_ty_span.unwrap_or(r.span).start() as usize,
                             ),
-                            func_ret_from.return_ty_span.unwrap_or(r.span).end()
-                                - func_ret_from.return_ty_span.unwrap_or(r.span).start(),
+                            (func_ret_from.return_ty_span.unwrap_or(r.span).end()
+                                - func_ret_from.return_ty_span.unwrap_or(r.span).start()) as usize,
                         ),
                         src: self.src.clone(),
                     }));
@@ -204,8 +204,8 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", cond_ty),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(w.condition.start()),
-                            w.condition.end() - w.condition.start(),
+                            SourceOffset::from(w.condition.start() as usize),
+                            (w.condition.end() - w.condition.start()) as usize,
                         ),
                         expected_type: format!("{}", self.arena.types().get_boolean_ty()),
                         expected_loc: SourceSpan::new(
