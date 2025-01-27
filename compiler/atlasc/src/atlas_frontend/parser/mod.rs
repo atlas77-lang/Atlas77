@@ -90,10 +90,10 @@ impl<'ast> Parser<'ast> {
 
     pub fn parse(&mut self) -> ParseResult<AstProgram<'ast>> {
         let mut items: Vec<AstItem> = Vec::new();
-        let _ = self.advance(); // Skip the first token (SoI)
         while self.current().kind() != TokenKind::EoI {
             items.push(self.parse_item()?);
         }
+
         let node = AstProgram {
             items: self.arena.alloc_vec(items),
         };
@@ -369,7 +369,7 @@ impl<'ast> Parser<'ast> {
 
         let value = self.parse_binary()?;
         let node = AstConst {
-            span: Span::union_span(&start, value.span()),
+            span: Span::union_span(&start, &value.span()),
             name: self.arena.alloc(name),
             ty: Some(self.arena.alloc(ty)),
             value: self.arena.alloc(value),
@@ -985,7 +985,7 @@ impl<'ast> Parser<'ast> {
                     token.kind(),
                 ]),
                 span: SourceSpan::new(
-                    SourceOffset::from(&start.start),
+                    SourceOffset::from(start.start),
                     self.current().end() - &start.start,
                 ),
                 src: self.src.clone(),

@@ -1,5 +1,5 @@
 use super::{signature::HirFunctionSignature, stmt::HirBlock};
-use crate::atlas_span::Span;
+use logos::Span;
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]

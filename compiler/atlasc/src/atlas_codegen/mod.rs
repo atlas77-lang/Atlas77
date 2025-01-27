@@ -172,8 +172,8 @@ where
                 return Err(atlas_hir::error::HirError::UnsupportedStatement(
                     UnsupportedStatement {
                         span: SourceSpan::new(
-                            SourceOffset::from(stmt.span().start()),
-                            stmt.span().end() - stmt.span().start(),
+                            SourceOffset::from(stmt.span().start),
+                            stmt.span().end - stmt.span().start,
                         ),
                         stmt: format!("{:?}", stmt),
                         src: src.clone(),
@@ -204,8 +204,8 @@ where
                         return Err(atlas_hir::error::HirError::UnsupportedExpr(
                             UnsupportedExpr {
                                 span: SourceSpan::new(
-                                    SourceOffset::from(expr.span().start()),
-                                    expr.span().end() - expr.span().start(),
+                                    SourceOffset::from(expr.span().start),
+                                    expr.span().end - expr.span().start,
                                 ),
                                 expr: format!("{:?}", expr),
                                 src: src.clone(),
@@ -322,8 +322,8 @@ where
                                     return Err(atlas_hir::error::HirError::UnsupportedExpr(
                                         UnsupportedExpr {
                                             span: SourceSpan::new(
-                                                SourceOffset::from(expr.span().start()),
-                                                expr.span().end() - expr.span().start(),
+                                                SourceOffset::from(expr.span().start),
+                                                expr.span().end - expr.span().start,
                                             ),
                                             expr: format!("Can't negate: {:?}", expr),
                                             src,
@@ -340,8 +340,8 @@ where
                                 return Err(atlas_hir::error::HirError::UnsupportedExpr(
                                     UnsupportedExpr {
                                         span: SourceSpan::new(
-                                            SourceOffset::from(expr.span().start()),
-                                            expr.span().end() - expr.span().start(),
+                                            SourceOffset::from(expr.span().start),
+                                            expr.span().end - expr.span().start,
                                         ),
                                         expr: format!("Can't negate: {:?}", expr),
                                         src,
@@ -374,8 +374,8 @@ where
                         return Err(atlas_hir::error::HirError::UnsupportedExpr(
                             UnsupportedExpr {
                                 span: SourceSpan::new(
-                                    SourceOffset::from(expr.span().start()),
-                                    expr.span().end() - expr.span().start(),
+                                    SourceOffset::from(expr.span().start),
+                                    expr.span().end - expr.span().start,
                                 ),
                                 expr: format!("Can't cast: {:?}", expr),
                                 src,
@@ -426,8 +426,8 @@ where
                         return Err(atlas_hir::error::HirError::UnsupportedExpr(
                             UnsupportedExpr {
                                 span: SourceSpan::new(
-                                    SourceOffset::from(expr.span().start()),
-                                    expr.span().end() - expr.span().start(),
+                                    SourceOffset::from(expr.span().start),
+                                    expr.span().end - expr.span().start,
                                 ),
                                 expr: format!("Can't call from: {:?}", expr),
                                 src: src.clone(),

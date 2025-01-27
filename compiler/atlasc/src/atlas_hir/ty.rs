@@ -1,9 +1,8 @@
+use logos::Span;
+use serde::Serialize;
 use std::fmt;
 use std::fmt::Formatter;
 use std::hash::{DefaultHasher, Hash, Hasher};
-
-use crate::atlas_span::Span;
-use serde::Serialize;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Copy)]
 pub struct HirTyId(u64);
@@ -173,5 +172,6 @@ pub struct HirFunctionTy<'hir> {
 #[derive(Debug, Clone, Serialize)]
 pub struct HirNamedTy<'hir> {
     pub name: &'hir str,
+    /// Span of the name declaration.
     pub span: Span,
 }

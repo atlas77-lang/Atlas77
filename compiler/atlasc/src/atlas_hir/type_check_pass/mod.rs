@@ -15,7 +15,7 @@ use super::{
     HirFunction, HirModule, HirModuleSignature,
 };
 use crate::atlas_hir::error::EmptyListLiteralError;
-use crate::atlas_span::{Span, Spanned};
+use logos::Span;
 use miette::{SourceOffset, SourceSpan};
 use std::collections::HashMap;
 
@@ -150,11 +150,11 @@ impl<'hir> TypeChecker<'hir> {
                     param.name,
                     ContextVariable {
                         _name: param.name,
-                        name_span: param.span,
+                        name_span: param.span.clone(),
                         ty: param.ty,
-                        ty_span: param.ty_span,
+                        ty_span: param.ty_span.clone(),
                         is_mut: false,
-                        span: param.span,
+                        span: param.span.clone(),
                     },
                 );
         }
@@ -181,16 +181,16 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", actual_ret_ty),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(r.value.start() as usize),
-                            (r.value.end() - r.value.start()) as usize,
+                            SourceOffset::from(r.value.span().start),
+                            r.value.span().end - r.value.span().start,
                         ),
                         expected_type: format!("{}", expected_ret_ty),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(
-                                func_ret_from.return_ty_span.unwrap_or(r.span).start() as usize,
+                                func_ret_from.return_ty_span.clone().unwrap_or(r.span.clone()).start,
                             ),
-                            (func_ret_from.return_ty_span.unwrap_or(r.span).end()
-                                - func_ret_from.return_ty_span.unwrap_or(r.span).start()) as usize,
+                            func_ret_from.return_ty_span.clone().unwrap_or(r.span.clone()).end
+                                - func_ret_from.return_ty_span.clone().unwrap_or(r.span.clone()).start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -204,13 +204,13 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", cond_ty),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(w.condition.start() as usize),
-                            (w.condition.end() - w.condition.start()) as usize,
+                            SourceOffset::from(w.condition.span().start),
+                            (w.condition.span().end - w.condition.span().start) as usize,
                         ),
                         expected_type: format!("{}", self.arena.types().get_boolean_ty()),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(w.condition.start()),
-                            w.condition.end() - w.condition.start(),
+                            SourceOffset::from(w.condition.span().start),
+                            w.condition.span().end - w.condition.span().start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -240,13 +240,13 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", cond_ty),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(i.condition.start()),
-                            i.condition.end() - i.condition.start(),
+                            SourceOffset::from(i.condition.span().start),
+                            i.condition.span().end - i.condition.span().start,
                         ),
                         expected_type: format!("{}", self.arena.types().get_boolean_ty()),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(i.condition.start()),
-                            i.condition.end() - i.condition.start(),
+                            SourceOffset::from(i.condition.span().start),
+                            i.condition.span().end - i.condition.span().start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -300,11 +300,11 @@ impl<'hir> TypeChecker<'hir> {
                         c.name,
                         ContextVariable {
                             _name: c.name,
-                            name_span: c.name_span,
+                            name_span: c.name_span.clone(),
                             ty: const_ty,
-                            ty_span: c.ty_span.unwrap_or(c.name_span),
+                            ty_span: c.ty_span.clone().unwrap_or(c.name_span.clone()),
                             is_mut: false,
-                            span: c.span,
+                            span: c.span.clone(),
                         },
                     );
 
@@ -312,13 +312,13 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", expr_ty),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(c.value.start()),
-                            c.value.end() - c.value.start(),
+                            SourceOffset::from(c.value.span().start),
+                            c.value.span().end - c.value.span().start,
                         ),
                         expected_type: format!("{}", const_ty),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(c.span.start()),
-                            c.name_span.end() - c.span.start(),
+                            SourceOffset::from(c.span.start),
+                            c.name_span.end - c.span.start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -339,24 +339,24 @@ impl<'hir> TypeChecker<'hir> {
                         l.name,
                         ContextVariable {
                             _name: l.name,
-                            name_span: l.name_span,
+                            name_span: l.name_span.clone(),
                             ty: var_ty,
-                            ty_span: l.ty_span.unwrap_or(l.name_span),
+                            ty_span: l.ty_span.clone().unwrap_or(l.name_span.clone()),
                             is_mut: true,
-                            span: l.span,
+                            span: l.span.clone(),
                         },
                     );
                 if HirTyId::from(expr_ty) != ty {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", expr_ty),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(l.value.start()),
-                            l.value.end() - l.value.start(),
+                            SourceOffset::from(l.value.span().start),
+                            l.value.span().end - l.value.span().start,
                         ),
                         expected_type: format!("{}", var_ty),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(l.name_span.start()),
-                            l.name_span.end() - l.name_span.start(),
+                            SourceOffset::from(l.name_span.start),
+                            l.name_span.end - l.name_span.start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -376,11 +376,11 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::BooleanLiteral(_) => Ok(self.arena.types().get_boolean_ty()),
             HirExpr::StringLiteral(_) => Ok(self.arena.types().get_str_ty()),
             HirExpr::ListLiteral(l) => {
-                if l.items.len() == 0 {
+                if l.items.is_empty() {
                     return Err(HirError::EmptyListLiteral(EmptyListLiteralError {
                         span: SourceSpan::new(
-                            SourceOffset::from(l.span.start()),
-                            l.span.end() - l.span.start(),
+                            SourceOffset::from(l.span.start),
+                            l.span.end - l.span.start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -392,13 +392,13 @@ impl<'hir> TypeChecker<'hir> {
                         return Err(HirError::TypeMismatch(TypeMismatchError {
                             actual_type: format!("{}", e_ty),
                             actual_loc: SourceSpan::new(
-                                SourceOffset::from(e.start()),
-                                e.end() - e.start(),
+                                SourceOffset::from(e.span().start),
+                                e.span().end - e.span().start,
                             ),
                             expected_type: format!("{}", ty),
                             expected_loc: SourceSpan::new(
-                                SourceOffset::from(l.span.start()),
-                                l.span.end() - l.span.start(),
+                                SourceOffset::from(l.span.start),
+                                l.span.end - l.span.start,
                             ),
                             src: self.src.clone(),
                         }));
@@ -414,8 +414,8 @@ impl<'hir> TypeChecker<'hir> {
                             return Err(HirError::TryingToNegateUnsigned(
                                 TryingToNegateUnsignedError {
                                     span: SourceSpan::new(
-                                        SourceOffset::from(u.expr.start()),
-                                        u.expr.end() - u.expr.start(),
+                                        SourceOffset::from(u.expr.span().start),
+                                        u.expr.span().end - u.expr.span().start,
                                     ),
                                     src: self.src.clone(),
                                 },
@@ -436,13 +436,13 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", expr_ty),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(c.expr.start()),
-                            c.expr.end() - c.expr.start(),
+                            SourceOffset::from(c.expr.span().start),
+                            c.expr.span().end - c.expr.span().start,
                         ),
                         expected_type: "int64, float64, uint64, Bool or str".to_string(),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(c.expr.start()),
-                            c.expr.end() - c.expr.start(),
+                            SourceOffset::from(c.expr.span().start),
+                            c.expr.span().end - c.expr.span().start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -458,13 +458,13 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", index),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(i.index.start()),
-                            i.index.end() - i.index.start(),
+                            SourceOffset::from(i.index.span().start),
+                            i.index.span().end - i.index.span().start,
                         ),
                         expected_type: format!("{}", self.arena.types().get_uint64_ty()),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(i.index.start()),
-                            i.index.end() - i.index.start(),
+                            SourceOffset::from(i.index.span().start),
+                            i.index.span().end - i.index.span().start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -485,13 +485,13 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", lhs),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(b.lhs.start()),
-                            b.lhs.end() - b.lhs.start(),
+                            SourceOffset::from(b.lhs.span().start),
+                            b.lhs.span().end - b.lhs.span().start,
                         ),
                         expected_type: format!("{}", rhs),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(b.rhs.start()),
-                            b.rhs.end() - b.rhs.start(),
+                            SourceOffset::from(b.rhs.span().start),
+                            b.rhs.span().end - b.rhs.span().start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -525,8 +525,8 @@ impl<'hir> TypeChecker<'hir> {
                         return Err(HirError::UnknownType(UnknownTypeError {
                             name: name.to_string(),
                             span: SourceSpan::new(
-                                SourceOffset::from(f.span.start()),
-                                f.span.end() - f.span.start(),
+                                SourceOffset::from(f.span.start),
+                                f.span.end - f.span.start,
                             ),
                             src: self.src.clone(),
                         }))
@@ -537,8 +537,8 @@ impl<'hir> TypeChecker<'hir> {
                     return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
                         expected_ty: format!("{:?}", func),
                         span: SourceSpan::new(
-                            SourceOffset::from(f.span.start()),
-                            f.span.end() - f.span.start(),
+                            SourceOffset::from(f.span.start),
+                            f.span.end - f.span.start,
                         ),
                         src: self.src.clone(),
                     }));
@@ -550,13 +550,13 @@ impl<'hir> TypeChecker<'hir> {
                         return Err(HirError::TypeMismatch(TypeMismatchError {
                             actual_type: format!("{}", arg_ty),
                             actual_loc: SourceSpan::new(
-                                SourceOffset::from(arg.start()),
-                                arg.end() - arg.start(),
+                                SourceOffset::from(arg.span().start),
+                                arg.span().end - arg.span().start,
                             ),
                             expected_type: format!("{}", param.ty),
                             expected_loc: SourceSpan::new(
-                                SourceOffset::from(param.span.start()),
-                                param.span.end() - param.span.start(),
+                                SourceOffset::from(param.span.start),
+                                param.span.end - param.span.start,
                             ),
                             src: self.src.clone(),
                         }));
@@ -587,13 +587,13 @@ impl<'hir> TypeChecker<'hir> {
                                     return Err(HirError::TryingToMutateImmutableVariable(
                                         TryingToMutateImmutableVariableError {
                                             const_loc: SourceSpan::new(
-                                                SourceOffset::from(ctx_var.span.start()),
-                                                ctx_var.name_span.end() - ctx_var.span.start(),
+                                                SourceOffset::from(ctx_var.span.start),
+                                                ctx_var.name_span.end - ctx_var.span.start,
                                             ),
                                             var_name: i.name.to_string(),
                                             span: SourceSpan::new(
-                                                SourceOffset::from(a.span.start()),
-                                                a.span.end() - a.span.start(),
+                                                SourceOffset::from(a.span.start),
+                                                a.span.end - a.span.start,
                                             ),
                                             src: self.src.clone(),
                                         },
@@ -605,8 +605,8 @@ impl<'hir> TypeChecker<'hir> {
                                 return Err(HirError::UnknownType(UnknownTypeError {
                                     name: i.name.to_string(),
                                     span: SourceSpan::new(
-                                        SourceOffset::from(i.span.start()),
-                                        i.span.end() - i.span.start(),
+                                        SourceOffset::from(i.span.start),
+                                        i.span.end - i.span.start,
                                     ),
                                     src: self.src.clone(),
                                 }))
@@ -622,13 +622,13 @@ impl<'hir> TypeChecker<'hir> {
                     Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", rhs),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(a.lhs.start()),
-                            a.rhs.end() - a.lhs.start(),
+                            SourceOffset::from(a.lhs.span().start),
+                            a.rhs.span().end - a.lhs.span().start,
                         ),
                         expected_type: format!("{}", lhs.ty),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(lhs.name_span.start()),
-                            lhs.ty_span.end() - lhs.name_span.start(),
+                            SourceOffset::from(lhs.name_span.start),
+                            lhs.ty_span.end - lhs.name_span.start,
                         ),
                         src: self.src.clone(),
                     }))
@@ -655,8 +655,8 @@ impl<'hir> TypeChecker<'hir> {
                     Err(HirError::UnknownType(UnknownTypeError {
                         name: i.name.to_string(),
                         span: SourceSpan::new(
-                            SourceOffset::from(i.span.start()),
-                            i.span.end() - i.span.start(),
+                            SourceOffset::from(i.span.start),
+                            i.span.end - i.span.start,
                         ),
                         src: self.src.clone(),
                     }))

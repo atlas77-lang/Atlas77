@@ -387,7 +387,7 @@ pub enum AstLiteral<'ast> {
 }
 
 impl AstLiteral<'_> {
-    fn span(&self) -> Span {
+    pub(crate) fn span(&self) -> Span {
         match self {
             AstLiteral::Integer(l) => l.span.clone(),
             AstLiteral::UnsignedInteger(l) => l.span.clone(),

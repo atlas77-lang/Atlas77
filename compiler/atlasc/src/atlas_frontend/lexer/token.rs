@@ -62,22 +62,24 @@ impl From<ParseBoolError> for LexingError {
 #[derive(Logos, Debug, Clone, PartialEq)]
 #[logos(error = LexingError)]
 //Skip whitespace regex
-#[logos(skip r"[ \t\n\f]+")]
+#[logos(skip r"[ \t\n\f\r]+")]
 pub enum TokenKind {
-    #[regex("\"[^\"]*\"", |lex| lex.slice().to_string())]
+    //Need to also drop the quotes
+    #[regex("\"[^\"]*\"", |lex| lex.slice()[1..lex.slice().len()-1].to_string())]
     StringLiteral(String),
     #[regex("[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
     Identifier(String),
-    #[regex("[0-9]+_i64?", |lex| lex.slice().parse())]
+    #[regex("[0-9]+", |lex| lex.slice().parse())]
     Integer(i64),
-    #[regex("[0-9]+\\.[0-9]+_f64?", |lex| lex.slice().parse())]
+    #[regex("[0-9]+\\.[0-9]+", |lex| lex.slice().parse())]
     Float(f64),
-    #[regex("[0-9]+_u64", |lex| lex.slice().parse())]
+    //#[regex("[0-9]+", |lex| lex.slice().parse())]
     UnsignedInteger(u64),
     #[regex("true|false", |lex| lex.slice().parse())]
     Bool(bool),
     #[regex("'.'", |lex| lex.slice().chars().nth(1).unwrap())]
     Char(char),
+    #[regex(r"//.*", |lex| lex.slice().to_string())]
     Comments(String),
     #[token("(")]
     LParen,

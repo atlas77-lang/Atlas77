@@ -1,39 +1,19 @@
 (
     labels: [
         (
-            name: "main",
+            name: "iterative_fib",
             position: 0,
             body: [
-                NewList(
-                    size: 5,
-                ),
-                Dup,
-                PushInt(1),
-                ListStore(
-                    index: 0,
-                ),
-                Dup,
-                PushInt(2),
-                ListStore(
-                    index: 1,
-                ),
-                Dup,
-                PushInt(3),
-                ListStore(
-                    index: 2,
-                ),
-                Dup,
-                PushInt(4),
-                ListStore(
-                    index: 3,
-                ),
-                Dup,
-                PushInt(5),
-                ListStore(
-                    index: 4,
-                ),
                 Store(
-                    var_name: "my_list",
+                    var_name: "n",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "a",
+                ),
+                PushInt(1),
+                Store(
+                    var_name: "b",
                 ),
                 PushInt(0),
                 Store(
@@ -42,23 +22,34 @@
                 Load(
                     var_name: "i",
                 ),
-                PushInt(5),
+                Load(
+                    var_name: "n",
+                ),
                 Lt,
                 JmpZ(
-                    pos: 11,
+                    pos: 13,
                 ),
                 Load(
-                    var_name: "my_list",
+                    var_name: "a",
+                ),
+                Store(
+                    var_name: "temp",
                 ),
                 Load(
-                    var_name: "i",
+                    var_name: "b",
                 ),
-                CastTo(UnsignedInteger),
-                ListLoad,
-                CastTo(String),
-                ExternCall(
-                    name: "println",
-                    args: 1,
+                Store(
+                    var_name: "a",
+                ),
+                Load(
+                    var_name: "temp",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                IAdd,
+                Store(
+                    var_name: "b",
                 ),
                 Load(
                     var_name: "i",
@@ -69,106 +60,90 @@
                     var_name: "i",
                 ),
                 Jmp(
-                    pos: -14,
+                    pos: -16,
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "main",
+            position: 26,
+            body: [
+                PushInt(80),
+                CallFunction(
+                    name: "iterative_fib",
+                    args: 1,
+                ),
+                Store(
+                    var_name: "fib_80",
+                ),
+                Load(
+                    var_name: "fib_80",
+                ),
+                PushInt(0),
+                Swap,
+                ISub,
+                CastTo(String),
+                ExternCall(
+                    name: "println",
+                    args: 1,
+                ),
+                PushInt(1),
+                PushInt(0),
+                Swap,
+                ISub,
+                CastTo(String),
+                ExternCall(
+                    name: "println",
+                    args: 1,
                 ),
                 Halt,
             ],
         ),
         (
-            name: "test_ret_list",
-            position: 35,
+            name: "recursive_fib",
+            position: 42,
             body: [
-                NewList(
-                    size: 4,
+                Store(
+                    var_name: "n",
                 ),
-                Dup,
-                NewList(
-                    size: 1,
+                Load(
+                    var_name: "n",
                 ),
-                Dup,
-                NewList(
-                    size: 1,
+                PushInt(1),
+                Lte,
+                JmpZ(
+                    pos: 3,
                 ),
-                Dup,
-                PushFloat(1.0),
-                ListStore(
-                    index: 0,
+                Load(
+                    var_name: "n",
                 ),
-                ListStore(
-                    index: 0,
+                Return,
+                Jmp(
+                    pos: 11,
                 ),
-                ListStore(
-                    index: 0,
+                Load(
+                    var_name: "n",
                 ),
-                Dup,
-                NewList(
-                    size: 1,
+                PushInt(1),
+                ISub,
+                CallFunction(
+                    name: "recursive_fib",
+                    args: 1,
                 ),
-                Dup,
-                NewList(
-                    size: 1,
+                Load(
+                    var_name: "n",
                 ),
-                Dup,
-                PushFloat(2.0),
-                ListStore(
-                    index: 0,
+                PushInt(2),
+                ISub,
+                CallFunction(
+                    name: "recursive_fib",
+                    args: 1,
                 ),
-                ListStore(
-                    index: 0,
-                ),
-                ListStore(
-                    index: 1,
-                ),
-                Dup,
-                NewList(
-                    size: 2,
-                ),
-                Dup,
-                NewList(
-                    size: 1,
-                ),
-                Dup,
-                PushFloat(3.0),
-                ListStore(
-                    index: 0,
-                ),
-                ListStore(
-                    index: 0,
-                ),
-                Dup,
-                NewList(
-                    size: 1,
-                ),
-                Dup,
-                PushFloat(4.0),
-                ListStore(
-                    index: 0,
-                ),
-                ListStore(
-                    index: 1,
-                ),
-                ListStore(
-                    index: 2,
-                ),
-                Dup,
-                NewList(
-                    size: 1,
-                ),
-                Dup,
-                NewList(
-                    size: 1,
-                ),
-                Dup,
-                PushFloat(5.0),
-                ListStore(
-                    index: 0,
-                ),
-                ListStore(
-                    index: 0,
-                ),
-                ListStore(
-                    index: 3,
-                ),
+                IAdd,
                 Return,
             ],
         ),

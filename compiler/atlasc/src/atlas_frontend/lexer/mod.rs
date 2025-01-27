@@ -18,13 +18,13 @@ impl<'lex> AtlasLexer<'lex> {
     }
     pub fn tokenize(&mut self) -> Result<Vec<Token>, LexingError> {
         let lex = TokenKind::lexer(&self.source);
-        let res: Vec<Result<Token, LexingError>> = lex.spanned().map(|(kind, span)| {
-            println!("{:?} {:?}", kind, span);
+        let mut res: Vec<Result<Token, LexingError>> = lex.spanned().map(|(kind, span)| {
             match kind {
                 Ok(kind) => Ok(Token::new(span, kind)),
                 Err(e) => Err(e),
             }
         }).collect::<Vec<_>>();
+        res.push(Ok(Token::new(Span::default(), TokenKind::EoI)));
         res.into_iter().collect::<Result<Vec<_>, LexingError>>()
     }
 }

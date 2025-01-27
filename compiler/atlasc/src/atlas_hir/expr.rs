@@ -21,7 +21,7 @@ pub enum HirExpr<'hir> {
 }
 
 impl HirExpr<'_> {
-    fn span(&self) -> Span {
+    pub(crate) fn span(&self) -> Span {
         match self {
             HirExpr::Ident(expr) => expr.span.clone(),
             HirExpr::IntegerLiteral(expr) => expr.span.clone(),

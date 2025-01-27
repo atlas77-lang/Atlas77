@@ -1,8 +1,7 @@
-use std::collections::BTreeMap;
-
 use super::ty::{HirTy, HirUnitTy};
-use crate::atlas_span::Span;
+use logos::Span;
 use serde::Serialize;
+use std::collections::BTreeMap;
 
 /// An HirModuleSignature represents the API of a module.
 ///

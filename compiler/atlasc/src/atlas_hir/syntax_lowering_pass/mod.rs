@@ -31,7 +31,6 @@ use crate::atlas_hir::{
     ty::HirTy,
     HirImport, HirModule, HirModuleBody,
 };
-use crate::atlas_span::{Span, Spanned};
 
 pub struct AstSyntaxLoweringPass<'ast, 'hir> {
     arena: &'hir HirArena<'hir>,
@@ -109,21 +108,21 @@ where
                     let hir_arg_name = self.arena.names().get(arg_name.name);
 
                     params.push(self.arena.intern(HirFunctionParameterSignature {
-                        span: arg_name.span,
+                        span: arg_name.span.clone(),
                         name: hir_arg_name,
-                        name_span: arg_name.span,
+                        name_span: arg_name.span.clone(),
                         ty: hir_arg_ty,
                         ty_span: arg_ty.span(),
                     }));
 
                     type_params.push(self.arena.intern(HirTypeParameterItemSignature {
-                        span: arg_name.span,
+                        span: arg_name.span.clone(),
                         name: hir_arg_name,
-                        name_span: arg_name.span,
+                        name_span: arg_name.span.clone(),
                     }));
                 }
                 let hir = self.arena.intern(HirFunctionSignature {
-                    span: e.span,
+                    span: e.span.clone(),
                     params,
                     type_params,
                     return_ty: ty,
@@ -157,9 +156,9 @@ where
                 let mut lower = hir.lower()?;
 
                 let hir_import: &'hir HirImport<'_> = self.arena.intern(HirImport {
-                    span: node.span,
+                    span: node.span.clone(),
                     path: node.path,
-                    path_span: node.span,
+                    path_span: node.span.clone(),
                     alias: None,
                     alias_span: None,
                 });
@@ -234,9 +233,9 @@ where
                 let mut lower = hir.lower()?;
 
                 let hir_import: &'hir HirImport<'_> = self.arena.intern(HirImport {
-                    span: node.span,
+                    span: node.span.clone(),
                     path: node.path,
-                    path_span: node.span,
+                    path_span: node.span.clone(),
                     alias: None,
                     alias_span: None,
                 });
@@ -263,8 +262,8 @@ where
             }
             _ => Err(HirError::UnsupportedStatement(UnsupportedStatement {
                 span: SourceSpan::new(
-                    SourceOffset::from(node.span.start()),
-                    node.span.end() - node.span.start(),
+                    SourceOffset::from(node.span.start),
+                    node.span.end - node.span.start,
                 ),
                 stmt: format!("{:?}", node),
                 src: self.src.clone(),
@@ -280,7 +279,7 @@ where
             .collect::<HirResult<Vec<_>>>()?;
         Ok(HirBlock {
             statements,
-            span: node.span,
+            span: node.span.clone(),
         })
     }
 
@@ -304,7 +303,7 @@ where
                 let hir = HirStatement::Const(HirLetStmt {
                     span: node.span(),
                     name,
-                    name_span: c.name.span,
+                    name_span: c.name.span.clone(),
                     ty,
                     ty_span: ty.map(|_| c.ty.unwrap().span()),
                     value,
@@ -319,7 +318,7 @@ where
                 let hir = HirStatement::Let(HirLetStmt {
                     span: node.span(),
                     name,
-                    name_span: l.name.span,
+                    name_span: l.name.span.clone(),
                     ty,
                     ty_span: ty.map(|_| l.ty.unwrap().span()),
                     value,
@@ -344,11 +343,11 @@ where
                 Ok(hir)
             }
             AstStatement::Break(b) => {
-                let hir = HirStatement::Break(b.span);
+                let hir = HirStatement::Break(b.span.clone());
                 Ok(hir)
             }
             AstStatement::Continue(c) => {
-                let hir = HirStatement::Continue(c.span);
+                let hir = HirStatement::Continue(c.span.clone());
                 Ok(hir)
             }
             //The parser really need a bit of work
@@ -372,8 +371,8 @@ where
             _ => Err(super::error::HirError::UnsupportedStatement(
                 UnsupportedStatement {
                     span: SourceSpan::new(
-                        SourceOffset::from(node.span().start()),
-                        node.span().end() - node.span().start(),
+                        SourceOffset::from(node.span().start),
+                        node.span().end - node.span().start,
                     ),
                     stmt: format!("{:?}", node),
                     src: self.src.clone(),
@@ -402,7 +401,7 @@ where
                 let hir = HirExpr::HirBinaryOp(HirBinaryOpExpr {
                     span: node.span(),
                     op,
-                    op_span: Span::empty(),
+                    op_span: 0..0,
                     lhs: Box::new(lhs.clone()),
                     rhs: Box::new(rhs.clone()),
                     ty: self.arena.types().get_uninitialized_ty(),
@@ -464,7 +463,7 @@ where
             AstExpr::Identifier(i) => {
                 let hir = HirExpr::Ident(HirIdentExpr {
                     name: self.arena.names().get(i.name),
-                    span: i.span,
+                    span: i.span.clone(),
                     ty: self.arena.types().get_uninitialized_ty(),
                 });
                 Ok(hir)
@@ -508,7 +507,7 @@ where
                             .map(|e| self.visit_expr(e))
                             .collect::<HirResult<Vec<_>>>()?;
                         HirExpr::ListLiteral(HirListLiteralExpr {
-                            span: l.span,
+                            span: l.span.clone(),
                             items: elements,
                             ty: self.arena.types().get_uninitialized_ty(),
                         })
@@ -516,8 +515,8 @@ where
                     _ => {
                         return Err(HirError::UnsupportedExpr(UnsupportedExpr {
                             span: SourceSpan::new(
-                                SourceOffset::from(node.span().start()),
-                                node.span().end() - node.span().start(),
+                                SourceOffset::from(node.span().start),
+                                node.span().end - node.span().start,
                             ),
                             expr: format!("{:?}", node),
                             src: self.src.clone(),
@@ -528,8 +527,8 @@ where
             }
             _ => Err(HirError::UnsupportedExpr(UnsupportedExpr {
                 span: SourceSpan::new(
-                    SourceOffset::from(node.span().start()),
-                    node.span().end() - node.span().start(),
+                    SourceOffset::from(node.span().start),
+                    node.span().end - node.span().start,
                 ),
                 expr: format!("{:?}", node),
                 src: self.src.clone(),
@@ -571,7 +570,7 @@ where
 
         let body = self.visit_block(node.body)?;
         let signature = self.arena.intern(HirFunctionSignature {
-            span: node.span,
+            span: node.span.clone(),
             params: parameters?,
             type_params: type_parameters?,
             return_ty: ret_type,
@@ -579,9 +578,9 @@ where
             is_external: false,
         });
         let fun = HirFunction {
-            span: node.span,
+            span: node.span.clone(),
             name: self.arena.names().get(node.name.name),
-            name_span: node.name.span,
+            name_span: node.name.span.clone(),
             signature,
             body,
         };
@@ -596,9 +595,9 @@ where
         let ty = self.visit_ty(node.ty)?;
 
         let hir = self.arena.intern(HirFunctionParameterSignature {
-            span: node.span,
+            span: node.span.clone(),
             name,
-            name_span: node.name.span,
+            name_span: node.name.span.clone(),
             ty,
             ty_span: node.ty.span(),
         });
@@ -612,9 +611,9 @@ where
         let name = self.arena.names().get(node.name.name);
 
         let hir = self.arena.intern(HirTypeParameterItemSignature {
-            span: node.span,
+            span: node.span.clone(),
             name,
-            name_span: node.name.span,
+            name_span: node.name.span.clone(),
         });
         Ok(hir)
     }

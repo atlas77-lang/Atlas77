@@ -1,5 +1,5 @@
 use super::{expr::HirExpr, ty::HirTy};
-use crate::atlas_span::{Span, Spanned};
+use logos::Span;
 use serde::Serialize;
 
 /// Most of the statements could actually be replaced with
@@ -20,18 +20,18 @@ pub enum HirStatement<'hir> {
     Continue(Span),
 }
 
-impl Spanned for HirStatement<'_> {
-    fn span(&self) -> Span {
+impl HirStatement<'_> {
+    pub fn span(&self) -> Span {
         match self {
-            HirStatement::_Block(block) => block.span,
-            HirStatement::Return(ret) => ret.span,
-            HirStatement::Expr(expr) => expr.span,
-            HirStatement::Let(let_stmt) => let_stmt.span,
-            HirStatement::Const(const_stmt) => const_stmt.span,
-            HirStatement::IfElse(if_else) => if_else.span,
-            HirStatement::While(while_stmt) => while_stmt.span,
-            HirStatement::Break(span) => *span,
-            HirStatement::Continue(span) => *span,
+            HirStatement::_Block(block) => block.span.clone(),
+            HirStatement::Return(ret) => ret.span.clone(),
+            HirStatement::Expr(expr) => expr.span.clone(),
+            HirStatement::Let(let_stmt) => let_stmt.span.clone(),
+            HirStatement::Const(const_stmt) => const_stmt.span.clone(),
+            HirStatement::IfElse(if_else) => if_else.span.clone(),
+            HirStatement::While(while_stmt) => while_stmt.span.clone(),
+            HirStatement::Break(span) => span.clone(),
+            HirStatement::Continue(span) => span.clone(),
         }
     }
 }
