@@ -1,24 +1,51 @@
 import "std/io"
+import "std/list"
 
-func main() -> int64 {
-    let test = test_ret_list();
-
-    let j = 0;
-    while j < 5 {
-        print("List element: ");
-        println(test[j] as str);
-        j = j + 1;
+//mat-mul
+func mat_mul(a: [[int64]], b: [[int64]]) -> [[int64]] {
+    let a_rows = len_double(a);
+    let a_cols = len(a[0]);
+    let b_rows = len_double(b);
+    let b_cols = len(b[0]);
+    let i_res = 0;
+    let result = new [[int64]; a_rows];
+    while i_res < a_rows {
+        result[i_res] = new [int64; b_cols];
+        i_res = i_res + 1;
     }
+    let i = 0;
+    while i < a_rows {
+        let j = 0;
+        while j < b_cols {
+            let k = 0;
+            let sum = 0;
+            while k < a_cols {
+                sum = sum + a[i][k] * b[k][j];
+                k = k + 1;
+            }
+            result[i][j] = sum;
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return result;
 }
 
-func test_ret_list() -> [float64] {
-    println("test_ret_list");
-    let size = 5;
-    let test = new [float64; size];
-    test[0] = 2.34;
-    test[1] = 3.45;
-    test[2] = 4.56;
-    test[3] = 5.67;
-    test[4] = 6.78;
-    return test;
+func main() {
+    let a: [[int64]] = [[1, 2, 3], [4, 5, 6]];
+    let b: [[int64]] = [[7, 8], [9, 10], [11, 12]];
+    let result = mat_mul(a, b);
+    let i = 0;
+    while i < len_double(result) {
+        let j = 0;
+        while j < len(result[0]) {
+            print(" ");
+            print(result[i][j] as str);
+            j = j + 1;
+        }
+        println("");
+        i = i + 1;
+    }
+    //The result should be: [[58, 64], [139, 154]]
+    println("Done");
 }

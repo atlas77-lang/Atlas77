@@ -1,54 +1,12 @@
 //[T] is a statically sized list of element of type T.
 //The list is 0-indexed.
 //The list is immutable.
-//
 
-extern len<T>(l: [T]) -> uint64;
-extern get<T>(l: [T], i: uint64) -> T;
-extern set<T>(l: [T], i: uint64, v: T) -> [T];
-extern slice<T>(l: [T], start: uint64, end: uint64) -> [T];
+extern len(l: [int64]) -> int64
+extern len_double(l: [[int64]]) -> int64
+extern len_f(l: [float64]) -> int64
+extern len_double_f(l: [[float64]]) -> int64
+extern get(l: [int64], i: int64) -> int64
+extern set(l: [int64] index: uint64, v: int64) -> [int64]
+extern slice(l: [int64], start: uint64, end: uint64) -> [int64]
 
-public class Vec<T> {
-    private:
-        data: [T];
-        len: uint64;
-        cap: uint64;
-    public:
-        func create() -> Vec<T> {
-            return new Vec<T> {
-                //Create a new list of size 4 so you don't end up allocating memory for every push.
-                data: new [T; 4],
-                len: 4
-            }
-        }
-        func len() -> uint64 {
-            return this.len;
-        }
-        //#[override(Index::get)]
-        func get(i: uint64) -> T {
-            return this.data[i];
-        }
-        //#[override(Index::set)]
-        func set(i: uint64, v: T) {
-            this.data[i] = v;
-        }
-        func push(v: T) {
-            if this.len == this.cap {
-                let old_data = clone(this.data);
-                this.data = new [T; this.cap + 5];
-                let i = 0;
-                while i < this.cap {
-                    this.data[i] = old_data[i];
-                    i = i + 1;
-                }
-                this.cap = this.cap + 5;                                
-            } else {
-                this.data[this.len] = v;
-                this.len = this.len + 1;
-            }
-        }
-        func pop() -> T {
-            this.len = this.len - 1;
-            return this.data[this.len];
-        }
-}

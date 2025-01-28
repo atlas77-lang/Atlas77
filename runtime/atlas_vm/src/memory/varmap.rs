@@ -22,7 +22,6 @@ impl VarMap {
             Some(old_data) => {
                 match old_data.tag {
                     VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
-                        println!("old_data: {:?}", old_data);
                         mem.rc_dec(old_data.as_object())?;
                     }
                     _ => {}

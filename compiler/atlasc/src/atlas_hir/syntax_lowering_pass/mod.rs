@@ -13,6 +13,7 @@ use crate::atlas_frontend::{
 
 const FILE_ATLAS: &str = include_str!("../../../../../libraries/std/fs.atlas");
 const IO_ATLAS: &str = include_str!("../../../../../libraries/std/io.atlas");
+const LIST_ATLAS: &str = include_str!("../../../../../libraries/std/list.atlas");
 const MATH_ATLAS: &str = include_str!("../../../../../libraries/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../../../libraries/std/string.atlas");
 
@@ -203,7 +204,7 @@ where
                 let ast: AstProgram<'ast> = parse(
                     "atlas_stdlib/list.atlas",
                     self.ast_arena,
-                    FILE_ATLAS.to_string(),
+                    LIST_ATLAS.to_string(),
                 )
                     .unwrap();
                 let allocated_ast = self.ast_arena.alloc(ast);
@@ -211,9 +212,20 @@ where
                     self.arena,
                     allocated_ast,
                     self.ast_arena,
-                    IO_ATLAS.to_string(),
+                    LIST_ATLAS.to_string(),
                 ));
-                hir.lower()
+                let mut lower = hir.lower()?;
+
+                let hir_import: &'hir HirImport<'_> = self.arena.intern(HirImport {
+                    span: node.span.clone(),
+                    path: node.path,
+                    path_span: node.span.clone(),
+                    alias: None,
+                    alias_span: None,
+                });
+
+                lower.body.imports.push(hir_import);
+                Ok(lower)
             }
             "string" => {
                 let ast: AstProgram<'ast> = parse(
@@ -227,7 +239,7 @@ where
                     self.arena,
                     allocated_ast,
                     self.ast_arena,
-                    IO_ATLAS.to_string(),
+                    STRING_ATLAS.to_string(),
                 ));
 
                 let mut lower = hir.lower()?;

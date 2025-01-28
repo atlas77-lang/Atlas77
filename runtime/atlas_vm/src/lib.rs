@@ -34,6 +34,7 @@ impl Atlas77VM<'_> {
         program.libraries.iter().for_each(|lib| {
             if lib.is_std {
                 let lib_name = lib.name.split('/').last().unwrap();
+                println!("lib_name: {:?}", lib_name);
                 match lib_name {
                     "file" => {
                         FILE_FUNCTIONS.iter().for_each(|(name, func)| {

@@ -4,8 +4,11 @@ use crate::memory::vm_data::VMData;
 use crate::runtime::vm_state::VMState;
 use crate::CallBack;
 
-pub const LIST_FUNCTIONS: [(&str, CallBack); 7] = [
+pub const LIST_FUNCTIONS: [(&str, CallBack); 10] = [
     ("len", len),
+    ("len_double", len),
+    ("len_f", len),
+    ("len_double_f", len),
     ("get", get),
     ("set", set),
     ("push", push),
@@ -15,7 +18,7 @@ pub const LIST_FUNCTIONS: [(&str, CallBack); 7] = [
 ];
 
 pub fn len(state: VMState) -> Result<VMData, RuntimeError> {
-    let list_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
+    let list_ptr = state.stack.pop()?.as_object();
     let raw_list = state.object_map.get(list_ptr)?;
     let list = raw_list.list();
     Ok(VMData::new_i64(list.len() as i64))

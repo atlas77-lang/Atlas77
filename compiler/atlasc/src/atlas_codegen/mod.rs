@@ -59,7 +59,6 @@ where
         let mut labels: Vec<Label> = Vec::new();
         for func in self.hir.body.functions.clone() {
             let mut bytecode = Vec::new();
-            //self.global.insert(func.0);
 
             let params = func.1.signature.params.clone();
             self.generate_bytecode_args(params, &mut bytecode)?;
@@ -91,13 +90,6 @@ where
             })
             .collect::<Vec<_>>();
         self.program.libraries = libraries;
-        /*for fn_name in self.global.into_iter() {}
-        self.program.global.function_pool = self
-            .global
-            .items
-            .iter()
-            .map(|s| self.global.get_index(*s).unwrap())
-            .collect::<Vec<_>>();*/
         Ok(self.program.clone())
     }
 
