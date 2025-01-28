@@ -15,7 +15,7 @@ func main() {
             j = j + 1;
         }
         if num == sum {
-            print_int(sum);
+            println(sum as str);
         }
         sum = 0;
         num = num - 1;

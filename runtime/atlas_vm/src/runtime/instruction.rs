@@ -16,7 +16,7 @@ pub enum Type {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub enum Instruction {
+pub enum Instruction<'run> {
     PushInt(i64),
     PushFloat(f64),
     PushUnsignedInt(u64),
@@ -39,11 +39,11 @@ pub enum Instruction {
     Dup,
 
     Store {
-        var_name: String,
+        var_name: &'run str,
     },
 
     Load {
-        var_name: String,
+        var_name: &'run str,
     },
 
     /// Stack state:
@@ -111,11 +111,11 @@ pub enum Instruction {
     },
 
     CallFunction {
-        name: String,
+        name: &'run str,
         args: u8,
     },
     ExternCall {
-        name: String,
+        name: &'run str,
         args: u8,
     },
     Return,
@@ -124,7 +124,7 @@ pub enum Instruction {
 }
 
 /// Read by the VM before execution to import the related functions
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub struct ImportedLibrary {
     pub name: String,
     pub is_std: bool,
@@ -132,16 +132,16 @@ pub struct ImportedLibrary {
 
 ///todo: Make the program serializable and deserializable
 /// This will allow the program to be saved and loaded from a file
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct Program {
-    pub labels: Vec<Label>,
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
+pub struct Program<'run> {
+    pub labels: Vec<Label<'run>>,
     pub entry_point: String,
     pub libraries: Vec<ImportedLibrary>,
     pub global: ConstantPool,
 }
 
-impl Index<usize> for Program {
-    type Output = Instruction;
+impl<'run> Index<usize> for Program<'run> {
+    type Output = Instruction<'run>;
 
     fn index(&self, index: usize) -> &Self::Output {
         let mut current_index = 0;
@@ -154,12 +154,12 @@ impl Index<usize> for Program {
         panic!("Index out of bounds");
     }
 }
-impl Default for Program {
+impl Default for Program<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
-impl Program {
+impl Program<'_> {
     pub fn len(&self) -> usize {
         self.labels.iter().map(|label| label.body.len()).sum()
     }
@@ -180,14 +180,14 @@ impl Program {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub struct ConstantPool {
     pub string_pool: Vec<String>,
     pub list_pool: Vec<Constant>,
     pub function_pool: Vec<usize>,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 //Temporary solution to the constant pool
 pub enum Constant {
     String(String),
@@ -198,9 +198,9 @@ pub enum Constant {
     Bool(bool),
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct Label {
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
+pub struct Label<'run> {
     pub name: String,
     pub position: usize,
-    pub body: Vec<Instruction>,
+    pub body: Vec<Instruction<'run>>,
 }

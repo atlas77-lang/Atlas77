@@ -4,7 +4,7 @@ import "std/io"
 func test() {
     let s = "  Hello World!";
     let len = str_len(s);
-    print_uint(len);
+    println(len as str);
     let trimmed = trim(s);
     println(trimmed);
     let upper = to_upper(s);

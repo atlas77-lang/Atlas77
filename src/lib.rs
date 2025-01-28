@@ -9,7 +9,13 @@ use std::{io::Write, path::PathBuf, time::Instant};
 
 //todo: The pipeline of the compiler should be more straightforward and should include the "debug" and "release" modes
 //todo: There should also be a function for each stage of the pipeline
-pub fn build(path: String) -> miette::Result<()> {
+
+pub enum CompilationFlag {
+    Release,
+    Debug,
+}
+
+fn get_path(path: &String) -> PathBuf {
     let mut path_buf = PathBuf::from(path.clone());
     if let Ok(current_dir) = std::env::current_dir() {
         if !path_buf.is_absolute() {
@@ -18,6 +24,11 @@ pub fn build(path: String) -> miette::Result<()> {
     } else {
         eprintln!("Failed to get current directory");
     }
+    path_buf
+}
+
+pub fn build(path: String, _flag: CompilationFlag) -> miette::Result<()> {
+    let path_buf = get_path(&path);
 
     let source = std::fs::read_to_string(path).unwrap();
     //parse
@@ -43,36 +54,12 @@ pub fn build(path: String) -> miette::Result<()> {
     let mut file = std::fs::File::create("output.atlasc").unwrap();
     file.write_all(output.as_bytes()).unwrap();
 
-    //run
-    let start = Instant::now();
-    let mut vm = atlas_vm::Atlas77VM::new(program);
-    let res = vm.run();
-    let end = Instant::now();
-    match res {
-        Ok(_) => {
-            println!(
-                "Program ran successfully: {} (time: {}ms)",
-                res.unwrap(),
-                (end - start).as_millis()
-            );
-        }
-        Err(e) => {
-            eprintln!("{}", e);
-        }
-    }
     Ok(())
 }
 
 //The "run" function needs a bit of refactoring
-pub fn run(path: String) -> miette::Result<()> {
-    let mut path_buf = PathBuf::from(path.clone());
-    if let Ok(current_dir) = std::env::current_dir() {
-        if !path_buf.is_absolute() {
-            path_buf = current_dir.join(path_buf);
-        }
-    } else {
-        eprintln!("Failed to get current directory");
-    }
+pub fn run(path: String, _flag: CompilationFlag) -> miette::Result<()> {
+    let path_buf = get_path(&path);
 
     let source = std::fs::read_to_string(path).unwrap();
     //parse

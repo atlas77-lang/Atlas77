@@ -4,20 +4,26 @@ use crate::RuntimeResult;
 use std::collections::HashMap;
 
 #[derive(Debug, Default)]
-pub struct VarMap {
-    var_map: Vec<HashMap<String, VMData>>,
+pub struct VarMap<'run> {
+    var_map: HashMap<Key<'run>, VMData>,
 }
 
-impl VarMap {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Key<'run> {
+    pub scope: usize,
+    pub key: &'run str,
+}
+
+impl<'run> VarMap<'run> {
     pub fn new() -> Self {
         VarMap {
-            var_map: vec![HashMap::new()]
+            var_map: HashMap::new()
         }
     }
     /// Insert doesn't need to increment the reference count of the value.
     /// Because stack.pop() doesn't decrement the reference count of the value.
-    pub fn insert(&mut self, key: String, value: VMData, mem: &mut Memory) -> RuntimeResult<VMData> {
-        let old_data = self.var_map.last_mut().unwrap().insert(key, value);
+    pub fn insert(&mut self, key: Key<'run>, value: VMData, mem: &mut Memory) -> RuntimeResult<VMData> {
+        let old_data = self.var_map.insert(key, value);
         match old_data {
             Some(old_data) => {
                 match old_data.tag {
@@ -31,24 +37,29 @@ impl VarMap {
         }
         Ok(old_data.unwrap_or_else(|| VMData::new_unit()))
     }
-    pub fn get(&self, key: &str) -> Option<&VMData> {
-        self.var_map.last().unwrap().get(key)
+    pub fn get(&self, key: &Key<'run>) -> Option<&VMData> {
+        self.var_map.get(key)
     }
-    pub fn last(&self) -> &HashMap<String, VMData> {
-        self.var_map.last().unwrap()
+    pub fn last(&self) -> &HashMap<Key<'_>, VMData> {
+        &self.var_map
     }
-    pub fn push(&mut self) {
-        self.var_map.push(HashMap::new());
-    }
-    pub fn pop(&mut self, mem: &mut Memory) -> RuntimeResult<()> {
-        let map = self.var_map.pop().unwrap();
-        for (_, value) in map {
-            match value.tag {
-                VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
-                    mem.rc_dec(value.as_object())?;
+    pub fn clean_scope(&mut self, scope: usize, mem: &mut Memory) -> RuntimeResult<()> {
+        let mut to_remove = Vec::new();
+        self.var_map.retain(|key, value| {
+            if key.scope == scope {
+                match value.tag {
+                    VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                        to_remove.push(value.as_object());
+                    }
+                    _ => {}
                 }
-                _ => {}
+                false
+            } else {
+                true
             }
+        });
+        for obj in to_remove {
+            mem.rc_dec(obj)?;
         }
         Ok(())
     }

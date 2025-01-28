@@ -390,6 +390,7 @@ pub enum AstLiteral<'ast> {
     Integer(AstIntegerLiteral),
     UnsignedInteger(AstUnsignedIntegerLiteral),
     Float(AstFloatLiteral),
+    Unit(AstUnitLiteral),
     String(AstStringLiteral<'ast>),
     Boolean(AstBooleanLiteral),
     List(AstListLiteral<'ast>),
@@ -401,11 +402,17 @@ impl AstLiteral<'_> {
             AstLiteral::Integer(l) => l.span.clone(),
             AstLiteral::UnsignedInteger(l) => l.span.clone(),
             AstLiteral::Float(l) => l.span.clone(),
+            AstLiteral::Unit(l) => l.span.clone(),
             AstLiteral::String(l) => l.span.clone(),
             AstLiteral::Boolean(l) => l.span.clone(),
             AstLiteral::List(l) => l.span.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstUnitLiteral {
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize)]

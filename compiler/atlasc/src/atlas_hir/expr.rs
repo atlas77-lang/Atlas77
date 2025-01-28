@@ -1,4 +1,4 @@
-use super::ty::HirTy;
+use super::ty::{HirTy, HirUnitTy};
 use logos::Span;
 use serde::Serialize;
 
@@ -14,6 +14,7 @@ pub enum HirExpr<'hir> {
     FloatLiteral(HirFloatLiteralExpr<'hir>),
     Indexing(HirIndexingExpr<'hir>),
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
+    UnitLiteral(HirUnitLiteralExpr),
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
     UnsignedIntegerLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
     StringLiteral(HirStringLiteralExpr<'hir>),
@@ -29,6 +30,7 @@ impl HirExpr<'_> {
             HirExpr::UnsignedIntegerLiteral(expr) => expr.span.clone(),
             HirExpr::BooleanLiteral(expr) => expr.span.clone(),
             HirExpr::FloatLiteral(expr) => expr.span.clone(),
+            HirExpr::UnitLiteral(expr) => expr.span.clone(),
             HirExpr::Unary(expr) => expr.span.clone(),
             HirExpr::Casting(expr) => expr.span.clone(),
             HirExpr::Indexing(expr) => expr.span.clone(),
@@ -50,6 +52,7 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::UnsignedIntegerLiteral(expr) => expr.ty,
             HirExpr::BooleanLiteral(expr) => expr.ty,
             HirExpr::FloatLiteral(expr) => expr.ty,
+            HirExpr::UnitLiteral(_) => &HirTy::Unit(HirUnitTy {}),
             HirExpr::Unary(expr) => expr.ty,
             HirExpr::Casting(expr) => expr.ty,
             HirExpr::Indexing(expr) => expr.ty,
@@ -61,6 +64,11 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::NewArray(expr) => expr.ty,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirUnitLiteralExpr {
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize)]

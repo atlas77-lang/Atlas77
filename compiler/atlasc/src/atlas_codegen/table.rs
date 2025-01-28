@@ -20,7 +20,7 @@ impl<T> Iterator for Table<T> {
 }
 
 impl<T> Table<T> {
-    pub fn insert(&mut self, item: T)
+    pub fn _insert(&mut self, item: T)
     where
         T: PartialEq,
     {
@@ -29,7 +29,7 @@ impl<T> Table<T> {
         }
         self.items.push(item)
     }
-    pub fn get_index<K>(&self, item: &K) -> Option<usize>
+    pub fn _get_index<K>(&self, item: &K) -> Option<usize>
     where
         T: Borrow<K>,
         K: PartialEq + ?Sized,
@@ -43,27 +43,27 @@ impl<T> Table<T> {
     {
         self.items.iter().any(|x| x.borrow() == item)
     }
-    pub fn retrieve(&self, idx: usize) -> Option<&T> {
+    pub fn _retrieve(&self, idx: usize) -> Option<&T> {
         self.items.get(idx)
     }
-    pub fn len(&self) -> usize {
+    pub fn _len(&self) -> usize {
         self.items.len()
     }
-    pub fn is_empty(&self) -> bool {
+    pub fn _is_empty(&self) -> bool {
         self.items.is_empty()
     }
-    pub fn clear(&mut self) {
+    pub fn _clear(&mut self) {
         self.items.clear()
     }
-    pub fn extend(&mut self, other: Table<T>) {
+    pub fn _extend(&mut self, other: Table<T>) {
         self.items.extend(other.items);
     }
-    pub fn remove<K>(&mut self, item: &K)
+    pub fn _remove<K>(&mut self, item: &K)
     where
         T: Borrow<K>,
         K: PartialEq,
     {
-        self.items.remove(self.get_index(item).unwrap());
+        self.items.remove(self._get_index(item).unwrap());
     }
 }
 

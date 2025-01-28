@@ -27,8 +27,8 @@ where
     'gen: 'hir,
 {
     hir: HirModule<'hir>,
-    program: Program,
-    _arena: CodeGenArena<'gen>,
+    program: Program<'gen>,
+    arena: CodeGenArena<'gen>,
     //simulate a var_map so the codegen can translate it into stack operations
     _variables: Table<&'hir str>,
     //store the function position
@@ -43,11 +43,11 @@ where
     'gen: 'hir,
 {
     /// Create a new CodeGenUnit
-    pub fn new(hir: HirModule<'hir>, _arena: CodeGenArena<'gen>, src: String) -> Self {
+    pub fn new(hir: HirModule<'hir>, arena: CodeGenArena<'gen>, src: String) -> Self {
         Self {
             hir,
             program: Program::new(),
-            _arena,
+            arena,
             _variables: Table::new(),
             _global: Table::new(),
             current_pos: 0,
@@ -96,7 +96,7 @@ where
     fn generate_bytecode_block(
         &mut self,
         block: &HirBlock<'hir>,
-        bytecode: &mut Vec<Instruction>,
+        bytecode: &mut Vec<Instruction<'gen>>,
         src: String,
     ) -> HirResult<()> {
         for stmt in &block.statements {
@@ -108,7 +108,7 @@ where
     fn generate_bytecode_stmt(
         &mut self,
         stmt: &HirStatement<'hir>,
-        bytecode: &mut Vec<Instruction>,
+        bytecode: &mut Vec<Instruction<'gen>>,
         src: String,
     ) -> HirResult<()> {
         match stmt {
@@ -155,7 +155,7 @@ where
                 let mut value = Vec::new();
                 self.generate_bytecode_expr(&l.value, &mut value, src)?;
                 value.push(Instruction::Store {
-                    var_name: l.name.to_string(),
+                    var_name: self.arena._alloc(l.name.to_string()),
                 });
                 bytecode.append(&mut value);
             }
@@ -182,7 +182,7 @@ where
     fn generate_bytecode_expr(
         &mut self,
         expr: &HirExpr<'hir>,
-        bytecode: &mut Vec<Instruction>,
+        bytecode: &mut Vec<Instruction<'gen>>,
         src: String,
     ) -> HirResult<()> {
         match expr {
@@ -192,7 +192,7 @@ where
                     HirExpr::Ident(i) => {
                         self.generate_bytecode_expr(&a.rhs, bytecode, src.clone())?;
                         bytecode.push(Instruction::Store {
-                            var_name: i.name.to_string(),
+                            var_name: self.arena._alloc(i.name.to_string()),
                         });
                     }
                     HirExpr::Indexing(i) => {
@@ -406,12 +406,12 @@ where
                         let func = self.hir.signature.functions.get(i.name).unwrap();
                         if func.is_external {
                             bytecode.push(Instruction::ExternCall {
-                                name: i.name.to_string(),
+                                name: self.arena._alloc(i.name.to_string()),
                                 args: f.args.len() as u8,
                             });
                         } else {
                             bytecode.push(Instruction::CallFunction {
-                                name: i.name.to_string(),
+                                name: self.arena._alloc(i.name.to_string()),
                                 args: f.args.len() as u8,
                             });
                         }
@@ -433,6 +433,7 @@ where
             HirExpr::IntegerLiteral(i) => bytecode.push(Instruction::PushInt(i.value)),
             HirExpr::FloatLiteral(f) => bytecode.push(Instruction::PushFloat(f.value)),
             HirExpr::BooleanLiteral(b) => bytecode.push(Instruction::PushBool(b.value)),
+            HirExpr::UnitLiteral(_) => bytecode.push(Instruction::PushUnit),
             HirExpr::UnsignedIntegerLiteral(u) => {
                 bytecode.push(Instruction::PushUnsignedInt(u.value))
             }
@@ -461,7 +462,7 @@ where
                 self.generate_bytecode_expr(&a.size, bytecode, src.clone())?;
                 bytecode.push(Instruction::NewList);
             }
-            HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: i.name.to_string() }),
+            HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: self.arena._alloc(i.name.to_string()) }),
         }
         Ok(())
     }
@@ -469,12 +470,12 @@ where
     fn generate_bytecode_args(
         &self,
         args: Vec<&HirFunctionParameterSignature<'hir>>,
-        bytecode: &mut Vec<Instruction>,
+        bytecode: &mut Vec<Instruction<'gen>>,
     ) -> HirResult<()> {
         let args = args.iter().rev().cloned().collect::<Vec<_>>();
         for arg in args {
             bytecode.push(Instruction::Store {
-                var_name: arg.name.to_string(),
+                var_name: self.arena._alloc(arg.name.to_string()),
             });
         }
         Ok(())

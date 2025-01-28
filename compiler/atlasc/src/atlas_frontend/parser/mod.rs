@@ -19,7 +19,7 @@ use ast::{
 };
 
 use crate::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
-use crate::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstListLiteral, AstListType, AstNewArrayExpr, AstNewObjExpr, AstStaticAccessExpr, AstVisibility};
+use crate::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstListLiteral, AstListType, AstNewArrayExpr, AstNewObjExpr, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
 use arena::AstArena;
 use logos::Span;
 
@@ -187,7 +187,6 @@ impl<'ast> Parser<'ast> {
             methods: self.arena.alloc_vec(methods),
             vis: AstVisibility::default(),
         };
-        println!("{:?}", node);
         Ok(node)
     }
 
@@ -340,7 +339,7 @@ impl<'ast> Parser<'ast> {
             let t = self.parse_type()?;
             Some(self.arena.alloc(t))
         } else {
-            eprintln!("Type inference is still unstable.");
+            eprintln!("Warning: Type inference is still unstable. {:?} @{:?}", name.name, start);
             None
         };
 
@@ -710,6 +709,16 @@ impl<'ast> Parser<'ast> {
 
     fn parse_return(&mut self) -> ParseResult<AstReturnStmt<'ast>> {
         let _ = self.advance();
+        if self.current().kind == TokenKind::Semicolon {
+            let node = AstReturnStmt {
+                span: self.current().span(),
+                value: self.arena.alloc(AstExpr::Literal(AstLiteral::Unit(AstUnitLiteral {
+                    span: self.current().span(),
+                }))),
+            };
+            self.expect(TokenKind::Semicolon)?;
+            return Ok(node);
+        }
         let expr = self.parse_expr()?;
         let node = AstReturnStmt {
             span: Span::union_span(&self.current().span(), &expr.span()),

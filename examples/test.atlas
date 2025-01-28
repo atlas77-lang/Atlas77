@@ -47,5 +47,13 @@ func main() {
         i = i + 1;
     }
     //The result should be: [[58, 64], [139, 154]]
+
+    if "Hello" == "Hello" {
+        println("Hello is equal to Hello");
+    } else {
+        //This happens as of now but it will be fixed in the future with operator overloading
+        println("Hello is not equal to Hello for some reason");
+    }
+
     println("Done");
 }

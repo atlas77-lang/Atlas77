@@ -17,7 +17,7 @@ const LIST_ATLAS: &str = include_str!("../../../../../libraries/std/list.atlas")
 const MATH_ATLAS: &str = include_str!("../../../../../libraries/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../../../libraries/std/string.atlas");
 
-use crate::atlas_hir::expr::{HirCastExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirStringLiteralExpr};
+use crate::atlas_hir::expr::{HirCastExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
 use crate::atlas_hir::{
     arena::HirArena,
     error::{HirError, HirResult, UnsupportedExpr, UnsupportedStatement},
@@ -180,9 +180,19 @@ where
                     self.arena,
                     allocated_ast,
                     self.ast_arena,
-                    IO_ATLAS.to_string(),
+                    MATH_ATLAS.to_string(),
                 ));
-                hir.lower()
+                let mut lower = hir.lower()?;
+                let hir_import: &'hir HirImport<'_> = self.arena.intern(HirImport {
+                    span: node.span.clone(),
+                    path: node.path,
+                    path_span: node.span.clone(),
+                    alias: None,
+                    alias_span: None,
+                });
+
+                lower.body.imports.push(hir_import);
+                Ok(lower)
             }
             "file" => {
                 let ast: AstProgram<'ast> = parse(
@@ -512,6 +522,9 @@ where
                             value: u.value,
                             ty: self.arena.types().get_uint64_ty(),
                         })
+                    }
+                    AstLiteral::Unit(_) => {
+                        HirExpr::UnitLiteral(HirUnitLiteralExpr { span: l.span() })
                     }
                     AstLiteral::String(s) => {
                         HirExpr::StringLiteral(HirStringLiteralExpr {

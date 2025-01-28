@@ -12,29 +12,28 @@ use runtime::instruction::{Instruction, Program, Type};
 use std::collections::HashMap;
 
 use crate::memory::object_map::ObjectKind;
-use crate::memory::varmap::VarMap;
+use crate::memory::varmap::{Key, VarMap};
 use crate::memory::{object_map::Memory, stack::Stack, vm_data::VMData};
 
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
 pub type CallBack = fn(runtime::vm_state::VMState) -> RuntimeResult<VMData>;
 
 pub struct Atlas77VM<'run> {
-    pub program: Program,
+    pub program: Program<'run>,
     pub stack: Stack,
     stack_frame: Vec<(usize, usize)>, //previous pc and previous stack top
     pub object_map: Memory,
-    pub var_map: VarMap,
+    pub var_map: VarMap<'run>,
     pub extern_fn: HashMap<&'run str, CallBack>,
     pub pc: usize,
 }
 
-impl Atlas77VM<'_> {
-    pub fn new(program: Program) -> Self {
+impl<'run> Atlas77VM<'run> {
+    pub fn new(program: Program<'run>) -> Self {
         let mut extern_fn: HashMap<&str, CallBack> = HashMap::new();
         program.libraries.iter().for_each(|lib| {
             if lib.is_std {
                 let lib_name = lib.name.split('/').last().unwrap();
-                println!("lib_name: {:?}", lib_name);
                 match lib_name {
                     "file" => {
                         FILE_FUNCTIONS.iter().for_each(|(name, func)| {
@@ -96,10 +95,6 @@ impl Atlas77VM<'_> {
                 .map(|t| VMData::new_fn_ptr(*t))
                 .collect::<Vec<_>>(),
         )?;
-        println!("fn_ptr in the stack: {:?} & all fn_name: {:?}",
-                 self.stack.iter().map(|x| x.as_fn_ptr()).collect::<Vec<_>>(),
-                 self.program.labels.iter().map(|x| x.name.clone()).collect::<Vec<_>>()
-        );
         if let Some(label) = label {
             self.pc = label.position;
         } else {
@@ -109,18 +104,15 @@ impl Atlas77VM<'_> {
         }
         while self.pc < self.program.len() {
             let instr = self.program[self.pc].clone();
-            let res = self.execute_instruction(instr.clone());
-            if let Err(e) = res {
-                eprintln!("pc: {}, instr: {:?}", self.pc, instr);
-                return Err(e);
-            }
+            self.execute_instruction(instr.clone())?;
         }
-        println!("Stack: {}", self.stack);
-        println!("Object Map: {}", self.object_map);
+        self.stack.top += 1;
         self.stack.last().cloned()
     }
+}
+impl<'run> Atlas77VM<'run> {
     /// TODO: Add check for unsigned int
-    pub fn execute_instruction(&mut self, instr: Instruction) -> RuntimeResult<()> {
+    pub fn execute_instruction(&mut self, instr: Instruction<'run>) -> RuntimeResult<()> {
         match instr {
             Instruction::PushInt(i) => {
                 let val = VMData::new_i64(i);
@@ -277,11 +269,19 @@ impl Atlas77VM<'_> {
             }
             Instruction::Store { var_name } => {
                 let val = self.stack.pop()?;
-                self.var_map.insert(var_name, val, &mut self.object_map)?;
+
+                self.var_map.insert(Key {
+                    scope: self.stack_frame.len(),
+                    key: var_name,
+                }, val, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Load { var_name } => {
-                let val = self.var_map.get(&var_name).unwrap();
+                let key = Key {
+                    scope: self.stack_frame.len(),
+                    key: var_name,
+                };
+                let val = self.var_map.get(&key).unwrap();
                 self.stack.push_with_rc(*val, &mut self.object_map)?;
                 self.pc += 1;
             }
@@ -432,9 +432,9 @@ impl Atlas77VM<'_> {
                     &mut self.stack,
                     &mut self.object_map,
                     &consts,
-                    self.var_map.last(),
+                    &mut self.var_map,
                 );
-                let extern_fn: &CallBack = self.extern_fn.get::<&str>(&name.as_str()).unwrap();
+                let extern_fn: &CallBack = self.extern_fn.get::<&str>(&name).unwrap();
                 let res = extern_fn(vm_state)?;
                 self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
@@ -443,7 +443,7 @@ impl Atlas77VM<'_> {
                 let fn_ptr = self.stack[pos];
                 let (pc, sp) = (self.pc, self.stack.top - args as usize);
                 self.stack_frame.push((pc, sp));
-                self.var_map.push();
+                //self.var_map.push();
                 self.pc = fn_ptr.as_fn_ptr();
             }
             Instruction::CallFunction { name, args } => {
@@ -455,7 +455,7 @@ impl Atlas77VM<'_> {
                     .unwrap();
                 let (pc, sp) = (self.pc, self.stack.top - args as usize);
                 self.stack_frame.push((pc, sp));
-                self.var_map.push();
+                //self.var_map.push();
                 self.pc = label.position;
             }
             Instruction::Return => {
@@ -476,7 +476,7 @@ impl Atlas77VM<'_> {
                     _ => {}
                 }
                 self.stack.truncate(sp, &mut self.object_map)?;
-                self.var_map.pop(&mut self.object_map)?;
+                self.var_map.clean_scope(self.stack_frame.len() + 1, &mut self.object_map)?;
                 self.pc = pc + 1;
                 self.stack.push(ret)?;
             }

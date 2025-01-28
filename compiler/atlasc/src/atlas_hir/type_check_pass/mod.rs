@@ -375,6 +375,7 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::FloatLiteral(_) => Ok(self.arena.types().get_float64_ty()),
             HirExpr::UnsignedIntegerLiteral(_) => Ok(self.arena.types().get_uint64_ty()),
             HirExpr::BooleanLiteral(_) => Ok(self.arena.types().get_boolean_ty()),
+            HirExpr::UnitLiteral(_) => Ok(self.arena.types().get_unit_ty()),
             HirExpr::StringLiteral(_) => Ok(self.arena.types().get_str_ty()),
             HirExpr::NewArray(a) => {
                 let size_ty = self.check_expr(a.size.as_mut())?;
@@ -620,10 +621,6 @@ impl<'hir> TypeChecker<'hir> {
             .unwrap()
             .get(i.name)
         {
-            println!(
-                "Changing type of {} from {} to {}",
-                i.name, i.ty, ctx_var.ty
-            );
             i.ty = ctx_var.ty;
             Ok(ctx_var)
         } else {

@@ -1,4 +1,4 @@
-//Should work in Atlas v0.5.1 and later
+//Should work in Atlas v0.5.x
 
 struct Vector3 {
     x: float64;

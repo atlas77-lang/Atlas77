@@ -1,1 +1,1 @@
-//todo: Wait for the Hir rework to be done
+//todo: Waiting for the Hir rework to be done
