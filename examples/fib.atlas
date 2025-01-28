@@ -1,9 +1,9 @@
 import "std/io"
 
 func main()  {
-    let fib_80 = recursive_fib(35);
-    println(fib_80 as str);
-    //println(-1 as str);
+    let fib_10 = recursive_fib(10);
+    println(fib_10 as str);
+    fib_10;
 }
 
 func recursive_fib(n: int64) -> int64 {

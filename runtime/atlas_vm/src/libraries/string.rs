@@ -14,14 +14,14 @@ pub const STRING_FUNCTIONS: [(&str, CallBack); 5] = [
 
 pub fn str_len(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
-    let raw_string = state.object_map.get(string_ptr);
+    let raw_string = state.object_map.get(string_ptr)?;
     let string = raw_string.string();
     Ok(VMData::new_i64(string.len() as i64))
 }
 
 pub fn trim(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
-    let string = state.object_map.get(string_ptr).string().clone();
+    let string = state.object_map.get(string_ptr)?.string().clone();
 
     let trimmed = string.trim();
 
@@ -34,7 +34,7 @@ pub fn trim(state: VMState) -> Result<VMData, RuntimeError> {
 
 pub fn to_upper(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
-    let raw_string = state.object_map.get(string_ptr);
+    let raw_string = state.object_map.get(string_ptr)?;
     let string = raw_string.string();
 
     let upper = string.to_uppercase();
@@ -48,7 +48,7 @@ pub fn to_upper(state: VMState) -> Result<VMData, RuntimeError> {
 
 pub fn to_lower(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
-    let raw_string = state.object_map.get(string_ptr);
+    let raw_string = state.object_map.get(string_ptr)?;
     let string = raw_string.string();
 
     let lower = string.to_lowercase();
@@ -64,8 +64,8 @@ pub fn split(state: VMState) -> Result<VMData, RuntimeError> {
     let delimiter_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
     let string_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
 
-    let delimiter = &state.object_map.get(delimiter_ptr).string().clone();
-    let raw_string = state.object_map.get(string_ptr);
+    let delimiter = &state.object_map.get(delimiter_ptr)?.string().clone();
+    let raw_string = state.object_map.get(string_ptr)?;
     let string = raw_string.string();
 
     let split_strings: Vec<String> = string.split(delimiter).map(|s| s.to_string()).collect();

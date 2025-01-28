@@ -1,9 +1,9 @@
 import "std/io"
 
 func main() {
-    println("Done");
     test_init_list();
     test();
+    println("Done");
 }
 
 func test_init_list() -> [int64] {
@@ -21,7 +21,9 @@ func test() -> int64 {
         println(my_list[i] as str);
         i = i + 1;
     }
+
     let test = test_ret_list();
+
     let j = 0;
     while j < 5 {
         print("List element: ");

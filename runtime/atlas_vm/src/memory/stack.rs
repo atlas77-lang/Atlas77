@@ -1,5 +1,5 @@
 use crate::memory::object_map::Memory;
-use crate::{errors::RuntimeError, memory::vm_data::VMData};
+use crate::{errors::RuntimeError, memory::vm_data::VMData, RuntimeResult};
 use std::fmt::Display;
 use std::ops::Index;
 
@@ -63,16 +63,17 @@ impl Stack {
     }
 
     #[inline(always)]
-    pub fn truncate(&mut self, new_top: usize, mem: &mut Memory) {
+    pub fn truncate(&mut self, new_top: usize, mem: &mut Memory) -> RuntimeResult<()> {
         for i in new_top..=self.top {
             match self.values[i].tag {
                 VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
-                    mem.rc_dec(self.values[i].as_object());
+                    mem.rc_dec(self.values[i].as_object())?;
                 }
                 _ => {}
             }
         }
         self.top = new_top;
+        Ok(())
     }
 
     pub fn pop(&mut self) -> Result<VMData, RuntimeError> {
@@ -89,7 +90,7 @@ impl Stack {
             let r = self.values[self.top];
             match r.tag {
                 VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
-                    mem.rc_dec(r.as_object());
+                    mem.rc_dec(r.as_object())?;
                 }
                 _ => {}
             }
@@ -111,7 +112,6 @@ impl Stack {
     pub fn extends(&mut self, values: &[VMData]) -> Result<(), RuntimeError> {
         if self.top + values.len() < STACK_SIZE {
             for val in values {
-                println!("current val: {}", val);
                 self.values[self.top] = *val;
                 self.top += 1;
             }

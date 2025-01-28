@@ -167,7 +167,10 @@ where
                 });
                 bytecode.append(&mut value);
             }
-            HirStatement::Expr(e) => self.generate_bytecode_expr(&e.expr, bytecode, src)?,
+            HirStatement::Expr(e) => {
+                self.generate_bytecode_expr(&e.expr, bytecode, src)?;
+                bytecode.push(Instruction::Pop);
+            }
             _ => {
                 return Err(atlas_hir::error::HirError::UnsupportedStatement(
                     UnsupportedStatement {
@@ -204,7 +207,6 @@ where
                         //Get the Index
                         self.generate_bytecode_expr(&i.index, bytecode, src.clone())?;
                         //Get the list pointer
-                        println!("i.target: {:?}", i.target);
                         self.generate_bytecode_expr(&i.target, bytecode, src.clone())?;
                         //Get the value
                         self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
@@ -224,6 +226,7 @@ where
                         ));
                     }
                 }
+                bytecode.push(Instruction::PushUnit);
             }
             HirExpr::HirBinaryOp(b) => {
                 self.generate_bytecode_expr(&b.lhs, bytecode, src.clone())?;
@@ -415,18 +418,6 @@ where
                                 args: f.args.len() as u8,
                             });
                         } else {
-                            /*if let Some(pos) = self.global.get_index(i.name) {
-                                bytecode.push(Instruction::DirectCall {
-                                    pos,
-                                    args: f.args.len() as u8,
-                                })
-                            } else {
-                                self.global.insert(i.name);
-                                bytecode.push(Instruction::DirectCall {
-                                    pos: self.global.len() - 1,
-                                    args: f.args.len() as u8,
-                                })
-                            }*/
                             bytecode.push(Instruction::CallFunction {
                                 name: i.name.to_string(),
                                 args: f.args.len() as u8,

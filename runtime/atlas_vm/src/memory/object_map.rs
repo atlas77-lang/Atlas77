@@ -1,5 +1,6 @@
 use crate::errors::RuntimeError;
 use crate::memory::vm_data::VMData;
+use crate::RuntimeResult;
 
 /// Probably should be renamed lmao
 ///
@@ -63,7 +64,8 @@ impl Memory {
         }
     }
 
-    pub fn free(&mut self, index: ObjectIndex) {
+    pub fn free(&mut self, index: ObjectIndex) -> RuntimeResult<()> {
+        //println!("Freeing object: {}", index);
         let next = self.free;
         let v = self.mem.get(usize::from(index)).unwrap().kind.clone();
         match v {
@@ -72,7 +74,7 @@ impl Memory {
                     match item.tag {
                         VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
                             let obj_to_dec = item.as_object();
-                            self.rc_dec(obj_to_dec);
+                            self.rc_dec(obj_to_dec)?;
                         }
                         _ => {}
                     }
@@ -88,28 +90,32 @@ impl Memory {
                 rc: 0,
             },
         );
-        match repl {
+        let res = match repl {
             Object { kind: ObjectKind::Free { .. }, .. } => {
-                panic!("Tried to free a non-free object")
+                Err(RuntimeError::NullReference)
             }
-            _ => {}
-        }
+            _ => {
+                Ok(())
+            }
+        };
         self.free = index;
+        res
     }
 
     #[inline(always)]
-    pub fn get(&mut self, index: ObjectIndex) -> ObjectKind {
+    pub fn get(&mut self, index: ObjectIndex) -> RuntimeResult<ObjectKind> {
         let kind = self.mem[usize::from(index)].kind.clone();
-        self.rc_dec(index);
-        kind
+        //println!("Getting object: {} {}", kind, index);
+        self.rc_dec(index)?;
+        Ok(kind)
     }
 
     #[inline(always)]
-    pub fn get_mut(&mut self, index: ObjectIndex) -> &mut ObjectKind {
+    pub fn get_mut(&mut self, index: ObjectIndex) -> RuntimeResult<&mut ObjectKind> {
         //You can decrement the rc here, because if it reaches 0 and still need to return a mutable reference, it's a bug
-        self.rc_dec(index);
+        self.rc_dec(index)?;
         let kind = &mut self.mem[usize::from(index)].kind;
-        kind
+        Ok(kind)
     }
 
     #[inline(always)]
@@ -118,12 +124,13 @@ impl Memory {
     }
 
     #[inline(always)]
-    pub fn rc_dec(&mut self, index: ObjectIndex) {
+    pub fn rc_dec(&mut self, index: ObjectIndex) -> RuntimeResult<()> {
         let rc = &mut self.mem[usize::from(index)].rc;
         *rc -= 1;
         if *rc == 0 {
-            self.free(index);
+            self.free(index)?;
         }
+        Ok(())
     }
 
     #[inline(always)]

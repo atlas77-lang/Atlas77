@@ -108,10 +108,15 @@ impl Atlas77VM<'_> {
         }
         while self.pc < self.program.len() {
             let instr = self.program[self.pc].clone();
-            self.execute_instruction(instr)?;
-            println!("Stack: {}", self.stack);
+            let res = self.execute_instruction(instr.clone());
+            if let Err(e) = res {
+                eprintln!("pc: {}, instr: {:?}", self.pc, instr);
+                return Err(e);
+            }
         }
-        self.stack.pop_with_rc(&mut self.object_map)
+        println!("Stack: {}", self.stack);
+        println!("Object Map: {}", self.object_map);
+        self.stack.last().cloned()
     }
     /// TODO: Add check for unsigned int
     pub fn execute_instruction(&mut self, instr: Instruction) -> RuntimeResult<()> {
@@ -128,6 +133,11 @@ impl Atlas77VM<'_> {
             }
             Instruction::PushUnsignedInt(u) => {
                 let val = VMData::new_u64(u);
+                self.stack.push_with_rc(val, &mut self.object_map)?;
+                self.pc += 1;
+            }
+            Instruction::PushUnit => {
+                let val = VMData::new_unit();
                 self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
             }
@@ -211,7 +221,7 @@ impl Atlas77VM<'_> {
                     Type::Boolean => {
                         match val.tag {
                             VMData::TAG_STR => {
-                                let raw_string = self.object_map.get(val.as_object());
+                                let raw_string = self.object_map.get(val.as_object())?;
                                 let string = raw_string.string();
                                 VMData::new_bool(string.parse::<bool>().unwrap())
                             }
@@ -221,7 +231,7 @@ impl Atlas77VM<'_> {
                     Type::Float => {
                         match val.tag {
                             VMData::TAG_STR => {
-                                let raw_string = self.object_map.get(val.as_object());
+                                let raw_string = self.object_map.get(val.as_object())?;
                                 let string = raw_string.string();
                                 VMData::new_f64(string.parse::<f64>().unwrap())
                             }
@@ -234,7 +244,7 @@ impl Atlas77VM<'_> {
                     Type::Integer => {
                         match val.tag {
                             VMData::TAG_STR => {
-                                let raw_string = self.object_map.get(val.as_object());
+                                let raw_string = self.object_map.get(val.as_object())?;
                                 let string = raw_string.string();
                                 VMData::new_i64(string.parse::<i64>().unwrap())
                             }
@@ -247,7 +257,7 @@ impl Atlas77VM<'_> {
                     Type::UnsignedInteger => {
                         match val.tag {
                             VMData::TAG_STR => {
-                                let raw_string = self.object_map.get(val.as_object());
+                                let raw_string = self.object_map.get(val.as_object())?;
                                 let string = raw_string.string();
                                 VMData::new_u64(string.parse::<u64>().unwrap())
                             }
@@ -266,20 +276,16 @@ impl Atlas77VM<'_> {
             }
             Instruction::Store { var_name } => {
                 let val = self.stack.pop()?;
-                if let Some(get_old_val) = self.var_map.get(&var_name)  {
-                    match get_old_val.tag {
-                        VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
-                            self.object_map.rc_dec(get_old_val.as_object());
-                        }
-                        _ => {}
-                    }
-                }
-                self.var_map.insert(var_name, val, &mut self.object_map);
+                self.var_map.insert(var_name, val, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Load { var_name } => {
                 let val = self.var_map.get(&var_name).unwrap();
                 self.stack.push_with_rc(*val, &mut self.object_map)?;
+                self.pc += 1;
+            }
+            Instruction::Pop => {
+                self.stack.pop_with_rc(&mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Swap => {
@@ -397,7 +403,7 @@ impl Atlas77VM<'_> {
             Instruction::ListLoad => {
                 let index = self.stack.pop()?;
                 let list_ptr = self.stack.pop()?;
-                let raw_list = self.object_map.get(list_ptr.as_object());
+                let raw_list = self.object_map.get(list_ptr.as_object())?;
                 let list = raw_list.list();
                 let val = list[index.as_u64() as usize];
                 self.stack.push_with_rc(val, &mut self.object_map)?;
@@ -407,7 +413,7 @@ impl Atlas77VM<'_> {
                 let val = self.stack.pop()?;
                 let list_ptr = self.stack.pop()?;
                 let index = self.stack.pop()?;
-                let list = self.object_map.get_mut(list_ptr.as_object()).list_mut();
+                let list = self.object_map.get_mut(list_ptr.as_object())?.list_mut();
                 list[index.as_u64() as usize] = val;
                 self.pc += 1;
             }
@@ -416,7 +422,7 @@ impl Atlas77VM<'_> {
                 let list = vec![VMData::new_unit(); size.as_u64() as usize];
                 let ptr = self.object_map.put(ObjectKind::List(list))?;
 
-                self.stack.push_with_rc(VMData::new_list(ptr), &mut self.object_map)?;
+                self.stack.push(VMData::new_list(ptr))?;
                 self.pc += 1;
             }
             Instruction::ExternCall { name, .. } => {
@@ -454,21 +460,22 @@ impl Atlas77VM<'_> {
             Instruction::Return => {
                 let (pc, sp) = self.stack_frame.pop().unwrap_or_else(|| {
                     eprintln!(
-                        "No stack frame to return to {:?} @ {}",
-                        self.stack.pop(),
+                        "No stack frame to return from {:?} @ {}",
+                        self.stack.last(),
                         self.pc
                     );
                     std::process::exit(1);
                 });
-                let ret = self.stack.last()?.clone();
+                let ret = *self.stack.last()?;
                 match ret.tag {
                     VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                        self.object_map.rc_inc(ret.as_object());
                         self.object_map.rc_inc(ret.as_object());
                     }
                     _ => {}
                 }
-                self.stack.truncate(sp, &mut self.object_map);
-                self.var_map.pop(&mut self.object_map);
+                self.stack.truncate(sp, &mut self.object_map)?;
+                self.var_map.pop(&mut self.object_map)?;
                 self.pc = pc + 1;
                 self.stack.push(ret)?;
             }

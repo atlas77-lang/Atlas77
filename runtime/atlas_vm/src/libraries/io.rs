@@ -16,10 +16,10 @@ pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
             println!("{}", val)
         }
         VMData::TAG_STR => {
-            println!("{}", state.object_map.get(val.as_object()).string())
+            println!("{}", state.object_map.get(val.as_object())?.string())
         }
         _ => {
-            println!("{}", state.object_map.get(val.as_object()))
+            println!("{}", state.object_map.get(val.as_object())?)
         }
     }
     Ok(VMData::new_unit())
@@ -32,10 +32,10 @@ pub fn print(state: VMState) -> Result<VMData, RuntimeError> {
             print!("{}", val)
         }
         VMData::TAG_STR => {
-            print!("{}", state.object_map.get(val.as_object()).string())
+            print!("{}", state.object_map.get(val.as_object())?.string())
         }
         _ => {
-            print!("{}", state.object_map.get(val.as_object()))
+            print!("{}", state.object_map.get(val.as_object())?)
         }
     }
     Ok(VMData::new_unit())
