@@ -29,7 +29,7 @@ atlas-core = "0.7.1"
 # For the CLI
 clap = { version = "4.5.26", features = ["derive"] }
 # For the Standard Library
-rand = "0.8.5"
+rand = "0.9.0"
 time = { version = "0.3.37", features = ["formatting"] }
 # For the Parser
 bumpalo = "3.16.0"
