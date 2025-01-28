@@ -1,5 +1,5 @@
 use crate::errors::RuntimeError;
-use crate::memory::object_map::Object;
+use crate::memory::object_map::ObjectKind;
 use crate::memory::vm_data::VMData;
 use crate::runtime::vm_state::VMState;
 use crate::CallBack;
@@ -46,7 +46,7 @@ pub fn input(state: VMState) -> Result<VMData, RuntimeError> {
     std::io::stdin().read_line(&mut input).unwrap();
     let obj_index = state
         .object_map
-        .put(Object::String(input.trim().to_string()));
+        .put(ObjectKind::String(input.trim().to_string()));
     match obj_index {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),

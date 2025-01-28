@@ -5,7 +5,7 @@
 use super::{
     arena::HirArena,
     error::{
-        FunctionTypeMismatchError, HirError, HirResult, TryingToMutateImmutableVariableError,
+        FunctionTypeMismatchError, HirError, HirResult,
         TryingToNegateUnsignedError, TypeMismatchError, UnknownTypeError,
     },
     expr,
@@ -15,6 +15,7 @@ use super::{
     HirFunction, HirModule, HirModuleSignature,
 };
 use crate::atlas_hir::error::EmptyListLiteralError;
+use crate::atlas_hir::expr::HirIdentExpr;
 use logos::Span;
 use miette::{SourceOffset, SourceSpan};
 use std::collections::HashMap;
@@ -205,7 +206,7 @@ impl<'hir> TypeChecker<'hir> {
                         actual_type: format!("{}", cond_ty),
                         actual_loc: SourceSpan::new(
                             SourceOffset::from(w.condition.span().start),
-                            (w.condition.span().end - w.condition.span().start) as usize,
+                            w.condition.span().end - w.condition.span().start,
                         ),
                         expected_type: format!("{}", self.arena.types().get_boolean_ty()),
                         expected_loc: SourceSpan::new(
@@ -375,6 +376,26 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::UnsignedIntegerLiteral(_) => Ok(self.arena.types().get_uint64_ty()),
             HirExpr::BooleanLiteral(_) => Ok(self.arena.types().get_boolean_ty()),
             HirExpr::StringLiteral(_) => Ok(self.arena.types().get_str_ty()),
+            HirExpr::NewArray(a) => {
+                let size_ty = self.check_expr(a.size.as_mut())?;
+                let size_ty_id = HirTyId::from(size_ty);
+                if size_ty_id != HirTyId::compute_uint64_ty_id() && size_ty_id != HirTyId::compute_integer64_ty_id() {
+                    return Err(HirError::TypeMismatch(TypeMismatchError {
+                        actual_type: format!("{}", size_ty),
+                        actual_loc: SourceSpan::new(
+                            SourceOffset::from(a.size.span().start),
+                            a.size.span().end - a.size.span().start,
+                        ),
+                        expected_type: format!("{} or {}", self.arena.types().get_uint64_ty(), self.arena.types().get_integer64_ty()),
+                        expected_loc: SourceSpan::new(
+                            SourceOffset::from(a.size.span().start),
+                            a.size.span().end - a.size.span().start,
+                        ),
+                        src: self.src.clone(),
+                    }));
+                }
+                Ok(a.ty)
+            }
             HirExpr::ListLiteral(l) => {
                 if l.items.is_empty() {
                     return Err(HirError::EmptyListLiteral(EmptyListLiteralError {
@@ -428,10 +449,7 @@ impl<'hir> TypeChecker<'hir> {
             }
             HirExpr::Casting(c) => {
                 let expr_ty = self.check_expr(&mut c.expr)?;
-                let can_cast = match expr_ty {
-                    HirTy::Int64(_) | HirTy::Float64(_) | HirTy::UInt64(_) | HirTy::Boolean(_) | HirTy::String(_) => true,
-                    _ => false
-                };
+                let can_cast = matches!(expr_ty, HirTy::Int64(_) | HirTy::Float64(_) | HirTy::UInt64(_) | HirTy::Boolean(_) | HirTy::String(_));
                 if !can_cast {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", expr_ty),
@@ -454,7 +472,7 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::Indexing(i) => {
                 let target = self.check_expr(&mut i.target)?;
                 let index = self.check_expr(&mut i.index)?;
-                if HirTyId::from(index) != HirTyId::compute_uint64_ty_id() {
+                if HirTyId::from(index) != HirTyId::compute_uint64_ty_id() && HirTyId::from(index) != HirTyId::compute_integer64_ty_id() {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", index),
                         actual_loc: SourceSpan::new(
@@ -568,100 +586,55 @@ impl<'hir> TypeChecker<'hir> {
             //todo: this should have its own function
             HirExpr::Assign(a) => {
                 let rhs = self.check_expr(&mut a.rhs)?;
-                let lhs = match a.lhs.as_mut() {
-                    HirExpr::Ident(i) => {
-                        match self
-                            .context
-                            .last()
-                            .unwrap()
-                            .get(self.current_func_name.unwrap())
-                        {
-                            Some(ctx_func) => {
-                                let ctx_var = ctx_func.get(i.name).unwrap();
-                                println!(
-                                    "Changing type of {} from {} to {}",
-                                    i.name, ctx_var.ty, rhs
-                                );
-                                i.ty = ctx_var.ty;
-                                if !ctx_var.is_mut {
-                                    return Err(HirError::TryingToMutateImmutableVariable(
-                                        TryingToMutateImmutableVariableError {
-                                            const_loc: SourceSpan::new(
-                                                SourceOffset::from(ctx_var.span.start),
-                                                ctx_var.name_span.end - ctx_var.span.start,
-                                            ),
-                                            var_name: i.name.to_string(),
-                                            span: SourceSpan::new(
-                                                SourceOffset::from(a.span.start),
-                                                a.span.end - a.span.start,
-                                            ),
-                                            src: self.src.clone(),
-                                        },
-                                    ));
-                                }
-                                ctx_var
-                            }
-                            None => {
-                                return Err(HirError::UnknownType(UnknownTypeError {
-                                    name: i.name.to_string(),
-                                    span: SourceSpan::new(
-                                        SourceOffset::from(i.span.start),
-                                        i.span.end - i.span.start,
-                                    ),
-                                    src: self.src.clone(),
-                                }))
-                            }
-                        }
-                    }
-                    _ => {
-                        todo!("TypeChecker::check_expr")
-                    }
-                };
-
-                if HirTyId::from(lhs.ty) != HirTyId::from(rhs) {
-                    Err(HirError::TypeMismatch(TypeMismatchError {
+                let lhs = self.check_expr(&mut a.lhs)?;
+                if HirTyId::from(lhs) != HirTyId::from(rhs) {
+                    return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", rhs),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(a.lhs.span().start),
-                            a.rhs.span().end - a.lhs.span().start,
+                            SourceOffset::from(a.rhs.span().start),
+                            a.rhs.span().end - a.rhs.span().start,
                         ),
-                        expected_type: format!("{}", lhs.ty),
+                        expected_type: format!("{}", lhs),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(lhs.name_span.start),
-                            lhs.ty_span.end - lhs.name_span.start,
+                            SourceOffset::from(a.lhs.span().start),
+                            a.lhs.span().end - a.lhs.span().start,
                         ),
                         src: self.src.clone(),
-                    }))
-                } else {
-                    Ok(lhs.ty)
+                    }));
                 }
+                Ok(lhs)
             }
             HirExpr::Ident(i) => {
-                if let Some(ctx_var) = self
-                    .context
-                    .last()
-                    .unwrap()
-                    .get(self.current_func_name.unwrap())
-                    .unwrap()
-                    .get(i.name)
-                {
-                    println!(
-                        "Changing type of {} from {} to {}",
-                        i.name, i.ty, ctx_var.ty
-                    );
-                    i.ty = ctx_var.ty;
-                    Ok(ctx_var.ty)
-                } else {
-                    Err(HirError::UnknownType(UnknownTypeError {
-                        name: i.name.to_string(),
-                        span: SourceSpan::new(
-                            SourceOffset::from(i.span.start),
-                            i.span.end - i.span.start,
-                        ),
-                        src: self.src.clone(),
-                    }))
-                }
+                let ctx_var = self.get_ident_ty(i)?;
+                Ok(ctx_var.ty)
             }
+        }
+    }
+
+    fn get_ident_ty(&mut self, i: &mut HirIdentExpr<'hir>) -> HirResult<&ContextVariable<'hir>> {
+        if let Some(ctx_var) = self
+            .context
+            .last()
+            .unwrap()
+            .get(self.current_func_name.unwrap())
+            .unwrap()
+            .get(i.name)
+        {
+            println!(
+                "Changing type of {} from {} to {}",
+                i.name, i.ty, ctx_var.ty
+            );
+            i.ty = ctx_var.ty;
+            Ok(ctx_var)
+        } else {
+            Err(HirError::UnknownType(UnknownTypeError {
+                name: i.name.to_string(),
+                span: SourceSpan::new(
+                    SourceOffset::from(i.span.start),
+                    i.span.end - i.span.start,
+                ),
+                src: self.src.clone(),
+            }))
         }
     }
 }

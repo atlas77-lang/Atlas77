@@ -52,7 +52,7 @@ pub fn build(path: String) -> miette::Result<()> {
         Ok(_) => {
             println!(
                 "Program ran successfully: {} (time: {}ms)",
-                vm.stack.pop().unwrap(),
+                res.unwrap(),
                 (end - start).as_millis()
             );
         }

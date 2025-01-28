@@ -11,7 +11,8 @@ use libraries::{
 use runtime::instruction::{Instruction, Program, Type};
 use std::collections::HashMap;
 
-use crate::memory::object_map::Object;
+use crate::memory::object_map::ObjectKind;
+use crate::memory::varmap::VarMap;
 use crate::memory::{object_map::Memory, stack::Stack, vm_data::VMData};
 
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
@@ -21,8 +22,8 @@ pub struct Atlas77VM<'run> {
     pub program: Program,
     pub stack: Stack,
     stack_frame: Vec<(usize, usize)>, //previous pc and previous stack top
-    pub(crate) object_map: Memory,
-    pub varmap: Vec<HashMap<String, VMData>>, //need to be changed
+    pub object_map: Memory,
+    pub var_map: VarMap,
     pub extern_fn: HashMap<&'run str, CallBack>,
     pub pc: usize,
 }
@@ -73,7 +74,7 @@ impl Atlas77VM<'_> {
             stack: Stack::new(),
             stack_frame: Vec::new(),
             object_map: Memory::new(1024),
-            varmap: vec![HashMap::new()],
+            var_map: VarMap::new(),
             extern_fn,
             pc: 0,
         }
@@ -109,29 +110,29 @@ impl Atlas77VM<'_> {
             let instr = self.program[self.pc].clone();
             self.execute_instruction(instr)?;
         }
-        self.stack.pop()
+        self.stack.pop_with_rc(&mut self.object_map)
     }
     /// TODO: Add check for unsigned int
     pub fn execute_instruction(&mut self, instr: Instruction) -> RuntimeResult<()> {
         match instr {
             Instruction::PushInt(i) => {
                 let val = VMData::new_i64(i);
-                self.stack.push(val)?;
+                self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::PushFloat(f) => {
                 let val = VMData::new_f64(f);
-                self.stack.push(val)?;
+                self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::PushUnsignedInt(u) => {
                 let val = VMData::new_u64(u);
-                self.stack.push(val)?;
+                self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::PushStr(u) => {
                 let string = self.program.global.string_pool[u].clone();
-                let ptr = match self.object_map.put(Object::String(string)) {
+                let ptr = match self.object_map.put(ObjectKind::String(string)) {
                     Ok(ptr) => ptr,
                     Err(_) => return Err(RuntimeError::OutOfMemory),
                 };
@@ -139,49 +140,49 @@ impl Atlas77VM<'_> {
                 self.pc += 1;
             }
             Instruction::Lt => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
+                let a = self.stack.pop_with_rc(&mut self.object_map)?;
+                let b = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = VMData::new_bool(b.as_i64() < a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Lte => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
+                let a = self.stack.pop_with_rc(&mut self.object_map)?;
+                let b = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = VMData::new_bool(b.as_i64() <= a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Gt => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
+                let a = self.stack.pop_with_rc(&mut self.object_map)?;
+                let b = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = VMData::new_bool(b.as_i64() > a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Gte => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
+                let a = self.stack.pop_with_rc(&mut self.object_map)?;
+                let b = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = VMData::new_bool(b.as_i64() >= a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Eq => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
+                let a = self.stack.pop_with_rc(&mut self.object_map)?;
+                let b = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = VMData::new_bool(b.as_i64() == a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Neq => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
+                let a = self.stack.pop_with_rc(&mut self.object_map)?;
+                let b = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = VMData::new_bool(b.as_i64() != a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::JmpZ { pos } => {
-                let cond = self.stack.pop()?;
+                let cond = self.stack.pop_with_rc(&mut self.object_map)?;
                 if !cond.as_bool() {
                     self.pc += (pos + 1) as usize;
                 } else {
@@ -189,12 +190,14 @@ impl Atlas77VM<'_> {
                 }
             }
             Instruction::CastTo(t) => {
-                let val = self.stack.pop()?;
+                let val = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = match t {
                     Type::String => {
                         let string = val.to_string();
-                        let ptr = match self.object_map.put(Object::String(string)) {
-                            Ok(ptr) => ptr,
+                        let ptr = match self.object_map.put(ObjectKind::String(string)) {
+                            Ok(ptr) => {
+                                ptr
+                            }
                             Err(_) => return Err(RuntimeError::OutOfMemory),
                         };
                         VMData::new_string(ptr)
@@ -202,7 +205,8 @@ impl Atlas77VM<'_> {
                     Type::Boolean => {
                         match val.tag {
                             VMData::TAG_STR => {
-                                let string = self.object_map.get(val.as_object()).string();
+                                let raw_string = self.object_map.get(val.as_object());
+                                let string = raw_string.string();
                                 VMData::new_bool(string.parse::<bool>().unwrap())
                             }
                             _ => VMData::new_bool(val.as_bool()),
@@ -211,7 +215,8 @@ impl Atlas77VM<'_> {
                     Type::Float => {
                         match val.tag {
                             VMData::TAG_STR => {
-                                let string = self.object_map.get(val.as_object()).string();
+                                let raw_string = self.object_map.get(val.as_object());
+                                let string = raw_string.string();
                                 VMData::new_f64(string.parse::<f64>().unwrap())
                             }
                             VMData::TAG_U64 => VMData::new_f64(val.as_u64() as f64),
@@ -223,7 +228,8 @@ impl Atlas77VM<'_> {
                     Type::Integer => {
                         match val.tag {
                             VMData::TAG_STR => {
-                                let string = self.object_map.get(val.as_object()).string();
+                                let raw_string = self.object_map.get(val.as_object());
+                                let string = raw_string.string();
                                 VMData::new_i64(string.parse::<i64>().unwrap())
                             }
                             VMData::TAG_U64 => VMData::new_i64(val.as_u64() as i64),
@@ -235,7 +241,8 @@ impl Atlas77VM<'_> {
                     Type::UnsignedInteger => {
                         match val.tag {
                             VMData::TAG_STR => {
-                                let string = self.object_map.get(val.as_object()).string();
+                                let raw_string = self.object_map.get(val.as_object());
+                                let string = raw_string.string();
                                 VMData::new_u64(string.parse::<u64>().unwrap())
                             }
                             VMData::TAG_I64 => VMData::new_u64(val.as_i64() as u64),
@@ -253,12 +260,12 @@ impl Atlas77VM<'_> {
             }
             Instruction::Store { var_name } => {
                 let val = self.stack.pop()?;
-                self.varmap.last_mut().unwrap().insert(var_name, val);
+                self.var_map.insert(var_name, val);
                 self.pc += 1;
             }
             Instruction::Load { var_name } => {
-                let val = self.varmap.last().unwrap().get(&var_name).unwrap();
-                self.stack.push(*val)?;
+                let val = self.var_map.get(&var_name).unwrap();
+                self.stack.push_with_rc(*val, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Swap => {
@@ -269,29 +276,29 @@ impl Atlas77VM<'_> {
                 self.pc += 1;
             }
             Instruction::Dup => {
-                let val = self.stack.last()?.clone();
-                self.stack.push(val)?;
+                let val = *self.stack.last()?;
+                self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::IMul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() * a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::FMul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() * a.as_f64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::UIMul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() * a.as_u64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::IDiv => {
@@ -301,7 +308,7 @@ impl Atlas77VM<'_> {
                 }
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() / a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::FDiv => {
@@ -311,7 +318,7 @@ impl Atlas77VM<'_> {
                 }
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() / a.as_f64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::UIDiv => {
@@ -321,81 +328,81 @@ impl Atlas77VM<'_> {
                 }
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() / a.as_u64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::IAdd => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() + a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::FAdd => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() + a.as_f64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::UIAdd => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() + a.as_u64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::ISub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() - a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::FSub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() - a.as_f64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::UISub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() - a.as_u64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::IMod => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() % a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::ListLoad => {
                 let index = self.stack.pop()?;
                 let list_ptr = self.stack.pop()?;
-                let list = self.object_map.get(list_ptr.as_object()).list();
+                let raw_list = self.object_map.get(list_ptr.as_object());
+                let list = raw_list.list();
                 let val = list[index.as_u64() as usize];
-                self.stack.push(val)?;
+                self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
             }
-            Instruction::ListStore { index } => {
+            Instruction::ListStore => {
                 let val = self.stack.pop()?;
                 let list_ptr = self.stack.pop()?;
+                let index = self.stack.pop()?;
                 let list = self.object_map.get_mut(list_ptr.as_object()).list_mut();
-                list[index] = val;
+                list[index.as_u64() as usize] = val;
                 self.pc += 1;
             }
-            Instruction::NewList { size } => {
-                let list = vec![VMData::new_unit(); size];
-                let ptr = match self.object_map.put(Object::List(list)) {
-                    Ok(ptr) => ptr,
-                    Err(_) => return Err(RuntimeError::OutOfMemory),
-                };
-                //I should drop the tag system for objects
-                self.stack.push(VMData::new_object(280, ptr))?;
+            Instruction::NewList => {
+                let size = self.stack.pop()?;
+                let list = vec![VMData::new_unit(); size.as_u64() as usize];
+                let ptr = self.object_map.put(ObjectKind::List(list))?;
+
+                self.stack.push_with_rc(VMData::new_object(VMData::TAG_LIST, ptr), &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::ExternCall { name, .. } => {
@@ -404,18 +411,18 @@ impl Atlas77VM<'_> {
                     &mut self.stack,
                     &mut self.object_map,
                     &consts,
-                    self.varmap.last().unwrap(),
+                    self.var_map.last(),
                 );
                 let extern_fn: &CallBack = self.extern_fn.get::<&str>(&name.as_str()).unwrap();
                 let res = extern_fn(vm_state)?;
-                self.stack.push(res)?;
+                self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::DirectCall { pos, args } => {
                 let fn_ptr = self.stack[pos];
                 let (pc, sp) = (self.pc, self.stack.top - args as usize);
                 self.stack_frame.push((pc, sp));
-                self.varmap.push(HashMap::new());
+                self.var_map.push();
                 self.pc = fn_ptr.as_fn_ptr();
             }
             Instruction::CallFunction { name, args } => {
@@ -427,7 +434,7 @@ impl Atlas77VM<'_> {
                     .unwrap();
                 let (pc, sp) = (self.pc, self.stack.top - args as usize);
                 self.stack_frame.push((pc, sp));
-                self.varmap.push(HashMap::new());
+                self.var_map.push();
                 self.pc = label.position;
             }
             Instruction::Return => {
@@ -439,10 +446,16 @@ impl Atlas77VM<'_> {
                     );
                     std::process::exit(1);
                 });
-                self.varmap.pop();
+                let ret = self.stack.last()?.clone();
+                match ret.tag {
+                    VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                        self.object_map.rc_inc(ret.as_object());
+                    }
+                    _ => {}
+                }
+                self.stack.truncate(sp, &mut self.object_map);
+                self.var_map.pop(&mut self.object_map);
                 self.pc = pc + 1;
-                let ret = self.stack.pop()?;
-                self.stack.truncate(sp);
                 self.stack.push(ret)?;
             }
             Instruction::Halt => {

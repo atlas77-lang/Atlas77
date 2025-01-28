@@ -1,3 +1,4 @@
+use crate::errors::RuntimeError;
 use crate::memory::vm_data::VMData;
 
 /// Probably should be renamed lmao
@@ -9,9 +10,15 @@ pub struct Memory {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct ObjectIndex {
     pub idx: u64,
+}
+
+impl From<ObjectIndex> for usize {
+    fn from(value: ObjectIndex) -> Self {
+        value.idx as usize
+    }
 }
 
 impl ObjectIndex {
@@ -30,42 +37,93 @@ impl Memory {
         Self {
             free: ObjectIndex::new(0),
             mem: (0..space)
-                .map(|x| Object::Free {
-                    next: ObjectIndex::new(((x + 1) % space) as u64),
+                .map(|x| Object {
+                    kind: ObjectKind::Free {
+                        next: ObjectIndex::new(((x + 1) % space) as u64),
+                    },
+                    rc: 0,
                 })
                 .collect(),
         }
     }
 
-    /// Need to add a way to increase `mem` size if we out of memory
-    /// And a way to clean it when there's too much memory (basically shrink and grow)
-    ///
-    /// Result<ObjectIndex, Object> should become Result<ObjectIndex, RuntimeError> with RuntimeError::OutOfMemory(Object)
-    pub fn put(&mut self, object: Object) -> Result<ObjectIndex, Object> {
+    pub fn put(&mut self, object: ObjectKind) -> Result<ObjectIndex, RuntimeError> {
         let idx = self.free;
-        let v = self.get_mut(self.free);
-        let repl = std::mem::replace(v, object);
+        let v = self.mem.get_mut(usize::from(self.free)).unwrap();
+        let repl = std::mem::replace(v, Object { kind: object, rc: 1 });
 
         match repl {
-            Object::Free { next } => {
+            Object { kind: ObjectKind::Free { next }, .. } => {
                 self.free = next;
                 Ok(idx)
             }
             _ => {
-                let obj = std::mem::replace(v, repl);
-                Err(obj)
+                Err(RuntimeError::OutOfMemory)
             }
         }
     }
 
-    #[inline(always)]
-    pub fn get(&self, index: ObjectIndex) -> &Object {
-        &self.mem[index.idx as usize]
+    pub fn free(&mut self, index: ObjectIndex) {
+        let next = self.free;
+        let v = self.mem.get(usize::from(index)).unwrap().kind.clone();
+        match v {
+            ObjectKind::List(l) => {
+                for item in l {
+                    match item.tag {
+                        VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                            let obj_to_dec = item.as_object();
+                            self.rc_dec(obj_to_dec);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+        let v = self.mem.get_mut(usize::from(index)).unwrap();
+        let repl = std::mem::replace(
+            v,
+            Object {
+                kind: ObjectKind::Free { next },
+                rc: 0,
+            },
+        );
+        match repl {
+            Object { kind: ObjectKind::Free { .. }, .. } => {
+                panic!("Tried to free a non-free object")
+            }
+            _ => {}
+        }
+        self.free = index;
     }
 
     #[inline(always)]
-    pub fn get_mut(&mut self, index: ObjectIndex) -> &mut Object {
-        &mut self.mem[index.idx as usize]
+    pub fn get(&mut self, index: ObjectIndex) -> ObjectKind {
+        let kind = self.mem[usize::from(index)].kind.clone();
+        self.rc_dec(index);
+        kind
+    }
+
+    #[inline(always)]
+    pub fn get_mut(&mut self, index: ObjectIndex) -> &mut ObjectKind {
+        //You can decrement the rc here, because if it reaches 0 and still need to return a mutable reference, it's a bug
+        self.rc_dec(index);
+        let kind = &mut self.mem[usize::from(index)].kind;
+        kind
+    }
+
+    #[inline(always)]
+    pub fn rc_inc(&mut self, index: ObjectIndex) {
+        self.mem[usize::from(index)].rc += 1;
+    }
+
+    #[inline(always)]
+    pub fn rc_dec(&mut self, index: ObjectIndex) {
+        let rc = &mut self.mem[usize::from(index)].rc;
+        *rc -= 1;
+        if *rc == 0 {
+            self.free(index);
+        }
     }
 
     #[inline(always)]
@@ -79,90 +137,119 @@ impl Memory {
     }
 }
 
-/// List is imho badly represented, a list should be defined in the language itself as a wrapper around a static array
+impl std::fmt::Display for Memory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, obj) in self.mem.iter().enumerate() {
+            if let Object { kind: ObjectKind::Free { .. }, .. } = obj {
+                continue;
+            }
+            writeln!(f, "{}: {}", i, obj)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug)]
-pub enum Object {
+pub enum ObjectKind {
     String(String),
     Structure(Structure),
     List(Vec<VMData>),
     Free { next: ObjectIndex },
 }
-
-
-impl std::fmt::Display for Object {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Object::String(s) => write!(f, "{}", s),
-            Object::Structure(s) => write!(f, "{:?}", s),
-            Object::List(l) => write!(f, "{:?}", l),
-            Object::Free { next } => write!(f, "Free: next -> {}", next),
+impl Default for ObjectKind {
+    fn default() -> Self {
+        ObjectKind::Free {
+            next: ObjectIndex::default(),
         }
     }
 }
 
-impl Object {
-    pub fn new(data: impl Into<Object>) -> Self {
+#[derive(Clone, Debug, Default)]
+pub struct Object {
+    pub kind: ObjectKind,
+    /// Reference count
+    pub rc: usize,
+}
+impl std::fmt::Display for Object {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} (rc: {})", self.kind, self.rc)
+    }
+}
+
+impl std::fmt::Display for ObjectKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ObjectKind::String(s) => write!(f, "`String`: \"{}\"", s),
+            ObjectKind::Structure(s) => write!(f, "{:?}", s),
+            ObjectKind::List(l) => write!(f, "{:?}", l),
+            ObjectKind::Free { next } => write!(f, "Free: next -> {}", next),
+        }
+    }
+}
+
+impl ObjectKind {
+    pub fn new(data: impl Into<ObjectKind>) -> Self {
         data.into()
     }
 
     pub fn string(&self) -> &String {
         match &self {
-            Object::String(s) => s,
-            _ => unreachable!(),
+            ObjectKind::String(s) => s,
+            _ => unreachable!("Expected a string, got a {:?}", self),
         }
     }
 
     pub fn string_mut(&mut self) -> &mut String {
         match self {
-            Object::String(s) => s,
-            _ => unreachable!(),
+            ObjectKind::String(s) => s,
+            _ => unreachable!("Expected a string, got a {:?}", self),
         }
     }
 
     pub fn structure(&self) -> &Structure {
         match &self {
-            Object::Structure(s) => s,
-            _ => unreachable!(),
+            ObjectKind::Structure(s) => s,
+            _ => unreachable!("Expected a structure, got a {:?}", self),
         }
     }
 
     pub fn structure_mut(&mut self) -> &mut Structure {
         match self {
-            Object::Structure(s) => s,
-            _ => unreachable!(),
+            ObjectKind::Structure(s) => s,
+            _ => unreachable!("Expected a structure, got a {:?}", self),
         }
     }
 
     pub fn list(&self) -> &Vec<VMData> {
         match &self {
-            Object::List(l) => l,
-            _ => unreachable!(),
+            ObjectKind::List(l) => l,
+            _ => unreachable!("Expected a list, got a {:?}", self),
         }
     }
 
     pub fn list_mut(&mut self) -> &mut Vec<VMData> {
         match self {
-            Object::List(l) => l,
-            _ => unreachable!(),
+            ObjectKind::List(l) => l,
+            _ => unreachable!("Expected a list, got a {:?}", self),
         }
     }
 }
 
-impl From<Structure> for Object {
+impl From<Structure> for ObjectKind {
     fn from(value: Structure) -> Self {
-        Object::Structure(value)
+        ObjectKind::Structure(value)
     }
 }
 
-impl From<String> for Object {
+impl From<String> for ObjectKind {
     fn from(value: String) -> Self {
-        Object::String(value)
+        ObjectKind::String(value)
     }
 }
 
-impl From<Vec<VMData>> for Object {
+impl From<Vec<VMData>> for ObjectKind {
     fn from(value: Vec<VMData>) -> Self {
-        Object::List(value)
+        ObjectKind::List(value)
     }
 }
 

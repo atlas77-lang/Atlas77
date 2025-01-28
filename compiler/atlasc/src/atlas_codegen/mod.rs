@@ -200,6 +200,17 @@ where
                             var_name: i.name.to_string(),
                         });
                     }
+                    HirExpr::Indexing(i) => {
+                        //Get the Index
+                        self.generate_bytecode_expr(&i.index, bytecode, src.clone())?;
+                        //Get the list pointer
+                        println!("i.target: {:?}", i.target);
+                        self.generate_bytecode_expr(&i.target, bytecode, src.clone())?;
+                        //Get the value
+                        self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
+                        //Store the value in the list
+                        bytecode.push(Instruction::ListStore);
+                    }
                     _ => {
                         return Err(atlas_hir::error::HirError::UnsupportedExpr(
                             UnsupportedExpr {
@@ -448,15 +459,24 @@ where
                 bytecode.push(Instruction::PushStr(index));
             }
             HirExpr::ListLiteral(l) => {
-                bytecode.push(Instruction::NewList { size: l.items.len() });
+                bytecode.push(Instruction::PushUnsignedInt(l.items.len() as u64));
+                bytecode.push(Instruction::NewList);
                 l.items.iter().enumerate().for_each(|(u, i)| {
                     //Duplicate the list reference
                     bytecode.push(Instruction::Dup);
+                    //Push the index
+                    bytecode.push(Instruction::PushUnsignedInt(u as u64));
+                    //Swap the index and the list reference
+                    bytecode.push(Instruction::Swap);
                     //Generate the expression
                     self.generate_bytecode_expr(i, bytecode, src.clone()).unwrap();
                     //Store the value in the list
-                    bytecode.push(Instruction::ListStore { index: u });
+                    bytecode.push(Instruction::ListStore);
                 });
+            }
+            HirExpr::NewArray(a) => {
+                self.generate_bytecode_expr(&a.size, bytecode, src.clone())?;
+                bytecode.push(Instruction::NewList);
             }
             HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: i.name.to_string() }),
         }

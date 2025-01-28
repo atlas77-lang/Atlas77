@@ -1,3 +1,4 @@
+use crate::memory::object_map::Memory;
 use crate::{errors::RuntimeError, memory::vm_data::VMData};
 use std::fmt::Display;
 use std::ops::Index;
@@ -45,16 +46,53 @@ impl Stack {
             Err(RuntimeError::StackOverflow)
         }
     }
+    pub fn push_with_rc(&mut self, val: VMData, mem: &mut Memory) -> Result<(), RuntimeError> {
+        if self.top < STACK_SIZE {
+            self.values[self.top] = val;
+            match val.tag {
+                VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                    mem.rc_inc(val.as_object());
+                }
+                _ => {}
+            }
+            self.top += 1;
+            Ok(())
+        } else {
+            Err(RuntimeError::StackOverflow)
+        }
+    }
 
     #[inline(always)]
-    pub fn truncate(&mut self, new_top: usize) {
+    pub fn truncate(&mut self, new_top: usize, mem: &mut Memory) {
+        for i in new_top..=self.top {
+            match self.values[i].tag {
+                VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                    mem.rc_dec(self.values[i].as_object());
+                }
+                _ => {}
+            }
+        }
         self.top = new_top;
     }
 
     pub fn pop(&mut self) -> Result<VMData, RuntimeError> {
         if self.top != 0 {
             self.top -= 1;
+            Ok(self.values[self.top])
+        } else {
+            Err(RuntimeError::StackUnderflow)
+        }
+    }
+    pub fn pop_with_rc(&mut self, mem: &mut Memory) -> Result<VMData, RuntimeError> {
+        if self.top != 0 {
+            self.top -= 1;
             let r = self.values[self.top];
+            match r.tag {
+                VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                    mem.rc_dec(r.as_object());
+                }
+                _ => {}
+            }
             Ok(r)
         } else {
             Err(RuntimeError::StackUnderflow)
@@ -119,7 +157,7 @@ impl Display for Stack {
             "Stack: {{ values: {}, top: {}}}",
             {
                 let mut s = "[".to_string();
-                for i in 0..self.top - 1 {
+                for i in 0..=self.top {
                     s.push_str(&format!("{}, ", self.values[i]))
                 }
                 s.push(']');

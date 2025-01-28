@@ -33,7 +33,7 @@ impl AstItem<'_> {
             AstItem::Func(v) => v.vis = vis,
         }
     }
-    fn span(&self) -> Span {
+    pub fn span(&self) -> Span {
         match self {
             AstItem::Import(v) => v.span.clone(),
             AstItem::Enum(v) => v.span.clone(),
@@ -213,6 +213,7 @@ pub enum AstExpr<'ast> {
     FieldAccess(AstFieldAccessExpr<'ast>),
     StaticAccess(AstStaticAccessExpr<'ast>),
     NewObj(AstNewObjExpr<'ast>),
+    NewArray(AstNewArrayExpr<'ast>),
     _Block(AstBlock<'ast>),
     Assign(AstAssignExpr<'ast>),
     Casting(AstCastingExpr<'ast>),
@@ -234,6 +235,7 @@ impl AstExpr<'_> {
             AstExpr::FieldAccess(e) => e.span.clone(),
             AstExpr::StaticAccess(e) => e.span.clone(),
             AstExpr::NewObj(e) => e.span.clone(),
+            AstExpr::NewArray(e) => e.span.clone(),
             AstExpr::_Block(e) => e.span.clone(),
             AstExpr::Assign(e) => e.span.clone(),
             AstExpr::Casting(e) => e.span.clone(),
@@ -266,6 +268,13 @@ pub struct AstNewObjExpr<'ast> {
     pub span: Span,
     pub ty: &'ast AstIdentifier<'ast>,
     pub fields: &'ast [&'ast AstFieldInit<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstNewArrayExpr<'ast> {
+    pub span: Span,
+    pub ty: &'ast AstType<'ast>,
+    pub size: &'ast AstExpr<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize)]

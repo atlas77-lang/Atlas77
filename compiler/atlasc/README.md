@@ -9,4 +9,3 @@ This is the compiler for the atlas77 language. Here's a list of all the modules 
   HIR.
   It also performs type checking, dead code elimination (WIP), and constant folding (WIP).
 - `atlas_macro`: Utilities macros for the atlas77 language.
-- `atlas_runtime`: Compiler runtime for the atlas77 language. Will run `comptime` expressions in the future.

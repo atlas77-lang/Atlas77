@@ -72,9 +72,9 @@
             name: "main",
             position: 26,
             body: [
-                PushInt(80),
+                PushInt(35),
                 CallFunction(
-                    name: "iterative_fib",
+                    name: "recursive_fib",
                     args: 1,
                 ),
                 Store(
@@ -83,18 +83,6 @@
                 Load(
                     var_name: "fib_80",
                 ),
-                PushInt(0),
-                Swap,
-                ISub,
-                CastTo(String),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                PushInt(1),
-                PushInt(0),
-                Swap,
-                ISub,
                 CastTo(String),
                 ExternCall(
                     name: "println",
@@ -105,7 +93,7 @@
         ),
         (
             name: "recursive_fib",
-            position: 42,
+            position: 33,
             body: [
                 Store(
                     var_name: "n",

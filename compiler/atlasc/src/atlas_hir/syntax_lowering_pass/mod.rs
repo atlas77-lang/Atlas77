@@ -16,7 +16,7 @@ const IO_ATLAS: &str = include_str!("../../../../../libraries/std/io.atlas");
 const MATH_ATLAS: &str = include_str!("../../../../../libraries/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../../../libraries/std/string.atlas");
 
-use crate::atlas_hir::expr::{HirCastExpr, HirIndexingExpr, HirListLiteralExpr, HirStringLiteralExpr};
+use crate::atlas_hir::expr::{HirCastExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirStringLiteralExpr};
 use crate::atlas_hir::{
     arena::HirArena,
     error::{HirError, HirResult, UnsupportedExpr, UnsupportedStatement},
@@ -468,6 +468,14 @@ where
                 });
                 Ok(hir)
             }
+            AstExpr::NewArray(a) => {
+                let hir = HirExpr::NewArray(HirNewArrayExpr {
+                    span: node.span(),
+                    ty: self.visit_ty(a.ty)?,
+                    size: Box::new(self.visit_expr(a.size)?),
+                });
+                Ok(hir)
+            }
 
             AstExpr::Literal(l) => {
                 let hir = match l {
@@ -511,16 +519,6 @@ where
                             items: elements,
                             ty: self.arena.types().get_uninitialized_ty(),
                         })
-                    }
-                    _ => {
-                        return Err(HirError::UnsupportedExpr(UnsupportedExpr {
-                            span: SourceSpan::new(
-                                SourceOffset::from(node.span().start),
-                                node.span().end - node.span().start,
-                            ),
-                            expr: format!("{:?}", node),
-                            src: self.src.clone(),
-                        }));
                     }
                 };
                 Ok(hir)

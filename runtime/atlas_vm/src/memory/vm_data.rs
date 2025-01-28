@@ -45,6 +45,8 @@ impl VMData {
     pub const TAG_CHAR: u16 = 12;
     pub const TAG_STACK_PTR: u16 = 13;
     pub const TAG_FN_PTR: u16 = 14;
+    pub const TAG_LIST: u16 = 15;
+    pub const TAG_OBJECT: u16 = 16;
 
     pub fn new(tag: u16, data: RawVMData) -> Self {
         Self { tag, data }
@@ -58,7 +60,7 @@ impl VMData {
     }
 
     pub fn new_object(tag: u16, val: ObjectIndex) -> Self {
-        assert!(tag > 256, "object typeid is within the reserved area");
+        //assert!(tag > 256, "object typeid is within the reserved area");
         Self {
             tag,
             data: RawVMData { as_object: val },
@@ -70,7 +72,7 @@ impl VMData {
     }
 
     pub fn new_list(tag: u16, val: ObjectIndex) -> Self {
-        assert!(tag > 256, "object typeid is within the reserved area");
+        //assert!(tag > 256, "object typeid is within the reserved area");
         Self {
             tag,
             data: RawVMData { as_object: val },
@@ -267,7 +269,7 @@ impl VMData {
     #[inline(always)]
     #[must_use]
     pub fn is_object(self) -> bool {
-        self.tag > 256 || self.tag == Self::TAG_STR
+        self.tag == Self::TAG_OBJECT || self.tag == Self::TAG_LIST || self.tag == Self::TAG_STR
     }
 
     #[inline(always)]

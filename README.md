@@ -171,16 +171,15 @@ language_](#goal-of-the-language)).
 | Structs                  | **v0.5.1**       | User-defined types with named fields                                    | 🔧     |
 | Unions                   | **v0.5.1**       | Low-level data structures allowing overlapping memory layouts           | 💤     |
 | Enums                    | **v0.5.1**       | Enumerations with optional associated data for flexible value sets      | 🔧     |
-| Garbage Collection       | **v0.5.1**       | Automatic memory management using Reference Counting                    | 💤     |
+| Garbage Collection       | **v0.5.1**       | Automatic memory management using Reference Counting                    | ✅      |
 | Lambdas & Closures       | **v0.5.2**       | Inline, anonymous functions with captured variables                     | 🔧     |
 | Classes                  | **v0.5.2**       | Object-oriented programming support                                     | 🔧     |
 | Traits                   | **v0.5.2**       | Interfaces for defining shared behavior                                 | 🔧     |
 | Pointers                 | **v0.5.2**       | Basic pointer manipulation for low-level programming                    | 🔧     |
-| Memory Management        | **v0.5.2**       | Simple memory management                                                | 🔧     |
 | Imports                  | **v0.5.2**       | Importing code from other files                                         | 🔧     |
 | Generics                 | **v0.5.x**       | Type parameters for writing reusable code                               | 🔧     |
 | Standard Library         | **v0.5.x**       | A comprehensive standard library                                        | 💭     |
-| UFCS                     | **v0.5.x**       | Universal Function Call Syntax (i.e. `foo.bar()` becomes `bar(foo)`)    | 💭     |
+| UFCS                     | **unknown**      | Universal Function Call Syntax (i.e. `foo.bar()` becomes `bar(foo)`)    | 💭     |
 | Package Manager          | **unknown**      | A package manager for sharing code                                      | 💤     |
 | Language Server Protocol | **unknown**      | Editor support for code completion, diagnostics, and more               | 💤     |
 | Cranelift JIT            | **unknown**      | Just-in-time compilation for faster execution                           | 💤     |
@@ -242,7 +241,7 @@ Don't forget to give the project a star! Thanks again!
 ### Top contributors:
 
 <a href="https://github.com/atlas77-lang/atlas77/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=atlas77-lang/atlas77" />
+  <img src="https://contrib.rocks/image?repo=atlas77-lang/atlas77"/>
 </a>
 
 Made with [contrib.rocks](https://contrib.rocks).

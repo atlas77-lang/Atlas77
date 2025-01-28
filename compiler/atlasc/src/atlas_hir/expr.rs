@@ -11,13 +11,14 @@ pub enum HirExpr<'hir> {
     Ident(HirIdentExpr<'hir>),
     Unary(UnaryOpExpr<'hir>),
     Casting(HirCastExpr<'hir>),
-    Indexing(HirIndexingExpr<'hir>),
     FloatLiteral(HirFloatLiteralExpr<'hir>),
+    Indexing(HirIndexingExpr<'hir>),
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
     UnsignedIntegerLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
     StringLiteral(HirStringLiteralExpr<'hir>),
     ListLiteral(HirListLiteralExpr<'hir>),
+    NewArray(HirNewArrayExpr<'hir>),
 }
 
 impl HirExpr<'_> {
@@ -36,6 +37,7 @@ impl HirExpr<'_> {
             HirExpr::Assign(expr) => expr.span.clone(),
             HirExpr::StringLiteral(expr) => expr.span.clone(),
             HirExpr::ListLiteral(expr) => expr.span.clone(),
+            HirExpr::NewArray(expr) => expr.span.clone(),
         }
     }
 }
@@ -56,8 +58,16 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::Assign(expr) => expr.ty,
             HirExpr::StringLiteral(expr) => expr.ty,
             HirExpr::ListLiteral(expr) => expr.ty,
+            HirExpr::NewArray(expr) => expr.ty,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirNewArrayExpr<'hir> {
+    pub span: Span,
+    pub ty: &'hir HirTy<'hir>,
+    pub size: Box<HirExpr<'hir>>,
 }
 
 #[derive(Debug, Clone, Serialize)]

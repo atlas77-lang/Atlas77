@@ -19,7 +19,7 @@ use ast::{
 };
 
 use crate::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
-use crate::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstListLiteral, AstListType, AstNewObjExpr, AstStaticAccessExpr, AstVisibility};
+use crate::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstListLiteral, AstListType, AstNewArrayExpr, AstNewObjExpr, AstStaticAccessExpr, AstVisibility};
 use arena::AstArena;
 use logos::Span;
 
@@ -544,7 +544,7 @@ impl<'ast> Parser<'ast> {
                 node
             }
             TokenKind::KwNew => {
-                let node = AstExpr::NewObj(self.parse_new_obj()?);
+                let node = self.parse_new_obj()?;
                 node
             }
             TokenKind::LBracket => {
@@ -600,7 +600,7 @@ impl<'ast> Parser<'ast> {
                     expected: TokenVec(vec![TokenKind::Identifier(
                         "Primary expression".to_string(),
                     )]),
-                    span: SourceSpan::new(SourceOffset::from(tok.start()), (tok.end() - tok.start()) as usize),
+                    span: SourceSpan::new(SourceOffset::from(tok.start()), tok.end() - tok.start()),
                     src: self.src.clone(),
                 }))
             }
@@ -619,35 +619,68 @@ impl<'ast> Parser<'ast> {
         Ok(node)
     }
 
-    fn parse_new_obj(&mut self) -> ParseResult<AstNewObjExpr<'ast>> {
+    fn parse_new_obj(&mut self) -> ParseResult<AstExpr<'ast>> {
         self.expect(TokenKind::KwNew)?;
-        let name = self.parse_identifier()?;
+        match self.current().kind() {
+            TokenKind::Identifier(_) => {
+                let name = self.parse_identifier()?;
 
-        self.expect(TokenKind::LBrace)?;
+                self.expect(TokenKind::LBrace)?;
 
-        let mut fields = vec![];
-        while self.current().kind() != TokenKind::RBrace {
-            let field_name = self.parse_identifier()?;
-            self.expect(TokenKind::Colon)?;
-            let field_value = self.parse_expr()?;
-            fields.push(AstObjField {
-                vis: AstVisibility::default(),
-                span: Span::union_span(&field_name.span, &field_value.span()),
-                name: self.arena.alloc(field_name),
-                ty: self.arena.alloc(AstType::Unit(AstUnitType { span: Span::default() })),
-            });
-            if self.current().kind() == TokenKind::Comma {
-                let _ = self.advance();
+                let mut fields = vec![];
+                while self.current().kind() != TokenKind::RBrace {
+                    let field_name = self.parse_identifier()?;
+                    self.expect(TokenKind::Colon)?;
+                    let field_value = self.parse_expr()?;
+                    fields.push(AstObjField {
+                        vis: AstVisibility::default(),
+                        span: Span::union_span(&field_name.span, &field_value.span()),
+                        name: self.arena.alloc(field_name),
+                        ty: self.arena.alloc(AstType::Unit(AstUnitType { span: Span::default() })),
+                    });
+                    if self.current().kind() == TokenKind::Comma {
+                        let _ = self.advance();
+                    }
+                }
+                self.expect(TokenKind::RBrace)?;
+                let node = AstExpr::NewObj(AstNewObjExpr {
+                    span: Span::union_span(&name.span, &self.current().span()),
+                    ty: self.arena.alloc(name),
+                    fields: self.arena.alloc(vec![]),
+                });
+
+                Ok(node)
+            }
+            TokenKind::LBracket => {
+                self.expect(TokenKind::LBracket)?;
+                let ty = self.parse_type()?;
+                self.expect(TokenKind::Semicolon)?;
+                let size = self.parse_expr()?;
+                self.expect(TokenKind::RBracket)?;
+                let node = AstExpr::NewArray(AstNewArrayExpr {
+                    span: Span::union_span(&ty.span(), &size.span()),
+                    ty: self.arena.alloc(AstType::List(AstListType {
+                        span: ty.span(),
+                        inner: self.arena.alloc(ty),
+                    })),
+                    size: self.arena.alloc(size),
+                });
+                Ok(node)
+            }
+            _ => {
+                Err(ParseError::UnexpectedToken(UnexpectedTokenError {
+                    token: self.current().clone(),
+                    expected: TokenVec(vec![TokenKind::Identifier(
+                        "Identifier".to_string(),
+                    ), TokenKind::LBrace]),
+                    span: SourceSpan::new(
+                        SourceOffset::from(self.current().start()),
+                        self.current().end() - self.current().start(),
+                    ),
+                    src: self.src.clone(),
+                }))
             }
         }
-        self.expect(TokenKind::RBrace)?;
-        let node = AstNewObjExpr {
-            span: Span::union_span(&name.span, &self.current().span()),
-            ty: self.arena.alloc(name),
-            fields: self.arena.alloc(vec![]),
-        };
-
-        Ok(node)
     }
 
     fn parse_if_expr(&mut self) -> ParseResult<AstIfElseExpr<'ast>> {
@@ -727,7 +760,7 @@ impl<'ast> Parser<'ast> {
                     )]),
                     span: SourceSpan::new(
                         SourceOffset::from(self.current().start()),
-                        (self.current().end() - self.current().start()) as usize,
+                        self.current().end() - self.current().start(),
                     ),
                     src: self.src.clone(),
                 }));
@@ -809,7 +842,7 @@ impl<'ast> Parser<'ast> {
                     )]),
                     span: SourceSpan::new(
                         SourceOffset::from(self.current().start()),
-                        (self.current().end() - self.current().start()) as usize,
+                        self.current().end() - self.current().start(),
                     ),
                     src: self.src.clone(),
                 }));
@@ -986,7 +1019,7 @@ impl<'ast> Parser<'ast> {
                 ]),
                 span: SourceSpan::new(
                     SourceOffset::from(start.start),
-                    self.current().end() - &start.start,
+                    self.current().end() - start.start,
                 ),
                 src: self.src.clone(),
             })),

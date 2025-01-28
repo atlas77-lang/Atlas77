@@ -46,20 +46,20 @@ pub enum Instruction {
         var_name: String,
     },
 
-    /// Load a value from a list at the top of the stack
-    /// The top of the stack is the index
-    /// The value under the index is the list pointer
-    /// The value is pushed to the stack
+    /// Stack state:
+    ///
+    /// - **Bottom** `[Index, ListPointer]` **Top**
+    ///
+    /// Load a value from a list to the top of the stack
     ListLoad,
-    /// Store a value in a list at the top of the stack
-    /// The top of the stack is the list pointer
-    /// The value is popped from the stack
-    ListStore {
-        index: usize,
-    },
-    NewList {
-        size: usize,
-    },
+    /// Stack state:
+    ///
+    /// - **Bottom** `[Index, ListPointer, Value]` **Top**
+    ///
+    /// Store a value in a given list
+    ListStore,
+    /// Create a new list, the size is the top of the stack
+    NewList,
     ListIndex(usize),
 
     CastTo(Type),
