@@ -2,6 +2,8 @@
 name = "atlasc"
 version = "0.5.1"
 edition = "2021"
+description = "The Atlas77 Compiler"
+license = "MIT"
 
 # doc test is disabled because it's not needed
 [lib]

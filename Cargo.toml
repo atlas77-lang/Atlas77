@@ -31,8 +31,8 @@ opt-level = 3
 codegen-units = 1
 
 [dependencies]
-atlasc = { path = "compiler/atlasc", version = "0.5.1" }
 atlas_vm = { path = "runtime/atlas_vm", version = "0.5.1" }
+atlasc = { path = "compiler/atlasc", version = "0.5.1" }
 #atlas_lib = { path = "libraries/atlas_lib", version = "0.5.1" }
 
 # For the CLI

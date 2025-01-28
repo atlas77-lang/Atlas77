@@ -3,5 +3,7 @@ name = "atlas_lib"
 version = "0.5.1"
 edition = "2021"
 include = ["/libraries/std/*.atlas"]
+description = "The Atlas77 Standard & Core Libraries"
+license = "MIT"
 
 [dependencies]
