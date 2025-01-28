@@ -416,7 +416,7 @@ impl Atlas77VM<'_> {
                 let list = vec![VMData::new_unit(); size.as_u64() as usize];
                 let ptr = self.object_map.put(ObjectKind::List(list))?;
 
-                self.stack.push_with_rc(VMData::new_object(VMData::TAG_LIST, ptr), &mut self.object_map)?;
+                self.stack.push_with_rc(VMData::new_list(ptr), &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::ExternCall { name, .. } => {

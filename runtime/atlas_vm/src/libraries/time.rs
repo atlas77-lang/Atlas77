@@ -27,7 +27,7 @@ pub fn now(state: VMState) -> Result<VMData, RuntimeError> {
         fields: vec![VMData::new_i64(sec as i64), VMData::new_i64(nsec as i64)],
     }));
     match obj_idx {
-        Ok(index) => Ok(VMData::new_object(25, index)),
+        Ok(index) => Ok(VMData::new_object(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
     }
 }
@@ -104,7 +104,7 @@ pub fn elapsed(state: VMState) -> Result<VMData, RuntimeError> {
     }));
 
     match obj_idx {
-        Ok(index) => Ok(VMData::new_object(25, index)),
+        Ok(index) => Ok(VMData::new_object(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
     }
 }

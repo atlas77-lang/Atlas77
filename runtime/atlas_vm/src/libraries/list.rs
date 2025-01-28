@@ -68,7 +68,7 @@ pub fn slice(state: VMState) -> Result<VMData, RuntimeError> {
     let sliced = list[start as usize..end as usize].to_vec();
     let obj_idx = state.object_map.put(ObjectKind::List(sliced));
     match obj_idx {
-        Ok(index) => Ok(VMData::new_list(257, index)),
+        Ok(index) => Ok(VMData::new_list(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
     }
 }

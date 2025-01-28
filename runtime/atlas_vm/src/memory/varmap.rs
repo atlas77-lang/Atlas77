@@ -2,7 +2,7 @@ use crate::memory::object_map::Memory;
 use crate::memory::vm_data::VMData;
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct VarMap {
     var_map: Vec<HashMap<String, VMData>>,
 }

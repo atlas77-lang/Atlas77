@@ -82,7 +82,7 @@ pub fn split(state: VMState) -> Result<VMData, RuntimeError> {
 
     let list_idx = state.object_map.put(ObjectKind::List(list));
     match list_idx {
-        Ok(index) => Ok(VMData::new_list(257, index)),
+        Ok(index) => Ok(VMData::new_list(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
     }
 }

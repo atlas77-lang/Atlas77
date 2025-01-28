@@ -22,7 +22,7 @@ pub union RawVMData {
 
 #[derive(Clone, Copy)]
 pub struct VMData {
-    pub tag: u16,
+    pub tag: u8,
     data: RawVMData,
 }
 
@@ -36,19 +36,19 @@ macro_rules! def_new_vmdata_func {
 }
 
 impl VMData {
-    pub const TAG_UNIT: u16 = 0;
-    pub const TAG_U64: u16 = 4;
-    pub const TAG_I64: u16 = 8;
-    pub const TAG_FLOAT: u16 = 9;
-    pub const TAG_BOOL: u16 = 10;
-    pub const TAG_STR: u16 = 11;
-    pub const TAG_CHAR: u16 = 12;
-    pub const TAG_STACK_PTR: u16 = 13;
-    pub const TAG_FN_PTR: u16 = 14;
-    pub const TAG_LIST: u16 = 15;
-    pub const TAG_OBJECT: u16 = 16;
+    pub const TAG_UNIT: u8 = 0;
+    pub const TAG_U64: u8 = 4;
+    pub const TAG_I64: u8 = 8;
+    pub const TAG_FLOAT: u8 = 9;
+    pub const TAG_BOOL: u8 = 10;
+    pub const TAG_STR: u8 = 11;
+    pub const TAG_CHAR: u8 = 12;
+    pub const TAG_STACK_PTR: u8 = 13;
+    pub const TAG_FN_PTR: u8 = 14;
+    pub const TAG_LIST: u8 = 15;
+    pub const TAG_OBJECT: u8 = 16;
 
-    pub fn new(tag: u16, data: RawVMData) -> Self {
+    pub fn new(tag: u8, data: RawVMData) -> Self {
         Self { tag, data }
     }
 
@@ -59,10 +59,10 @@ impl VMData {
         }
     }
 
-    pub fn new_object(tag: u16, val: ObjectIndex) -> Self {
-        //assert!(tag > 256, "object typeid is within the reserved area");
+    pub fn new_object(val: ObjectIndex) -> Self {
+        //assert!(tag > 256, "object type_id is within the reserved area");
         Self {
-            tag,
+            tag: Self::TAG_OBJECT,
             data: RawVMData { as_object: val },
         }
     }
@@ -71,10 +71,9 @@ impl VMData {
         Self::new(Self::TAG_STR, RawVMData { as_object: val })
     }
 
-    pub fn new_list(tag: u16, val: ObjectIndex) -> Self {
-        //assert!(tag > 256, "object typeid is within the reserved area");
+    pub fn new_list(val: ObjectIndex) -> Self {
         Self {
-            tag,
+            tag: Self::TAG_LIST,
             data: RawVMData { as_object: val },
         }
     }
@@ -100,7 +99,7 @@ impl PartialEq for VMData {
             Self::TAG_U64 => self.as_u64() == other.as_u64(),
             Self::TAG_CHAR => self.as_char() == other.as_char(),
             Self::TAG_UNIT => true,
-            _ if self.tag > 256 => self.as_object() == other.as_object(),
+            Self::TAG_STR | Self::TAG_OBJECT | Self::TAG_LIST => self.as_object() == other.as_object(),
             _ => panic!("Illegal comparison between {:?} and {:?}", self, other),
         }
     }
