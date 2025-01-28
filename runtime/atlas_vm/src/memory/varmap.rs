@@ -15,8 +15,20 @@ impl VarMap {
     }
     /// Insert doesn't need to increment the reference count of the value.
     /// Because stack.pop() doesn't decrement the reference count of the value.
-    pub fn insert(&mut self, key: String, value: VMData) {
-        self.var_map.last_mut().unwrap().insert(key, value);
+    pub fn insert(&mut self, key: String, value: VMData, mem: &mut Memory) -> Option<VMData> {
+        let old_data = self.var_map.last_mut().unwrap().insert(key, value);
+        match old_data {
+            Some(old_data) => {
+                match old_data.tag {
+                    VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                        mem.rc_dec(old_data.as_object());
+                    }
+                    _ => {}
+                }
+            }
+            None => {}
+        }
+        old_data
     }
     pub fn get(&self, key: &str) -> Option<&VMData> {
         self.var_map.last().unwrap().get(key)

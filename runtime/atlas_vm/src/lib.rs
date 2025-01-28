@@ -109,6 +109,7 @@ impl Atlas77VM<'_> {
         while self.pc < self.program.len() {
             let instr = self.program[self.pc].clone();
             self.execute_instruction(instr)?;
+            println!("Stack: {}", self.stack);
         }
         self.stack.pop_with_rc(&mut self.object_map)
     }
@@ -127,6 +128,11 @@ impl Atlas77VM<'_> {
             }
             Instruction::PushUnsignedInt(u) => {
                 let val = VMData::new_u64(u);
+                self.stack.push_with_rc(val, &mut self.object_map)?;
+                self.pc += 1;
+            }
+            Instruction::PushBool(b) => {
+                let val = VMData::new_bool(b);
                 self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
             }
@@ -260,7 +266,7 @@ impl Atlas77VM<'_> {
             }
             Instruction::Store { var_name } => {
                 let val = self.stack.pop()?;
-                self.var_map.insert(var_name, val);
+                self.var_map.insert(var_name, val, &mut self.object_map);
                 self.pc += 1;
             }
             Instruction::Load { var_name } => {

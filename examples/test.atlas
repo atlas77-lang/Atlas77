@@ -1,31 +1,9 @@
 import "std/io"
 
 func main() {
-    let string = "test";
-    string;
-    test();
-    let test = test_ret_list();
-    let j = 0;
-    while j < 5 {
-        print("List element: ");
-        println(test[j] as str);
-        j = j + 1;
+    let list = new [int64; 5];
+    while true {
+        list = new [int64; 5];
+        println(list[0] as str);
     }
-}
-
-func test() -> int64 {
-    let string = ["test"];
-    println(string[0]);
-    return 0;
-}
-
-func test_ret_list() -> [float64] {
-    let size = 5;
-    let list = new [float64; size];
-    list[0] = 2.34;
-    list[1] = 3.45;
-    list[2] = 4.56;
-    list[3] = 5.67;
-    list[4] = 6.78;
-    return list;
 }
