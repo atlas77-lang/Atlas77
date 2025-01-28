@@ -34,7 +34,7 @@ codegen-units = 1
 doctest = false
 
 [[bin]]
-
+name = "atlas_77"
 
 [dependencies]
 atlas_vm = { path = "runtime/atlas_vm", version = "0.5.1" }
