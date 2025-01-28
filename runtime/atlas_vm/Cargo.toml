@@ -14,4 +14,4 @@ doctest = false
 [dependencies]
 serde = { version = "1.0.217", features = ["derive"] }
 time = { version = "0.3.37", features = ["formatting"] }
-rand = "0.8.5"
+rand = "0.9.0"
