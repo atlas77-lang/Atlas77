@@ -266,6 +266,14 @@ impl Atlas77VM<'_> {
             }
             Instruction::Store { var_name } => {
                 let val = self.stack.pop()?;
+                if let Some(get_old_val) = self.var_map.get(&var_name)  {
+                    match get_old_val.tag {
+                        VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                            self.object_map.rc_dec(get_old_val.as_object());
+                        }
+                        _ => {}
+                    }
+                }
                 self.var_map.insert(var_name, val, &mut self.object_map);
                 self.pc += 1;
             }
