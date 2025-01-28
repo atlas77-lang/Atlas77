@@ -2,12 +2,14 @@
 name = "atlas_vm"
 version = "0.5.1"
 edition = "2021"
-repository = "https://github.com/atlas77-lang/Atlas77"
-keywords = ["programming", "language", "compiler", "atlas77"]
-categories = ["compilers"]
-homepage = "https://atlas77-lang.github.io/Atlas77/docs/latest/index.html"
 license = "MIT"
 description = "The Atlas77 Virtual Machine"
+keywords = ["programming", "language", "compiler", "atlas77"]
+categories = ["compilers"]
+homepage = "https://atlas77-lang.github.io/atlas77-docs/docs/latest/index.html"
+documentation = "https://atlas77-lang.github.io/atlas77-docs/docs/latest/index.html"
+repository = "https://github.com/atlas77-lang/Atlas77"
+
 [lib]
 doctest = false
 
