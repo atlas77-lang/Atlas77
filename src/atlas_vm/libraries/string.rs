@@ -2,21 +2,37 @@ use crate::atlas_vm::errors::RuntimeError;
 use crate::atlas_vm::memory::object_map::ObjectKind;
 use crate::atlas_vm::memory::vm_data::VMData;
 use crate::atlas_vm::runtime::vm_state::VMState;
-use crate::atlas_vm::CallBack;
+use crate::atlas_vm::{CallBack, RuntimeResult};
 
-pub const STRING_FUNCTIONS: [(&str, CallBack); 5] = [
+pub const STRING_FUNCTIONS: [(&str, CallBack); 6] = [
     ("str_len", str_len),
     ("trim", trim),
     ("to_upper", to_upper),
     ("to_lower", to_lower),
     ("split", split),
+    ("str_cmp", str_cmp),
 ];
 
 pub fn str_len(state: VMState) -> Result<VMData, RuntimeError> {
-    let string_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
+    let string_ptr = state.stack.pop()?.as_object();
     let raw_string = state.object_map.get(string_ptr)?;
     let string = raw_string.string();
     Ok(VMData::new_i64(string.len() as i64))
+}
+
+pub fn str_cmp(state: VMState) -> RuntimeResult<VMData> {
+    let string_ptr1 = state.stack.pop()?.as_object();
+    let string_ptr2 = state.stack.pop()?.as_object();
+
+    let raw_string1 = state.object_map.get(string_ptr1)?;
+    let raw_string2 = state.object_map.get(string_ptr2)?;
+
+    let string1 = raw_string1.string();
+    let string2 = raw_string2.string();
+
+    let cmp = string1.cmp(string2);
+
+    Ok(VMData::new_i64(cmp as i64))
 }
 
 pub fn trim(state: VMState) -> Result<VMData, RuntimeError> {

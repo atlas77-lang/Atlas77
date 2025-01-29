@@ -18,8 +18,9 @@ use ast::{
     AstUnsignedIntegerLiteral, AstUnsignedIntegerType, AstWhileExpr,
 };
 
+use crate::atlasc::atlas_frontend::lexer::token::TokenKind::KwSelf;
 use crate::atlasc::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
-use crate::atlasc::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstListLiteral, AstListType, AstNewArrayExpr, AstNewObjExpr, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
+use crate::atlasc::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstListLiteral, AstListType, AstNewArrayExpr, AstNewObjExpr, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
 use arena::AstArena;
 use logos::Span;
 
@@ -193,6 +194,7 @@ impl<'ast> Parser<'ast> {
         let name = self.parse_identifier()?;
         self.expect(TokenKind::LParen)?;
         let mut params = vec![];
+
         while self.current().kind() != TokenKind::RParen {
             params.push(self.parse_obj_field()?);
             //Bad code imo, because programmers could just do: `func foo(bar: i32 baz: i64)` with no comma between the args
@@ -801,6 +803,20 @@ impl<'ast> Parser<'ast> {
     }
 
     fn parse_obj_field(&mut self) -> ParseResult<AstObjField<'ast>> {
+        if self.current().kind == KwSelf {
+            self.expect(KwSelf)?;
+            let name = AstIdentifier {
+                span: self.current().span.clone(),
+                name: self.arena.alloc("self"),
+            };
+            let node = AstObjField {
+                vis: AstVisibility::Public,
+                span: self.current().span.clone(),
+                name: self.arena.alloc(name.clone()),
+                ty: self.arena.alloc(AstType::SelfTy(AstSelfType { span: name.span.clone() })),
+            };
+            return Ok(node);
+        }
         let name = self.parse_identifier()?;
 
         self.expect(TokenKind::Colon)?;
@@ -949,6 +965,13 @@ impl<'ast> Parser<'ast> {
             TokenKind::UnitTy => {
                 let _ = self.advance();
                 let node = AstType::Unit(AstUnitType {
+                    span: Span::union_span(&start, &self.current().span()),
+                });
+                Ok(node)
+            }
+            TokenKind::SelfTy => {
+                let _ = self.advance();
+                let node = AstType::SelfTy(AstSelfType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
                 Ok(node)

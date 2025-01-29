@@ -1,4 +1,5 @@
 use super::{signature::HirFunctionSignature, stmt::HirBlock};
+use crate::atlasc::atlas_hir::signature::{HirClassFieldSignature, HirClassSignature};
 use logos::Span;
 use serde::Serialize;
 
@@ -21,4 +22,13 @@ pub struct HirImport<'hir> {
     /// As of now the alias is unsupported.
     pub alias: Option<&'hir str>,
     pub alias_span: Option<Span>,
+}
+#[derive(Debug, Clone, Serialize)]
+pub struct HirClass<'hir> {
+    pub span: Span,
+    pub name: &'hir str,
+    pub name_span: Span,
+    pub signature: &'hir HirClassSignature<'hir>,
+    pub methods: Vec<HirFunction<'hir>>,
+    pub fields: Vec<HirClassFieldSignature<'hir>>,
 }

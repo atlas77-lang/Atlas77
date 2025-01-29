@@ -9,7 +9,26 @@ use std::collections::BTreeMap;
 #[derive(Debug, Clone, Serialize, Default)]
 pub struct HirModuleSignature<'hir> {
     pub functions: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
+    pub classes: BTreeMap<&'hir str, &'hir HirClassSignature<'hir>>,
 }
+
+#[derive(Debug, Clone, Serialize)]
+/// As of now, classes don't inherit from other classes or extend interfaces.
+///
+/// Generic classes are not supported yet.
+pub struct HirClassSignature<'hir> {
+    pub span: Span,
+    pub methods: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
+    pub fields: BTreeMap<&'hir str, HirClassFieldSignature<'hir>>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirClassFieldSignature<'hir> {
+    pub span: Span,
+    pub name: &'hir str,
+    pub ty: &'hir HirTy<'hir>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct HirFunctionSignature<'hir> {
     pub span: Span,

@@ -1,237 +1,95 @@
 (
     labels: [
         (
-            name: "main",
+            name: "iterative_fib",
             position: 0,
             body: [
-                PushUnsignedInt(2),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushUnsignedInt(3),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
+                Store(
+                    var_name: "n",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "a",
+                ),
                 PushInt(1),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(2),
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushInt(3),
-                ListStore,
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushUnsignedInt(3),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushInt(4),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(5),
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushInt(6),
-                ListStore,
-                ListStore,
-                Store(
-                    var_name: "a",
-                ),
-                PushUnsignedInt(3),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushUnsignedInt(2),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushInt(7),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(8),
-                ListStore,
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushUnsignedInt(2),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushInt(9),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(10),
-                ListStore,
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushUnsignedInt(2),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushInt(11),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(12),
-                ListStore,
-                ListStore,
                 Store(
                     var_name: "b",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "n",
+                ),
+                Lt,
+                JmpZ(
+                    pos: 19,
                 ),
                 Load(
                     var_name: "a",
                 ),
+                Store(
+                    var_name: "temp",
+                ),
                 Load(
                     var_name: "b",
                 ),
+                Store(
+                    var_name: "a",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "temp",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                IAdd,
+                Store(
+                    var_name: "b",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "i",
+                ),
+                PushInt(1),
+                IAdd,
+                Store(
+                    var_name: "i",
+                ),
+                PushUnit,
+                Pop,
+                Jmp(
+                    pos: -22,
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "main",
+            position: 32,
+            body: [
+                PushInt(40),
                 CallFunction(
-                    name: "mat_mul",
-                    args: 2,
-                ),
-                Store(
-                    var_name: "result",
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "result",
-                ),
-                ExternCall(
-                    name: "len_double",
+                    name: "recursive_fib",
                     args: 1,
                 ),
-                Lt,
-                JmpZ(
-                    pos: 37,
-                ),
-                PushInt(0),
                 Store(
-                    var_name: "j",
+                    var_name: "fib_40",
                 ),
                 Load(
-                    var_name: "j",
+                    var_name: "fib_40",
                 ),
-                Load(
-                    var_name: "result",
-                ),
-                PushInt(0),
-                ListLoad,
-                ExternCall(
-                    name: "len",
-                    args: 1,
-                ),
-                Lt,
-                JmpZ(
-                    pos: 18,
-                ),
-                PushStr(0),
-                ExternCall(
-                    name: "print",
-                    args: 1,
-                ),
-                Pop,
-                Load(
-                    var_name: "result",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                ListLoad,
-                Load(
-                    var_name: "j",
-                ),
-                ListLoad,
                 CastTo(String),
-                ExternCall(
-                    name: "print",
-                    args: 1,
-                ),
-                Pop,
-                Load(
-                    var_name: "j",
-                ),
-                PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "j",
-                ),
-                PushUnit,
-                Pop,
-                Jmp(
-                    pos: -24,
-                ),
-                PushStr(1),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Pop,
-                Load(
-                    var_name: "i",
-                ),
-                PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "i",
-                ),
-                PushUnit,
-                Pop,
-                Jmp(
-                    pos: -41,
-                ),
-                PushStr(2),
-                PushStr(3),
-                Eq,
-                JmpZ(
-                    pos: 4,
-                ),
-                PushStr(4),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Pop,
-                Jmp(
-                    pos: 4,
-                ),
-                PushStr(5),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Pop,
-                PushStr(6),
                 ExternCall(
                     name: "println",
                     args: 1,
@@ -241,242 +99,46 @@
             ],
         ),
         (
-            name: "mat_mul",
-            position: 159,
+            name: "recursive_fib",
+            position: 40,
             body: [
                 Store(
-                    var_name: "b",
-                ),
-                Store(
-                    var_name: "a",
+                    var_name: "n",
                 ),
                 Load(
-                    var_name: "a",
-                ),
-                ExternCall(
-                    name: "len_double",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "a_rows",
-                ),
-                Load(
-                    var_name: "a",
-                ),
-                PushInt(0),
-                ListLoad,
-                ExternCall(
-                    name: "len",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "a_cols",
-                ),
-                Load(
-                    var_name: "b",
-                ),
-                ExternCall(
-                    name: "len_double",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "b_rows",
-                ),
-                Load(
-                    var_name: "b",
-                ),
-                PushInt(0),
-                ListLoad,
-                ExternCall(
-                    name: "len",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "b_cols",
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "i_res",
-                ),
-                Load(
-                    var_name: "a_rows",
-                ),
-                NewList,
-                Store(
-                    var_name: "result",
-                ),
-                Load(
-                    var_name: "i_res",
-                ),
-                Load(
-                    var_name: "a_rows",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 14,
-                ),
-                Load(
-                    var_name: "i_res",
-                ),
-                Load(
-                    var_name: "result",
-                ),
-                Load(
-                    var_name: "b_cols",
-                ),
-                NewList,
-                ListStore,
-                PushUnit,
-                Pop,
-                Load(
-                    var_name: "i_res",
+                    var_name: "n",
                 ),
                 PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "i_res",
+                Lte,
+                JmpZ(
+                    pos: 3,
                 ),
-                PushUnit,
-                Pop,
+                Load(
+                    var_name: "n",
+                ),
+                Return,
                 Jmp(
-                    pos: -17,
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "i",
+                    pos: 11,
                 ),
                 Load(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "a_rows",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 59,
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "j",
-                ),
-                Load(
-                    var_name: "j",
-                ),
-                Load(
-                    var_name: "b_cols",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 46,
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "k",
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "sum",
-                ),
-                Load(
-                    var_name: "k",
-                ),
-                Load(
-                    var_name: "a_cols",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 23,
-                ),
-                Load(
-                    var_name: "sum",
-                ),
-                Load(
-                    var_name: "a",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                ListLoad,
-                Load(
-                    var_name: "k",
-                ),
-                ListLoad,
-                Load(
-                    var_name: "b",
-                ),
-                Load(
-                    var_name: "k",
-                ),
-                ListLoad,
-                Load(
-                    var_name: "j",
-                ),
-                ListLoad,
-                IMul,
-                IAdd,
-                Store(
-                    var_name: "sum",
-                ),
-                PushUnit,
-                Pop,
-                Load(
-                    var_name: "k",
+                    var_name: "n",
                 ),
                 PushInt(1),
+                ISub,
+                CallFunction(
+                    name: "recursive_fib",
+                    args: 1,
+                ),
+                Load(
+                    var_name: "n",
+                ),
+                PushInt(2),
+                ISub,
+                CallFunction(
+                    name: "recursive_fib",
+                    args: 1,
+                ),
                 IAdd,
-                Store(
-                    var_name: "k",
-                ),
-                PushUnit,
-                Pop,
-                Jmp(
-                    pos: -26,
-                ),
-                Load(
-                    var_name: "j",
-                ),
-                Load(
-                    var_name: "result",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                ListLoad,
-                Load(
-                    var_name: "sum",
-                ),
-                ListStore,
-                PushUnit,
-                Pop,
-                Load(
-                    var_name: "j",
-                ),
-                PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "j",
-                ),
-                PushUnit,
-                Pop,
-                Jmp(
-                    pos: -49,
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "i",
-                ),
-                PushUnit,
-                Pop,
-                Jmp(
-                    pos: -62,
-                ),
-                Load(
-                    var_name: "result",
-                ),
                 Return,
             ],
         ),
@@ -487,21 +149,9 @@
             name: "std/io",
             is_std: true,
         ),
-        (
-            name: "std/list",
-            is_std: true,
-        ),
     ],
     global: (
-        string_pool: [
-            " ",
-            "",
-            "Hello",
-            "Hello",
-            "Hello is equal to Hello",
-            "Hello is not equal to Hello for some reason",
-            "Done",
-        ],
+        string_pool: [],
         list_pool: [],
         function_pool: [],
     ),

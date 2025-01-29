@@ -1,5 +1,6 @@
 use miette::{SourceOffset, SourceSpan};
 
+use crate::atlasc::atlas_frontend::parser::ast::AstClass;
 use crate::atlasc::atlas_frontend::{
     parse,
     parser::{
@@ -18,6 +19,8 @@ const MATH_ATLAS: &str = include_str!("../../../atlas_lib/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../atlas_lib/std/string.atlas");
 
 use crate::atlasc::atlas_hir::expr::{HirCastExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
+use crate::atlasc::atlas_hir::item::HirClass;
+use crate::atlasc::atlas_hir::signature::{HirClassFieldSignature, HirClassSignature};
 use crate::atlasc::atlas_hir::{
     arena::HirArena,
     error::{HirError, HirResult, UnsupportedExpr, UnsupportedStatement},
@@ -87,6 +90,9 @@ where
                 module_signature.functions.insert(name, fun.signature);
                 module_body.functions.insert(name, fun);
             }
+            AstItem::Class(c) => {
+                let class = self.visit_class(c)?;
+            }
             AstItem::Import(i) => {
                 let hir = self.visit_import(i)?;
                 let allocated_hir: &'hir HirModule<'hir> = self.arena.intern(hir);
@@ -135,6 +141,50 @@ where
             _ => {}
         }
         Ok(())
+    }
+
+    fn visit_class(&self, node: &'ast AstClass<'ast>) -> HirResult<HirClass<'hir>> {
+        let name = self.arena.names().get(node.name.name);
+        let mut methods = Vec::new();
+        let mut fields = Vec::new();
+        for method in node.methods.iter() {
+            let fun = self.visit_func(method)?;
+            methods.push(fun);
+        }
+        for field in node.fields.iter() {
+            let ty = self.visit_ty(&field.ty)?;
+            let name = self.arena.names().get(field.name.name);
+            fields.push(HirClassFieldSignature {
+                span: field.span.clone(),
+                name,
+                ty,
+            });
+        }
+        let signature = self.arena.intern(HirClassSignature {
+            span: node.span.clone(),
+            methods: {
+                let mut map = std::collections::BTreeMap::new();
+                for method in methods.iter() {
+                    map.insert(method.name, method.signature);
+                }
+                map
+            },
+            fields: {
+                let mut map = std::collections::BTreeMap::new();
+                for field in fields.iter() {
+                    map.insert(field.name, field.clone());
+                }
+                map
+            },
+        });
+        Ok(HirClass {
+            span: node.span.clone(),
+            name,
+            name_span: node.name.span.clone(),
+            signature,
+            methods,
+            fields,
+        })
     }
 
     //This needs to be generalized

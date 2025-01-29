@@ -458,6 +458,7 @@ pub enum AstType<'ast> {
     Integer(AstIntegerType),
     Float(AstFloatType),
     UnsignedInteger(AstUnsignedIntegerType),
+    SelfTy(AstSelfType),
     String(AstStringType),
     Named(AstNamedType<'ast>),
     Pointer(AstPointerType<'ast>),
@@ -474,6 +475,7 @@ impl AstType<'_> {
             AstType::Integer(t) => t.span.clone(),
             AstType::Float(t) => t.span.clone(),
             AstType::UnsignedInteger(t) => t.span.clone(),
+            AstType::SelfTy(t) => t.span.clone(),
             AstType::String(t) => t.span.clone(),
             AstType::Named(t) => t.span.clone(),
             AstType::Pointer(t) => t.span.clone(),
@@ -482,6 +484,11 @@ impl AstType<'_> {
             AstType::Generic(t) => t.span.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstSelfType {
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize)]

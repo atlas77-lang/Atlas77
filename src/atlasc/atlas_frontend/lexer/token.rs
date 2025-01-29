@@ -165,6 +165,8 @@ pub enum TokenKind {
     FatArrow,
     #[token("~")]
     Tilde,
+    #[token("self")]
+    KwSelf,
     #[token("class")]
     KwClass,
     #[token("new")]
@@ -231,7 +233,7 @@ pub enum TokenKind {
     CharTy,
     #[token("bool")]
     BoolTy,
-    #[token("self")]
+    #[token("Self")]
     SelfTy,
     #[token("str")]
     StrTy,
