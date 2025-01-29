@@ -2,6 +2,68 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2025-01-29
+
+### Bug Fixes
+
+- Issue with returning pointer ([13731a1](https://github.com/atlas77-lang/Atlas77/commit/13731a1c9b93fbd314ac3d06345a644905a71408))
+- Issue with unary op ([4a2f30b](https://github.com/atlas77-lang/Atlas77/commit/4a2f30b83ce254244fe85944bbf6c46a4479ee51))
+- Issue #104 ([f27248e](https://github.com/atlas77-lang/Atlas77/commit/f27248e4ca877997c2f29145ecd524e4e594e5fd))
+
+### Documentation
+
+- Removed the doc and put it in atlas77-docs ([2e79547](https://github.com/atlas77-lang/Atlas77/commit/2e7954737800eb6c714343670d93e595b47e048e))
+- Added some doc and updated it ([b65dcf5](https://github.com/atlas77-lang/Atlas77/commit/b65dcf53bef943eff4cd212521641c6a963bbfb3))
+- Mdbook build ([adbd5a6](https://github.com/atlas77-lang/Atlas77/commit/adbd5a67ade26f4796c5ee46a4788bea1672c979))
+- More test ([e66c72a](https://github.com/atlas77-lang/Atlas77/commit/e66c72ad60accb03a4b31c6a36c805005d3c8fe4))
+- Update to the docs ([3ac1248](https://github.com/atlas77-lang/Atlas77/commit/3ac12482e283eb77894b2c1d5989d163207ed8a3))
+- Added some docs for the standard library ([8a2be67](https://github.com/atlas77-lang/Atlas77/commit/8a2be67d73e5edf63ccce99aecea55081df7cbc1))
+- Basic setup for documentation of this project ([929f6a9](https://github.com/atlas77-lang/Atlas77/commit/929f6a94e15a424cb6f21f5bdb2b7b4a3661b90d))
+
+### Features
+
+- Improved Runtime by optimizing the VarMap ([1223c83](https://github.com/atlas77-lang/Atlas77/commit/1223c838b0caa13dbafdea8d6d9fca74f67dbdfb))
+- Made a small matmul in test.atlas ([4867b57](https://github.com/atlas77-lang/Atlas77/commit/4867b57507e8ba5012405fefaa7649c3da68b8c4))
+- VMData.tag is now u8 from u16 ([efd12ae](https://github.com/atlas77-lang/Atlas77/commit/efd12ae966e61e1822571e2bd99ee6134fae892d))
+- Added PushBool instruction ([ef65471](https://github.com/atlas77-lang/Atlas77/commit/ef65471e1c43155fb3e284a60a3b11c3a2be2d6c))
+- Added a working Reference Counting memory management ([1b8ae06](https://github.com/atlas77-lang/Atlas77/commit/1b8ae06a67b9ffea1e6cd46c4464093948b998ee))
+- Lists work. [int64] or [float64] should work ([82ef451](https://github.com/atlas77-lang/Atlas77/commit/82ef451ec87ae1cc332d5d5490eb9e43bc87327b))
+- Casting is here with the `as` keyword! ([aca37c9](https://github.com/atlas77-lang/Atlas77/commit/aca37c90ea8c0a18e37be756a288cd7983e25968))
+- Added strings ([c39ff5a](https://github.com/atlas77-lang/Atlas77/commit/c39ff5a3e95f5a3dbb7a8a3312f55f1d0df64749))
+- Added unary operation in the codegen 💀☠️ ([64b14af](https://github.com/atlas77-lang/Atlas77/commit/64b14af56800e10e39c84cbefcd318bfa45042ec))
+- Parser for classes and Static access (i.e. ::) ([f137438](https://github.com/atlas77-lang/Atlas77/commit/f137438c65f0e9fdf501d9a0b1fbfddb6e1579f7))
+- Type Inference is working ([dfbb536](https://github.com/atlas77-lang/Atlas77/commit/dfbb536f004635e10b13bb99bf14ae9207aa28fd))
+
+### Miscellaneous Tasks
+
+- Prepare for v0.5.1 (again-again-again) ([08989e9](https://github.com/atlas77-lang/Atlas77/commit/08989e96fe39aeb436ec8f367a070cf7234790e4))
+- Prepare for v0.5.1 (again-again) ([8655028](https://github.com/atlas77-lang/Atlas77/commit/8655028cfd64957eb535c1dbfea67aff7818ae1a))
+- Prepare for v0.5.1 (again) ([39c3879](https://github.com/atlas77-lang/Atlas77/commit/39c3879b162e2a85a89c7399b7954a01c86beeff))
+- Prepare for v0.5.1 ([32221d4](https://github.com/atlas77-lang/Atlas77/commit/32221d4d556787915e0096d3e6e1cbb78d7d558b))
+- Rand 0.8.5 -> 0.9.0 ([26e0603](https://github.com/atlas77-lang/Atlas77/commit/26e06038b77abb3478eb60d453c3aba7fb84be05))
+- Cleaning a bit ([3ffa049](https://github.com/atlas77-lang/Atlas77/commit/3ffa0496c22c24ac2844c19c712354e6cb137d97))
+- Updated Cargo.toml files version ([bd743fb](https://github.com/atlas77-lang/Atlas77/commit/bd743fb287ba7890b93e7fd1a20a0be039569855))
+- Added a bit of syntax highlighting for VSCode ([29a46f6](https://github.com/atlas77-lang/Atlas77/commit/29a46f6c4bf84e0fa09d0b502803a1f614b28ca6))
+- Redid the file structure so it's more easier to navigate ([356b785](https://github.com/atlas77-lang/Atlas77/commit/356b7857ea564ea02d0504e75d4dc317d8ab185e))
+
+### Refactor
+
+- Redid the file structure once again for `cargo publish` ([56de771](https://github.com/atlas77-lang/Atlas77/commit/56de77191a7172714eaac554158a08b3d73810cc))
+- Swapped the lexer from atlas-core to logos ([825fdbe](https://github.com/atlas77-lang/Atlas77/commit/825fdbe06f7d4a557ffd6b65a1ca1ee5f0f58d6b))
+- Atlas-core -> logos for a more efficient lexer ([e4bc5d7](https://github.com/atlas77-lang/Atlas77/commit/e4bc5d7f543b7dc502b7a25ab6059a58932ea20d))
+- Change type names `i64` -> `int64` ([090fa4f](https://github.com/atlas77-lang/Atlas77/commit/090fa4fe1119b3473f1132f4a9d6dcf1e2fc69fd))
+- Changed file structure for the better ([4c40770](https://github.com/atlas77-lang/Atlas77/commit/4c407708930a9a8ce53994d64a2cb92215095aa4))
+
+### Misc
+
+- Removed debug types in error messages ([b46aa14](https://github.com/atlas77-lang/Atlas77/commit/b46aa143efbb29ef365b9aad7c41abcd7685f657))
+- Added some stuff, nothing fancy, mostly comments ([04f0324](https://github.com/atlas77-lang/Atlas77/commit/04f03247a5987469b3f9eee0c5fead172fa8b136))
+- Stuff done, no idea what ([58c6aa2](https://github.com/atlas77-lang/Atlas77/commit/58c6aa20b405bb4c3421198c265687e4ec1aee06))
+
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
 ## [0.5] - 2025-01-17
 
 ### Bug Fixes

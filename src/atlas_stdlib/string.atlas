@@ -1,5 +1,0 @@
-extern str_len(s: str) -> u64;
-extern trim(s: str) -> str;
-extern to_upper(s: str) -> str;
-extern to_lower(s: str) -> str;
-extern split(s: str, sep: str) -> [str];

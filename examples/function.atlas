@@ -1,13 +1,13 @@
 import "std/io"
 
-func curry_add(a: i64) -> (i64) -> i64 {
-    let add = (b: i64) -> i64 {
+func curry_add(a: int64) -> (int64) -> int64 {
+    let add = (b: int64) -> int64 {
         return a + b;
     };
     return add;
 }
 
-func main() -> i64 {
-    let add: (i64) -> i64 = curry_add(1);
+func main() -> int64 {
+    let add: (int64) -> int64 = curry_add(1);
     println(add(2)); //> 3
 }

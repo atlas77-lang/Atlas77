@@ -1,5 +1,0 @@
-extern read_dir(path: str) -> [str];
-extern read_file(path: str) -> str;
-extern write_file(path: str, content: str);
-extern remove_file(path: str);
-extern file_exists(path: str) -> bool;

@@ -1,18 +1,21 @@
 import "std/math"
+import "std/io"
 
 
-func main() {
-    let secret: i64 = random(1, 100);
-    let guess: i64 = 0;
+func main()  {
+    let secret: int64 = random(1, 100);
+    let guess = 0;
     while guess != secret {
-        print("Guess the number: ");
-        guess = input();
+        println("Your guess:");
+        guess = input() as int64;
         if guess < secret {
             println("Too low!");
-        } else if guess > secret {
-            println("Too high!");
         } else {
-            println("You win!");
+            if guess > secret {
+                println("Too high!");
+            } else {
+                println("You win!");
+            }
         }
     }
 }

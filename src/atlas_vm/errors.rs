@@ -4,7 +4,7 @@ pub type RuntimeResult<T> = Result<T, RuntimeError>;
 pub enum RuntimeError {
     OutOfMemory,
     StackOverflow,
-    StackUndeflow,
+    StackUnderflow,
     NullReference,
     DivisionByZero,
     IndexOutOfBounds,
@@ -19,7 +19,7 @@ impl std::fmt::Display for RuntimeError {
         match self {
             OutOfMemory => writeln!(f, "No more memory bozo"),
             StackOverflow => writeln!(f, "No more stack bozo"),
-            StackUndeflow => writeln!(f, "Too little stack bozo"),
+            StackUnderflow => writeln!(f, "Too little stack bozo"),
             NullReference => writeln!(f, "Null Reference error"),
             DivisionByZero => writeln!(f, "There are no infinity, you can't divide by zero"),
             IndexOutOfBounds => writeln!(f, "Index out of bounds"),

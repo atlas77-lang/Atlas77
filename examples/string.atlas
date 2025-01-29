@@ -1,0 +1,18 @@
+import "std/string"
+import "std/io"
+
+func test() {
+    let s = "  Hello World!";
+    let len = str_len(s);
+    println(len as str);
+    let trimmed = trim(s);
+    println(trimmed);
+    let upper = to_upper(s);
+    println(upper);
+    let lower = to_lower(s);
+    println(lower);
+}
+
+func main() {
+    test();
+}
