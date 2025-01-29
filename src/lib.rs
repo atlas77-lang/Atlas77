@@ -1,3 +1,7 @@
+pub mod atlas_vm;
+pub mod atlasc;
+pub mod atlas_lib;
+
 use atlasc::atlas_codegen::{arena::CodeGenArena, CodeGenUnit};
 use atlasc::atlas_frontend::parse;
 use atlasc::atlas_frontend::parser::arena::AstArena;

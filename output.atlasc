@@ -4,54 +4,192 @@
             name: "main",
             position: 0,
             body: [
+                PushUnsignedInt(2),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                PushUnsignedInt(3),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
                 PushInt(1),
-                PushInt(100),
-                ExternCall(
-                    name: "random",
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                PushInt(2),
+                ListStore,
+                Dup,
+                PushUnsignedInt(2),
+                Swap,
+                PushInt(3),
+                ListStore,
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                PushUnsignedInt(3),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                PushInt(4),
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                PushInt(5),
+                ListStore,
+                Dup,
+                PushUnsignedInt(2),
+                Swap,
+                PushInt(6),
+                ListStore,
+                ListStore,
+                Store(
+                    var_name: "a",
+                ),
+                PushUnsignedInt(3),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                PushUnsignedInt(2),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                PushInt(7),
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                PushInt(8),
+                ListStore,
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                PushUnsignedInt(2),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                PushInt(9),
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                PushInt(10),
+                ListStore,
+                ListStore,
+                Dup,
+                PushUnsignedInt(2),
+                Swap,
+                PushUnsignedInt(2),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                PushInt(11),
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                PushInt(12),
+                ListStore,
+                ListStore,
+                Store(
+                    var_name: "b",
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                CallFunction(
+                    name: "mat_mul",
                     args: 2,
                 ),
                 Store(
-                    var_name: "secret",
+                    var_name: "result",
                 ),
                 PushInt(0),
                 Store(
-                    var_name: "guess",
+                    var_name: "i",
                 ),
                 Load(
-                    var_name: "guess",
+                    var_name: "i",
                 ),
                 Load(
-                    var_name: "secret",
+                    var_name: "result",
                 ),
-                Neq,
-                JmpZ(
-                    pos: 28,
-                ),
-                PushStr(0),
                 ExternCall(
-                    name: "println",
+                    name: "len_double",
                     args: 1,
-                ),
-                Pop,
-                ExternCall(
-                    name: "input",
-                    args: 0,
-                ),
-                CastTo(Integer),
-                Store(
-                    var_name: "guess",
-                ),
-                PushUnit,
-                Pop,
-                Load(
-                    var_name: "guess",
-                ),
-                Load(
-                    var_name: "secret",
                 ),
                 Lt,
                 JmpZ(
-                    pos: 4,
+                    pos: 37,
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "j",
+                ),
+                Load(
+                    var_name: "j",
+                ),
+                Load(
+                    var_name: "result",
+                ),
+                PushInt(0),
+                ListLoad,
+                ExternCall(
+                    name: "len",
+                    args: 1,
+                ),
+                Lt,
+                JmpZ(
+                    pos: 18,
+                ),
+                PushStr(0),
+                ExternCall(
+                    name: "print",
+                    args: 1,
+                ),
+                Pop,
+                Load(
+                    var_name: "result",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                ListLoad,
+                Load(
+                    var_name: "j",
+                ),
+                ListLoad,
+                CastTo(String),
+                ExternCall(
+                    name: "print",
+                    args: 1,
+                ),
+                Pop,
+                Load(
+                    var_name: "j",
+                ),
+                PushInt(1),
+                IAdd,
+                Store(
+                    var_name: "j",
+                ),
+                PushUnit,
+                Pop,
+                Jmp(
+                    pos: -24,
                 ),
                 PushStr(1),
                 ExternCall(
@@ -59,20 +197,26 @@
                     args: 1,
                 ),
                 Pop,
+                Load(
+                    var_name: "i",
+                ),
+                PushInt(1),
+                IAdd,
+                Store(
+                    var_name: "i",
+                ),
+                PushUnit,
+                Pop,
                 Jmp(
-                    pos: 12,
+                    pos: -41,
                 ),
-                Load(
-                    var_name: "guess",
-                ),
-                Load(
-                    var_name: "secret",
-                ),
-                Gt,
+                PushStr(2),
+                PushStr(3),
+                Eq,
                 JmpZ(
                     pos: 4,
                 ),
-                PushStr(2),
+                PushStr(4),
                 ExternCall(
                     name: "println",
                     args: 1,
@@ -81,36 +225,282 @@
                 Jmp(
                     pos: 4,
                 ),
-                PushStr(3),
+                PushStr(5),
                 ExternCall(
                     name: "println",
                     args: 1,
                 ),
                 Pop,
-                Jmp(
-                    pos: -31,
+                PushStr(6),
+                ExternCall(
+                    name: "println",
+                    args: 1,
                 ),
+                Pop,
                 Halt,
+            ],
+        ),
+        (
+            name: "mat_mul",
+            position: 159,
+            body: [
+                Store(
+                    var_name: "b",
+                ),
+                Store(
+                    var_name: "a",
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                ExternCall(
+                    name: "len_double",
+                    args: 1,
+                ),
+                Store(
+                    var_name: "a_rows",
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                PushInt(0),
+                ListLoad,
+                ExternCall(
+                    name: "len",
+                    args: 1,
+                ),
+                Store(
+                    var_name: "a_cols",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                ExternCall(
+                    name: "len_double",
+                    args: 1,
+                ),
+                Store(
+                    var_name: "b_rows",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                PushInt(0),
+                ListLoad,
+                ExternCall(
+                    name: "len",
+                    args: 1,
+                ),
+                Store(
+                    var_name: "b_cols",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "i_res",
+                ),
+                Load(
+                    var_name: "a_rows",
+                ),
+                NewList,
+                Store(
+                    var_name: "result",
+                ),
+                Load(
+                    var_name: "i_res",
+                ),
+                Load(
+                    var_name: "a_rows",
+                ),
+                Lt,
+                JmpZ(
+                    pos: 14,
+                ),
+                Load(
+                    var_name: "i_res",
+                ),
+                Load(
+                    var_name: "result",
+                ),
+                Load(
+                    var_name: "b_cols",
+                ),
+                NewList,
+                ListStore,
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "i_res",
+                ),
+                PushInt(1),
+                IAdd,
+                Store(
+                    var_name: "i_res",
+                ),
+                PushUnit,
+                Pop,
+                Jmp(
+                    pos: -17,
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "a_rows",
+                ),
+                Lt,
+                JmpZ(
+                    pos: 59,
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "j",
+                ),
+                Load(
+                    var_name: "j",
+                ),
+                Load(
+                    var_name: "b_cols",
+                ),
+                Lt,
+                JmpZ(
+                    pos: 46,
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "k",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "sum",
+                ),
+                Load(
+                    var_name: "k",
+                ),
+                Load(
+                    var_name: "a_cols",
+                ),
+                Lt,
+                JmpZ(
+                    pos: 23,
+                ),
+                Load(
+                    var_name: "sum",
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                ListLoad,
+                Load(
+                    var_name: "k",
+                ),
+                ListLoad,
+                Load(
+                    var_name: "b",
+                ),
+                Load(
+                    var_name: "k",
+                ),
+                ListLoad,
+                Load(
+                    var_name: "j",
+                ),
+                ListLoad,
+                IMul,
+                IAdd,
+                Store(
+                    var_name: "sum",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "k",
+                ),
+                PushInt(1),
+                IAdd,
+                Store(
+                    var_name: "k",
+                ),
+                PushUnit,
+                Pop,
+                Jmp(
+                    pos: -26,
+                ),
+                Load(
+                    var_name: "j",
+                ),
+                Load(
+                    var_name: "result",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                ListLoad,
+                Load(
+                    var_name: "sum",
+                ),
+                ListStore,
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "j",
+                ),
+                PushInt(1),
+                IAdd,
+                Store(
+                    var_name: "j",
+                ),
+                PushUnit,
+                Pop,
+                Jmp(
+                    pos: -49,
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                PushInt(1),
+                IAdd,
+                Store(
+                    var_name: "i",
+                ),
+                PushUnit,
+                Pop,
+                Jmp(
+                    pos: -62,
+                ),
+                Load(
+                    var_name: "result",
+                ),
+                Return,
             ],
         ),
     ],
     entry_point: "main",
     libraries: [
         (
-            name: "std/math",
+            name: "std/io",
             is_std: true,
         ),
         (
-            name: "std/io",
+            name: "std/list",
             is_std: true,
         ),
     ],
     global: (
         string_pool: [
-            "Your guess:",
-            "Too low!",
-            "Too high!",
-            "You win!",
+            " ",
+            "",
+            "Hello",
+            "Hello",
+            "Hello is equal to Hello",
+            "Hello is not equal to Hello for some reason",
+            "Done",
         ],
         list_pool: [],
         function_pool: [],
