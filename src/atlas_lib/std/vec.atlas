@@ -65,10 +65,12 @@ public class Vec<T> : impl Indexable<T> {
         }
         func push(self, v: T) {
             if self.len == self.cap {
-                let old_data = clone(self.data);
+                // Take the reference of the old data so it doesn't get dropped
+                let old_data = self.data;
+                // Allocate a new array with double the capacity
                 self.data = new [T; self.cap * 2];
                 let i = 0;
-                //Need an extern function to copy the data from one array to another
+                //Need an operator for the copy of the array
                 while i < self.cap {
                     self.data[i] = old_data[i];
                     i = i + 1;

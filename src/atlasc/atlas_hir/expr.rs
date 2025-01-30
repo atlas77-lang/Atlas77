@@ -1,4 +1,4 @@
-use super::ty::{HirTy, HirUnitTy};
+use super::ty::HirTy;
 use logos::Span;
 use serde::Serialize;
 
@@ -12,9 +12,10 @@ pub enum HirExpr<'hir> {
     Unary(UnaryOpExpr<'hir>),
     Casting(HirCastExpr<'hir>),
     FloatLiteral(HirFloatLiteralExpr<'hir>),
+    CharLiteral(HirCharLiteralExpr<'hir>),
     Indexing(HirIndexingExpr<'hir>),
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
-    UnitLiteral(HirUnitLiteralExpr),
+    UnitLiteral(HirUnitLiteralExpr<'hir>),
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
     UnsignedIntegerLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
     StringLiteral(HirStringLiteralExpr<'hir>),
@@ -30,6 +31,7 @@ impl HirExpr<'_> {
             HirExpr::UnsignedIntegerLiteral(expr) => expr.span.clone(),
             HirExpr::BooleanLiteral(expr) => expr.span.clone(),
             HirExpr::FloatLiteral(expr) => expr.span.clone(),
+            HirExpr::CharLiteral(expr) => expr.span.clone(),
             HirExpr::UnitLiteral(expr) => expr.span.clone(),
             HirExpr::Unary(expr) => expr.span.clone(),
             HirExpr::Casting(expr) => expr.span.clone(),
@@ -52,7 +54,8 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::UnsignedIntegerLiteral(expr) => expr.ty,
             HirExpr::BooleanLiteral(expr) => expr.ty,
             HirExpr::FloatLiteral(expr) => expr.ty,
-            HirExpr::UnitLiteral(_) => &HirTy::Unit(HirUnitTy {}),
+            HirExpr::CharLiteral(expr) => expr.ty,
+            HirExpr::UnitLiteral(expr) => expr.ty,
             HirExpr::Unary(expr) => expr.ty,
             HirExpr::Casting(expr) => expr.ty,
             HirExpr::Indexing(expr) => expr.ty,
@@ -67,8 +70,16 @@ impl<'hir> HirExpr<'hir> {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct HirUnitLiteralExpr {
+pub struct HirCharLiteralExpr<'hir> {
+    pub value: char,
     pub span: Span,
+    pub ty: &'hir HirTy<'hir>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirUnitLiteralExpr<'hir> {
+    pub span: Span,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]

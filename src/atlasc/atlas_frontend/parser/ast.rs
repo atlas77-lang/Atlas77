@@ -123,6 +123,7 @@ pub struct AstObjField<'ast> {
 pub struct AstExternFunction<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
+    pub generics: Option<&'ast [&'ast AstNamedType<'ast>]>,
     pub args_name: &'ast [&'ast AstIdentifier<'ast>],
     pub args_ty: &'ast [&'ast AstType<'ast>],
     pub ret: &'ast AstType<'ast>,
@@ -390,6 +391,7 @@ pub enum AstLiteral<'ast> {
     Integer(AstIntegerLiteral),
     UnsignedInteger(AstUnsignedIntegerLiteral),
     Float(AstFloatLiteral),
+    Char(AstCharLiteral),
     Unit(AstUnitLiteral),
     String(AstStringLiteral<'ast>),
     Boolean(AstBooleanLiteral),
@@ -402,12 +404,19 @@ impl AstLiteral<'_> {
             AstLiteral::Integer(l) => l.span.clone(),
             AstLiteral::UnsignedInteger(l) => l.span.clone(),
             AstLiteral::Float(l) => l.span.clone(),
+            AstLiteral::Char(l) => l.span.clone(),
             AstLiteral::Unit(l) => l.span.clone(),
             AstLiteral::String(l) => l.span.clone(),
             AstLiteral::Boolean(l) => l.span.clone(),
             AstLiteral::List(l) => l.span.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstCharLiteral {
+    pub span: Span,
+    pub value: char,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -458,6 +467,7 @@ pub enum AstType<'ast> {
     Integer(AstIntegerType),
     Float(AstFloatType),
     UnsignedInteger(AstUnsignedIntegerType),
+    Char(AstCharType),
     SelfTy(AstSelfType),
     String(AstStringType),
     Named(AstNamedType<'ast>),
@@ -475,6 +485,7 @@ impl AstType<'_> {
             AstType::Integer(t) => t.span.clone(),
             AstType::Float(t) => t.span.clone(),
             AstType::UnsignedInteger(t) => t.span.clone(),
+            AstType::Char(t) => t.span.clone(),
             AstType::SelfTy(t) => t.span.clone(),
             AstType::String(t) => t.span.clone(),
             AstType::Named(t) => t.span.clone(),
@@ -484,6 +495,11 @@ impl AstType<'_> {
             AstType::Generic(t) => t.span.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstCharType {
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize)]

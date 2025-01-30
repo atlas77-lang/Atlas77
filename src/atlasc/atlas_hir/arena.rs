@@ -5,9 +5,10 @@ use std::{
     rc::Rc,
 };
 
+use super::ty::{HirBooleanTy, HirCharTy, HirFloatTy, HirIntegerTy, HirListTy, HirNamedTy, HirStringTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirUnsignedIntTy};
 use bumpalo::Bump;
+use logos::Span;
 
-use super::ty::{HirBooleanTy, HirFloatTy, HirIntegerTy, HirListTy, HirStringTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirUnsignedIntTy};
 //todo: Implement my own Arenas (maybe)
 pub struct HirArena<'arena> {
     allocator: Rc<Bump>,
@@ -110,6 +111,14 @@ impl<'arena> TypeArena<'arena> {
             .or_insert_with(|| self.allocator.alloc(HirTy::UInt64(HirUnsignedIntTy {})))
     }
 
+    pub fn get_char_ty(&'arena self) -> &'arena HirTy<'arena> {
+        let id = HirTyId::compute_char_ty_id();
+        self.intern
+            .borrow_mut()
+            .entry(id)
+            .or_insert_with(|| self.allocator.alloc(HirTy::Char(HirCharTy {})))
+    }
+
     pub fn get_boolean_ty(&'arena self) -> &'arena HirTy<'arena> {
         let id = HirTyId::compute_boolean_ty_id();
         self.intern
@@ -147,6 +156,14 @@ impl<'arena> TypeArena<'arena> {
         self.intern
             .borrow_mut()
             .entry(id)
-            .or_insert_with(|| self.allocator.alloc(HirTy::List(HirListTy { ty })))
+            .or_insert_with(|| self.allocator.alloc(HirTy::List(HirListTy { inner: ty })))
+    }
+
+    pub fn get_named_ty(&'arena self, name: &'arena str, span: Span) -> &'arena HirTy<'arena> {
+        let id = HirTyId::compute_name_ty_id(name);
+        self.intern
+            .borrow_mut()
+            .entry(id)
+            .or_insert_with(|| self.allocator.alloc(HirTy::Named(HirNamedTy { name, span })))
     }
 }

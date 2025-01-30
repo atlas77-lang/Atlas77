@@ -1,3 +1,5 @@
+use crate::atlas_vm::runtime::instruction::Type;
+
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
 
 #[derive(Debug, Clone)]
@@ -7,6 +9,7 @@ pub enum RuntimeError {
     StackUnderflow,
     NullReference,
     DivisionByZero,
+    InvalidCast(u8, Type),
     IndexOutOfBounds,
     InvalidOperation,
     TypeMismatchError,
@@ -22,6 +25,7 @@ impl std::fmt::Display for RuntimeError {
             StackUnderflow => writeln!(f, "Too little stack bozo"),
             NullReference => writeln!(f, "Null Reference error"),
             DivisionByZero => writeln!(f, "There are no infinity, you can't divide by zero"),
+            InvalidCast(from, to) => writeln!(f, "Invalid cast from {} to {:?}", from, to),
             IndexOutOfBounds => writeln!(f, "Index out of bounds"),
             InvalidOperation => writeln!(f, "Invalid Operation (default error)"),
             TypeMismatchError => writeln!(f, "Incorrect types bozo"),

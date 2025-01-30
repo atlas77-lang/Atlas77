@@ -1,6 +1,6 @@
 use miette::{SourceOffset, SourceSpan};
 
-use crate::atlasc::atlas_frontend::parser::ast::AstClass;
+use crate::atlasc::atlas_frontend::parser::ast::{AstClass, AstNamedType};
 use crate::atlasc::atlas_frontend::{
     parse,
     parser::{
@@ -18,7 +18,7 @@ const LIST_ATLAS: &str = include_str!("../../../atlas_lib/std/list.atlas");
 const MATH_ATLAS: &str = include_str!("../../../atlas_lib/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../atlas_lib/std/string.atlas");
 
-use crate::atlasc::atlas_hir::expr::{HirCastExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
+use crate::atlasc::atlas_hir::expr::{HirCastExpr, HirCharLiteralExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
 use crate::atlasc::atlas_hir::item::HirClass;
 use crate::atlasc::atlas_hir::signature::{HirClassFieldSignature, HirClassSignature};
 use crate::atlasc::atlas_hir::{
@@ -90,6 +90,7 @@ where
                 module_signature.functions.insert(name, fun.signature);
                 module_body.functions.insert(name, fun);
             }
+            //todo: add support for classes
             AstItem::Class(c) => {
                 let class = self.visit_class(c)?;
             }
@@ -109,6 +110,12 @@ where
 
                 let mut params: Vec<&HirFunctionParameterSignature<'hir>> = Vec::new();
                 let mut type_params: Vec<&HirTypeParameterItemSignature<'_>> = Vec::new();
+
+                let generics = if e.generics.is_some() {
+                    Some(e.generics.unwrap().into_iter().map(|g| self.visit_generic(g)).collect::<HirResult<Vec<_>>>()?)
+                } else {
+                    None
+                };
 
                 for (arg_name, arg_ty) in e.args_name.iter().zip(e.args_ty.iter()) {
                     let hir_arg_ty = self.visit_ty(arg_ty)?;
@@ -131,6 +138,7 @@ where
                 let hir = self.arena.intern(HirFunctionSignature {
                     span: e.span.clone(),
                     params,
+                    generics,
                     type_params,
                     return_ty: ty,
                     return_ty_span: Some(e.ret.span()),
@@ -141,6 +149,17 @@ where
             _ => {}
         }
         Ok(())
+    }
+
+    //todo: Add constraints to generics
+    fn visit_generic(&self, generics: &'ast AstNamedType) -> HirResult<&'hir HirTypeParameterItemSignature<'hir>> {
+        let name = self.arena.names().get(generics.name.name);
+        let hir = self.arena.intern(HirTypeParameterItemSignature {
+            span: generics.span.clone(),
+            name,
+            name_span: generics.name.span.clone(),
+        });
+        Ok(hir)
     }
 
     fn visit_class(&self, node: &'ast AstClass<'ast>) -> HirResult<HirClass<'hir>> {
@@ -573,8 +592,18 @@ where
                             ty: self.arena.types().get_uint64_ty(),
                         })
                     }
+                    AstLiteral::Char(c) => {
+                        HirExpr::CharLiteral(HirCharLiteralExpr {
+                            span: l.span(),
+                            value: c.value,
+                            ty: self.arena.types().get_char_ty(),
+                        })
+                    }
                     AstLiteral::Unit(_) => {
-                        HirExpr::UnitLiteral(HirUnitLiteralExpr { span: l.span() })
+                        HirExpr::UnitLiteral(HirUnitLiteralExpr {
+                            span: l.span(),
+                            ty: self.arena.types().get_unit_ty(),
+                        })
                     }
                     AstLiteral::String(s) => {
                         HirExpr::StringLiteral(HirStringLiteralExpr {
@@ -645,6 +674,8 @@ where
         let signature = self.arena.intern(HirFunctionSignature {
             span: node.span.clone(),
             params: parameters?,
+            //Generics aren't supported yet for normal functions
+            generics: None,
             type_params: type_parameters?,
             return_ty: ret_type,
             return_ty_span: Some(ret_type_span),
@@ -696,9 +727,14 @@ where
             AstType::Boolean(_) => self.arena.types().get_boolean_ty(),
             AstType::Integer(_) => self.arena.types().get_integer64_ty(),
             AstType::Float(_) => self.arena.types().get_float64_ty(),
+            AstType::Char(_) => self.arena.types().get_char_ty(),
             AstType::UnsignedInteger(_) => self.arena.types().get_uint64_ty(),
             AstType::Unit(_) => self.arena.types().get_unit_ty(),
             AstType::String(_) => self.arena.types().get_str_ty(),
+            AstType::Named(n) => {
+                let name = self.arena.names().get(n.name.name);
+                self.arena.types().get_named_ty(name, n.span.clone())
+            }
             AstType::List(l) => {
                 let ty = self.visit_ty(l.inner)?;
                 self.arena.types().get_list_ty(ty)

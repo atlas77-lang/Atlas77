@@ -1,5 +1,6 @@
 import "std/string"
 import "std/io"
+import "std/list"
 
 func test() {
     let s = "  Hello World!";
@@ -14,5 +15,18 @@ func test() {
 }
 
 func main() {
+    let s = ['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '!'];
+    let i = 0;
+    //len(4);
+    while i < len(s) {
+        print(s[i] as str);
+        i = i + 1;
+    }
+    let s_slice: [char] = slice(s, 0, 5);
+    i = 0;
+    while i < len(s_slice) {
+        print(s_slice[i] as str);
+        i = i + 1;
+    }
     test();
 }

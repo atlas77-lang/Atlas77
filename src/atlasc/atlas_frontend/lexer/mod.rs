@@ -16,16 +16,16 @@ impl<'lex> AtlasLexer<'lex> {
             source,
         }
     }
-    pub fn tokenize(&mut self) -> Result<Vec<Token>, LexingError> {
+    pub fn tokenize(&mut self) -> Result<Vec<Token>, (LexingError, Span)> {
         let lex = TokenKind::lexer(&self.source);
-        let mut res: Vec<Result<Token, LexingError>> = lex.spanned().map(|(kind, span)| {
+        let mut res: Vec<Result<Token, (LexingError, Span)>> = lex.spanned().map(|(kind, span)| {
             match kind {
                 Ok(kind) => Ok(Token::new(span, kind)),
-                Err(e) => Err(e),
+                Err(e) => Err((e, span)),
             }
         }).collect::<Vec<_>>();
         res.push(Ok(Token::new(Span::default(), TokenKind::EoI)));
-        res.into_iter().collect::<Result<Vec<_>, LexingError>>()
+        res.into_iter().collect::<Result<_, _>>()
     }
 }
 

@@ -15,7 +15,8 @@ use super::{
     HirFunction, HirModule, HirModuleSignature,
 };
 use crate::atlasc::atlas_hir::error::EmptyListLiteralError;
-use crate::atlasc::atlas_hir::expr::HirIdentExpr;
+use crate::atlasc::atlas_hir::expr::{HirFunctionCallExpr, HirIdentExpr};
+use crate::atlasc::atlas_hir::signature::{HirFunctionParameterSignature, HirFunctionSignature};
 use logos::Span;
 use miette::{SourceOffset, SourceSpan};
 use std::collections::HashMap;
@@ -31,6 +32,7 @@ pub struct TypeChecker<'hir> {
     current_func_name: Option<&'hir str>,
     // Source code
     src: String,
+    extern_monomorphized: HashMap<(&'hir str, Vec<&'hir HirTy<'hir>>), &'hir HirFunctionSignature<'hir>>,
 }
 
 pub struct ContextFunction<'hir> {
@@ -123,6 +125,7 @@ impl<'hir> TypeChecker<'hir> {
             src,
             signature: HirModuleSignature::default(),
             current_func_name: None,
+            extern_monomorphized: HashMap::new(),
         }
     }
 
@@ -376,6 +379,7 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::UnsignedIntegerLiteral(_) => Ok(self.arena.types().get_uint64_ty()),
             HirExpr::BooleanLiteral(_) => Ok(self.arena.types().get_boolean_ty()),
             HirExpr::UnitLiteral(_) => Ok(self.arena.types().get_unit_ty()),
+            HirExpr::CharLiteral(_) => Ok(self.arena.types().get_char_ty()),
             HirExpr::StringLiteral(_) => Ok(self.arena.types().get_str_ty()),
             HirExpr::NewArray(a) => {
                 let size_ty = self.check_expr(a.size.as_mut())?;
@@ -450,7 +454,12 @@ impl<'hir> TypeChecker<'hir> {
             }
             HirExpr::Casting(c) => {
                 let expr_ty = self.check_expr(&mut c.expr)?;
-                let can_cast = matches!(expr_ty, HirTy::Int64(_) | HirTy::Float64(_) | HirTy::UInt64(_) | HirTy::Boolean(_) | HirTy::String(_));
+                let can_cast = matches!(
+                    expr_ty,
+                    HirTy::Int64(_) | HirTy::Float64(_) |
+                    HirTy::UInt64(_) | HirTy::Boolean(_) |
+                    HirTy::Char(_) | HirTy::String(_)
+                );
                 if !can_cast {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", expr_ty),
@@ -490,7 +499,7 @@ impl<'hir> TypeChecker<'hir> {
                 }
 
                 match target {
-                    HirTy::List(l) => Ok(l.ty),
+                    HirTy::List(l) => Ok(l.inner),
                     _ => {
                         todo!("TypeChecker::check_expr")
                     }
@@ -528,7 +537,6 @@ impl<'hir> TypeChecker<'hir> {
                     _ => Ok(lhs),
                 }
             }
-            //Todo, add support for extern func
             HirExpr::Call(f) => {
                 let callee = f.callee.as_ref();
                 let name = match callee {
@@ -563,8 +571,14 @@ impl<'hir> TypeChecker<'hir> {
                     }));
                 }
 
+                //Only check if it's an external function with generics (e.g. `extern foo<T>(a: T) -> T`)
+                if func.is_external && func.generics.is_some() {
+                    return self.check_extern_fn(name, f, func);
+                }
+
                 for (param, arg) in func.params.iter().zip(f.args.iter_mut()) {
                     let arg_ty = self.check_expr(arg)?;
+
                     if HirTyId::from(arg_ty) != HirTyId::from(param.ty) {
                         return Err(HirError::TypeMismatch(TypeMismatchError {
                             actual_type: format!("{}", arg_ty),
@@ -609,6 +623,100 @@ impl<'hir> TypeChecker<'hir> {
                 let ctx_var = self.get_ident_ty(i)?;
                 Ok(ctx_var.ty)
             }
+        }
+    }
+
+    //todo: Also check for more constraints, rn `len<T> (l: [T]) -> int64` doesn't check if what's passed is a list
+    fn check_extern_fn(&mut self, name: &'hir str, expr: &mut HirFunctionCallExpr<'hir>, signature: &'hir HirFunctionSignature<'hir>) -> HirResult<&'hir HirTy<'hir>> {
+        let args_ty = expr
+            .args
+            .iter_mut()
+            .map(|a| self.check_expr(a))
+            .collect::<HirResult<Vec<_>>>()?;
+        let monomorphized = self.extern_monomorphized.get(&(name, args_ty.clone()));
+        if let Some(m) = monomorphized {
+            return Ok(m.return_ty);
+        }
+        //Contains the name + the actual type of that generic
+        let mut generics: Vec<(&'hir str, &'hir HirTy<'hir>)> = Vec::new();
+        let mut params = vec![];
+        for (i, (param, arg)) in signature.params.iter().zip(args_ty.iter()).enumerate() {
+            //This only take the name of the generic type (e.g. `T` in `extern foo<T>(a: T) -> T`)
+            //So `extern foo<T>(a: [T]) -> T` won't be correctly type checked
+
+            if let Some(name) = self.get_generic_name(param.ty) {
+                let ty = if let Some(ty) = self.get_generic_ty(param.ty, arg) {
+                    ty
+                } else {
+                    return Err(HirError::TypeMismatch(TypeMismatchError {
+                        actual_type: format!("{}", arg),
+                        actual_loc: SourceSpan::new(
+                            SourceOffset::from(expr.args[i].span().start),
+                            expr.args[i].span().end - expr.args[i].span().start,
+                        ),
+                        expected_type: format!("{}", param.ty),
+                        expected_loc: SourceSpan::new(
+                            SourceOffset::from(param.span.start),
+                            param.span.end - param.span.start,
+                        ),
+                        src: self.src.clone(),
+                    }));
+                };
+                generics.push((name, ty));
+            }
+            let param_sign: &'hir HirFunctionParameterSignature = self.arena.intern(HirFunctionParameterSignature {
+                name: param.name,
+                name_span: param.name_span.clone(),
+                span: param.span.clone(),
+                ty: arg,
+                ty_span: param.ty_span.clone(),
+            });
+            params.push(param_sign);
+        }
+
+        let mut monomorphized = signature.clone();
+        monomorphized.params = params;
+        if let Some(name) = self.get_generic_name(monomorphized.return_ty) {
+            let actual_generic_ty = generics.iter().find(|(n, _)| *n == name).unwrap().1;
+            let return_ty = self.get_generic_ret_ty(monomorphized.return_ty, actual_generic_ty);
+
+            monomorphized.return_ty = return_ty;
+        };
+
+        monomorphized.generics = None;
+        let signature = self.arena.intern(monomorphized);
+        self.extern_monomorphized.insert((name, args_ty), signature);
+        Ok(signature.return_ty)
+    }
+
+    fn get_generic_name(&self, ty: &'hir HirTy<'hir>) -> Option<&'hir str> {
+        match ty {
+            HirTy::List(l) => self.get_generic_name(l.inner),
+            HirTy::Named(n) => Some(n.name),
+            _ => None,
+        }
+    }
+
+    fn get_generic_ret_ty(&self, ty: &'hir HirTy<'hir>, actual_generic_ty: &'hir HirTy<'hir>) -> &'hir HirTy<'hir> {
+        match ty {
+            HirTy::List(l) => self.arena.types().get_list_ty(self.get_generic_ret_ty(l.inner, actual_generic_ty)),
+            HirTy::Named(_) => {
+                println!("actual_generic_ty: {:?}", actual_generic_ty);
+                actual_generic_ty
+            }
+            _ => actual_generic_ty,
+        }
+    }
+
+    /// Return the type of the generic after monormophization
+    /// e.g. `foo<T>(a: T) -> T` with `foo(42)` will return `int64`
+    fn get_generic_ty(&self, ty: &'hir HirTy<'hir>, given_ty: &'hir HirTy<'hir>) -> Option<&'hir HirTy<'hir>> {
+        match (ty, given_ty) {
+            (HirTy::List(l1), HirTy::List(l2)) => self.get_generic_ty(l1.inner, l2.inner),
+            (HirTy::Named(_), _) => {
+                Some(given_ty)
+            }
+            _ => None,
         }
     }
 

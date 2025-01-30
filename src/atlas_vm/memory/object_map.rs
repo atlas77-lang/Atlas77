@@ -47,6 +47,15 @@ impl Memory {
                 .collect(),
         }
     }
+    pub fn clear(&mut self) {
+        for (idx, obj) in self.mem.iter_mut().enumerate() {
+            obj.kind = ObjectKind::Free {
+                next: self.free,
+            };
+            obj.rc = 0;
+            self.free = ObjectIndex::new(idx as u64);
+        }
+    }
 
     pub fn put(&mut self, object: ObjectKind) -> Result<ObjectIndex, RuntimeError> {
         let idx = self.free;
@@ -242,6 +251,7 @@ impl ObjectKind {
     }
 }
 
+
 impl From<Structure> for ObjectKind {
     fn from(value: Structure) -> Self {
         ObjectKind::Structure(value)
@@ -258,6 +268,12 @@ impl From<Vec<VMData>> for ObjectKind {
     fn from(value: Vec<VMData>) -> Self {
         ObjectKind::List(value)
     }
+}
+
+pub struct Class {
+    pub fields: Vec<VMData>,
+    /// Too much data duplication, should be a reference to an object that holds the method pointers
+    pub methods: Vec<VMData>,
 }
 
 #[derive(Clone, Debug)]

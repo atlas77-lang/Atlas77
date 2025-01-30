@@ -20,7 +20,7 @@ use ast::{
 
 use crate::atlasc::atlas_frontend::lexer::token::TokenKind::KwSelf;
 use crate::atlasc::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
-use crate::atlasc::atlas_frontend::parser::ast::{AstCastingExpr, AstClass, AstListLiteral, AstListType, AstNewArrayExpr, AstNewObjExpr, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
+use crate::atlasc::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstListLiteral, AstListType, AstNewArrayExpr, AstNewObjExpr, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
 use arena::AstArena;
 use logos::Span;
 
@@ -518,6 +518,14 @@ impl<'ast> Parser<'ast> {
                 let _ = self.advance();
                 node
             }
+            TokenKind::Char(c) => {
+                let node = AstExpr::Literal(AstLiteral::Char(AstCharLiteral {
+                    span: tok.span(),
+                    value: c,
+                }));
+                let _ = self.advance();
+                node
+            }
             TokenKind::StringLiteral(s) => {
                 let node = AstExpr::Literal(AstLiteral::String(AstStringLiteral {
                     span: tok.span(),
@@ -715,6 +723,26 @@ impl<'ast> Parser<'ast> {
     fn parse_extern_function(&mut self) -> ParseResult<AstExternFunction<'ast>> {
         let _ = self.advance();
         let name = self.parse_identifier()?;
+
+        let mut generics = None;
+        //Start of generic with `fn foo<T>() -> T`
+        if self.current().kind == TokenKind::OpLessThan {
+            self.expect(TokenKind::OpLessThan)?;
+            let mut generic_names = vec![];
+            while self.current().kind != TokenKind::OpGreaterThan {
+                let generic_name = self.parse_identifier()?;
+                generic_names.push(AstNamedType {
+                    span: self.current().span(),
+                    name: self.arena.alloc(generic_name),
+                });
+                if self.current().kind == TokenKind::Comma {
+                    let _ = self.advance();
+                }
+            }
+            self.expect(TokenKind::OpGreaterThan)?;
+            generics = Some(self.arena.alloc_vec(generic_names));
+        }
+
         self.expect(TokenKind::LParen)?;
         let mut args_name = vec![];
         let mut args_ty = vec![];
@@ -732,6 +760,7 @@ impl<'ast> Parser<'ast> {
         let node = AstExternFunction {
             span: Span::union_span(&name.span, &ret_ty.span()),
             name: self.arena.alloc(name),
+            generics,
             args_name: self.arena.alloc_vec(args_name),
             args_ty: self.arena.alloc_vec(args_ty),
             ret: self.arena.alloc(ret_ty),
@@ -944,6 +973,13 @@ impl<'ast> Parser<'ast> {
             TokenKind::UInt64Ty => {
                 let _ = self.advance();
                 let node = AstType::UnsignedInteger(AstUnsignedIntegerType {
+                    span: Span::union_span(&start, &self.current().span()),
+                });
+                Ok(node)
+            }
+            TokenKind::CharTy => {
+                let _ = self.advance();
+                let node = AstType::Char(AstCharType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
                 Ok(node)

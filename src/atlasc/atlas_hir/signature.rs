@@ -33,6 +33,7 @@ pub struct HirClassFieldSignature<'hir> {
 pub struct HirFunctionSignature<'hir> {
     pub span: Span,
     pub params: Vec<&'hir HirFunctionParameterSignature<'hir>>,
+    pub generics: Option<Vec<&'hir HirTypeParameterItemSignature<'hir>>>,
     pub type_params: Vec<&'hir HirTypeParameterItemSignature<'hir>>,
     /// The user can declare a function without a return type, in which case the return type is `()`.
     pub return_ty: &'hir HirTy<'hir>,
@@ -46,6 +47,7 @@ impl Default for HirFunctionSignature<'_> {
         Self {
             span: Span::default(),
             params: Vec::new(),
+            generics: None,
             type_params: Vec::new(),
             return_ty: &HirTy::Unit(HirUnitTy {}),
             return_ty_span: None,

@@ -67,6 +67,8 @@ pub enum TokenKind {
     //Need to also drop the quotes
     #[regex("\"[^\"]*\"", |lex| lex.slice()[1..lex.slice().len()-1].to_string())]
     StringLiteral(String),
+    #[regex("'.'", |lex| lex.slice().chars().nth(1).unwrap())]
+    Char(char),
     #[regex("[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
     Identifier(String),
     #[regex("[0-9]+", |lex| lex.slice().parse())]
@@ -74,11 +76,10 @@ pub enum TokenKind {
     #[regex("[0-9]+\\.[0-9]+", |lex| lex.slice().parse())]
     Float(f64),
     //#[regex("[0-9]+", |lex| lex.slice().parse())]
+    /// Unused for now, once trailing is implemented, this will be used
     UnsignedInteger(u64),
     #[regex("true|false", |lex| lex.slice().parse())]
     Bool(bool),
-    #[regex("'.'", |lex| lex.slice().chars().nth(1).unwrap())]
-    Char(char),
     #[regex(r"//.*", |lex| lex.slice().to_string())]
     Comments(String),
     #[token("(")]

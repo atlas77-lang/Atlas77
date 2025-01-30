@@ -8,7 +8,7 @@ use libraries::{
     fs::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
     string::STRING_FUNCTIONS, time::TIME_FUNCTIONS,
 };
-use runtime::instruction::{Instruction, Program, Type};
+use runtime::instruction::{Instruction, Label, Program, Type};
 use std::collections::HashMap;
 
 use crate::atlas_vm::memory::object_map::ObjectKind;
@@ -79,6 +79,13 @@ impl<'run> Atlas77VM<'run> {
             pc: 0,
         }
     }
+    pub fn reset(&mut self) {
+        self.stack.clear();
+        self.stack_frame.clear();
+        self.object_map.clear();
+        self.var_map.var_map.clear();
+        self.pc = 0;
+    }
     pub fn run(&mut self) -> RuntimeResult<VMData> {
         let label = self
             .program
@@ -116,27 +123,32 @@ impl<'run> Atlas77VM<'run> {
         match instr {
             Instruction::PushInt(i) => {
                 let val = VMData::new_i64(i);
-                self.stack.push_with_rc(val, &mut self.object_map)?;
+                self.stack.push(val)?;
                 self.pc += 1;
             }
             Instruction::PushFloat(f) => {
                 let val = VMData::new_f64(f);
-                self.stack.push_with_rc(val, &mut self.object_map)?;
+                self.stack.push(val)?;
                 self.pc += 1;
             }
             Instruction::PushUnsignedInt(u) => {
                 let val = VMData::new_u64(u);
-                self.stack.push_with_rc(val, &mut self.object_map)?;
+                self.stack.push(val)?;
+                self.pc += 1;
+            }
+            Instruction::PushChar(c) => {
+                let val = VMData::new_char(c);
+                self.stack.push(val)?;
                 self.pc += 1;
             }
             Instruction::PushUnit => {
                 let val = VMData::new_unit();
-                self.stack.push_with_rc(val, &mut self.object_map)?;
+                self.stack.push(val)?;
                 self.pc += 1;
             }
             Instruction::PushBool(b) => {
                 let val = VMData::new_bool(b);
-                self.stack.push_with_rc(val, &mut self.object_map)?;
+                self.stack.push(val)?;
                 self.pc += 1;
             }
             Instruction::PushStr(u) => {
@@ -149,49 +161,49 @@ impl<'run> Atlas77VM<'run> {
                 self.pc += 1;
             }
             Instruction::Lt => {
-                let a = self.stack.pop_with_rc(&mut self.object_map)?;
-                let b = self.stack.pop_with_rc(&mut self.object_map)?;
+                let a = self.stack.pop()?;
+                let b = self.stack.pop()?;
                 let res = VMData::new_bool(b.as_i64() < a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::Lte => {
-                let a = self.stack.pop_with_rc(&mut self.object_map)?;
-                let b = self.stack.pop_with_rc(&mut self.object_map)?;
+                let a = self.stack.pop()?;
+                let b = self.stack.pop()?;
                 let res = VMData::new_bool(b.as_i64() <= a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::Gt => {
-                let a = self.stack.pop_with_rc(&mut self.object_map)?;
-                let b = self.stack.pop_with_rc(&mut self.object_map)?;
+                let a = self.stack.pop()?;
+                let b = self.stack.pop()?;
                 let res = VMData::new_bool(b.as_i64() > a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::Gte => {
-                let a = self.stack.pop_with_rc(&mut self.object_map)?;
-                let b = self.stack.pop_with_rc(&mut self.object_map)?;
+                let a = self.stack.pop()?;
+                let b = self.stack.pop()?;
                 let res = VMData::new_bool(b.as_i64() >= a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::Eq => {
-                let a = self.stack.pop_with_rc(&mut self.object_map)?;
-                let b = self.stack.pop_with_rc(&mut self.object_map)?;
+                let a = self.stack.pop()?;
+                let b = self.stack.pop()?;
                 let res = VMData::new_bool(b.as_i64() == a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::Neq => {
-                let a = self.stack.pop_with_rc(&mut self.object_map)?;
-                let b = self.stack.pop_with_rc(&mut self.object_map)?;
+                let a = self.stack.pop()?;
+                let b = self.stack.pop()?;
                 let res = VMData::new_bool(b.as_i64() != a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::JmpZ { pos } => {
-                let cond = self.stack.pop_with_rc(&mut self.object_map)?;
+                let cond = self.stack.pop()?;
                 if !cond.as_bool() {
                     self.pc += (pos + 1) as usize;
                 } else {
@@ -210,6 +222,24 @@ impl<'run> Atlas77VM<'run> {
                             Err(_) => return Err(RuntimeError::OutOfMemory),
                         };
                         VMData::new_string(ptr)
+                    }
+                    Type::Char => {
+                        match val.tag {
+                            VMData::TAG_STR => {
+                                let raw_string = self.object_map.get(val.as_object())?;
+                                let string = raw_string.string();
+                                if string.len() != 1 {
+                                    return Err(RuntimeError::InvalidCast(
+                                        val.tag,
+                                        Type::Char,
+                                    ));
+                                }
+                                VMData::new_char(string.chars().next().unwrap())
+                            }
+                            _ => {
+                                VMData::new_char(val.as_char())
+                            }
+                        }
                     }
                     Type::Boolean => {
                         match val.tag {
@@ -231,6 +261,7 @@ impl<'run> Atlas77VM<'run> {
                             VMData::TAG_U64 => VMData::new_f64(val.as_u64() as f64),
                             VMData::TAG_I64 => VMData::new_f64(val.as_i64() as f64),
                             VMData::TAG_BOOL => VMData::new_f64(val.as_bool() as i64 as f64),
+                            VMData::TAG_CHAR => VMData::new_f64(val.as_char() as i64 as f64),
                             _ => unreachable!("Invalid cast to float"),
                         }
                     }
@@ -244,6 +275,7 @@ impl<'run> Atlas77VM<'run> {
                             VMData::TAG_U64 => VMData::new_i64(val.as_u64() as i64),
                             VMData::TAG_FLOAT => VMData::new_i64(val.as_f64() as i64),
                             VMData::TAG_BOOL => VMData::new_i64(val.as_bool() as i64),
+                            VMData::TAG_CHAR => VMData::new_i64(val.as_char() as i64),
                             _ => unreachable!("Invalid cast to integer"),
                         }
                     }
@@ -257,6 +289,7 @@ impl<'run> Atlas77VM<'run> {
                             VMData::TAG_I64 => VMData::new_u64(val.as_i64() as u64),
                             VMData::TAG_FLOAT => VMData::new_u64(val.as_f64() as u64),
                             VMData::TAG_BOOL => VMData::new_u64(val.as_bool() as u64),
+                            VMData::TAG_CHAR => VMData::new_u64(val.as_char() as u64),
                             _ => unreachable!("Invalid cast to unsigned integer"),
                         }
                     }
@@ -305,21 +338,21 @@ impl<'run> Atlas77VM<'run> {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() * a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::FMul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() * a.as_f64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::UIMul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() * a.as_u64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::IDiv => {
@@ -329,7 +362,7 @@ impl<'run> Atlas77VM<'run> {
                 }
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() / a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::FDiv => {
@@ -339,7 +372,7 @@ impl<'run> Atlas77VM<'run> {
                 }
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() / a.as_f64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::UIDiv => {
@@ -349,56 +382,56 @@ impl<'run> Atlas77VM<'run> {
                 }
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() / a.as_u64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::IAdd => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() + a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::FAdd => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() + a.as_f64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::UIAdd => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() + a.as_u64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::ISub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() - a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::FSub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_f64(b.as_f64() - a.as_f64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::UISub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_u64(b.as_u64() - a.as_u64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::IMod => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 let res = VMData::new_i64(b.as_i64() % a.as_i64());
-                self.stack.push_with_rc(res, &mut self.object_map)?;
+                self.stack.push(res)?;
                 self.pc += 1;
             }
             Instruction::ListLoad => {
@@ -440,22 +473,20 @@ impl<'run> Atlas77VM<'run> {
                 self.pc += 1;
             }
             Instruction::DirectCall { pos, args } => {
-                let fn_ptr = self.stack[pos];
-                let (pc, sp) = (self.pc, self.stack.top - args as usize);
+                let fn_ptr: VMData = self.stack[pos];
+                let (pc, sp): (usize, usize) = (self.pc, self.stack.top - args as usize);
                 self.stack_frame.push((pc, sp));
-                //self.var_map.push();
                 self.pc = fn_ptr.as_fn_ptr();
             }
             Instruction::CallFunction { name, args } => {
-                let label = self
+                let label: &Label<'_> = self
                     .program
                     .labels
                     .iter()
-                    .find(|label| label.name == name)
+                    .find(|label: &&Label<'_>| label.name == name)
                     .unwrap();
-                let (pc, sp) = (self.pc, self.stack.top - args as usize);
+                let (pc, sp): (usize, usize) = (self.pc, self.stack.top - args as usize);
                 self.stack_frame.push((pc, sp));
-                //self.var_map.push();
                 self.pc = label.position;
             }
             Instruction::Return => {

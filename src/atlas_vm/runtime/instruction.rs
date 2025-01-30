@@ -13,6 +13,7 @@ pub enum Type {
     UnsignedInteger,
     Boolean,
     String,
+    Char,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -21,6 +22,7 @@ pub enum Instruction<'run> {
     PushFloat(f64),
     PushUnsignedInt(u64),
     PushBool(bool),
+    PushChar(char),
     /// Push a string from the constant pool
     /// The string is directly put in the memory and its pointer is pushed to the stack
     PushStr(usize),

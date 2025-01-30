@@ -270,6 +270,9 @@ where
                         HirTy::UInt64(_) => {
                             bytecode.push(Instruction::UIDiv);
                         }
+                        HirTy::Char(_) => {
+                            bytecode.push(Instruction::IDiv);
+                        }
                         _ => unimplemented!("Unsupported type for now"),
                     },
                     atlas_hir::expr::HirBinaryOp::Mod => match b.ty {
@@ -324,6 +327,12 @@ where
                                     bytecode.push(Instruction::Swap);
                                     bytecode.push(Instruction::FSub);
                                 }
+                                // This won't really work, because you're subtracting a 32-bit char from a 64-bit integer
+                                HirTy::Char(_) => {
+                                    bytecode.push(Instruction::PushInt(0));
+                                    bytecode.push(Instruction::Swap);
+                                    bytecode.push(Instruction::ISub);
+                                }
                                 _ => {
                                     return Err(atlas_hir::error::HirError::UnsupportedExpr(
                                         UnsupportedExpr {
@@ -375,6 +384,9 @@ where
                     }
                     HirTy::String(_) => {
                         bytecode.push(Instruction::CastTo(Type::String));
+                    }
+                    HirTy::Char(_) => {
+                        bytecode.push(Instruction::CastTo(Type::Char));
                     }
                     _ => {
                         return Err(atlas_hir::error::HirError::UnsupportedExpr(
@@ -433,6 +445,7 @@ where
             HirExpr::IntegerLiteral(i) => bytecode.push(Instruction::PushInt(i.value)),
             HirExpr::FloatLiteral(f) => bytecode.push(Instruction::PushFloat(f.value)),
             HirExpr::BooleanLiteral(b) => bytecode.push(Instruction::PushBool(b.value)),
+            HirExpr::CharLiteral(c) => bytecode.push(Instruction::PushChar(c.value)),
             HirExpr::UnitLiteral(_) => bytecode.push(Instruction::PushUnit),
             HirExpr::UnsignedIntegerLiteral(u) => {
                 bytecode.push(Instruction::PushUnsignedInt(u.value))

@@ -4,9 +4,9 @@ import "std/string"
 
 //mat-mul
 func mat_mul(a: [[int64]], b: [[int64]]) -> [[int64]] {
-    let a_rows = len_double(a);
+    let a_rows = len(a);
     let a_cols = len(a[0]);
-    let b_rows = len_double(b);
+    let b_rows = len(b);
     let b_cols = len(b[0]);
     let i_res = 0;
     let result = new [[int64]; a_rows];
@@ -37,11 +37,11 @@ func main() {
     let b: [[int64]] = [[7, 8], [9, 10], [11, 12]];
     let result = mat_mul(a, b);
     let i = 0;
-    while i < len_double(result) {
+    while i < len(result) {
         let j = 0;
         while j < len(result[0]) {
             print(" ");
-            print(result[i][j] as str);
+            print(result[i][j]);
             j = j + 1;
         }
         println("");

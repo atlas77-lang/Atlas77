@@ -10,7 +10,6 @@ use atlasc::atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLowering
 use bumpalo::Bump;
 
 use std::{io::Write, path::PathBuf, time::Instant};
-
 //todo: The pipeline of the compiler should be more straightforward and should include the "debug" and "release" modes
 //todo: There should also be a function for each stage of the pipeline
 
@@ -90,15 +89,15 @@ pub fn run(path: String, _flag: CompilationFlag) -> miette::Result<()> {
     file.write_all(output.as_bytes()).unwrap();
 
     //run
-    let start = Instant::now();
     let mut vm = atlas_vm::Atlas77VM::new(program);
+    let start = Instant::now();
     let res = vm.run();
     let end = Instant::now();
     match res {
         Ok(_) => {
             println!(
-                "Program ran successfully (time: {}ms)",
-                (end - start).as_millis()
+                "Program ran successfully (time: {}µs)",
+                (end - start).as_micros()
             );
         }
         Err(e) => {
