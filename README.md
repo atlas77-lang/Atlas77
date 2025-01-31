@@ -12,7 +12,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/atlas77-lang/Atlas77">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="images/logo.png" alt="Logo">
   </a>
 
 <h3 align="center">Atlas77</h3>
@@ -21,7 +21,7 @@
     Functional Programming language with a strong interop with Rust,
     designed to be a functional scripting language.
     <br />
-    <a href="https://github.com/atlas77-lang/Atlas77"><strong>Explore the docs »</strong></a>
+    <a href="https://atlas77-lang.github.io/atlas77-docs/docs/latest/index.html"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/atlas77-lang/Atlas77">Playground (inexistant)</a>
@@ -104,8 +104,6 @@ Or directly from their website: [Rust](https://www.rust-lang.org/tools/install)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-
-
 <!-- USAGE EXAMPLES -->
 
 ## Usage
@@ -124,7 +122,7 @@ func fib(n: i64) -> i64 {
 
 func main() -> i64 {
     let n: i64 = 10;
-    print_int(fib(n));
+    print(fib(n));
 }
 ```
 
@@ -155,7 +153,8 @@ _For more examples, please refer to the [examples folder](./examples/README.MD)_
 
 The v0.5 is a complete rewrite of Atlas77, it aligns better with the end goal of the language (see [_Goal of the
 language_](#goal-of-the-language)).
-> NB: up until the v1.0 the language will always be in alpha, tho I'll try to make every release as stable as possible.
+> [!Note]
+> Up until the v1.0 the language will always be in alpha, tho I'll try to make every release as stable as possible.
 > I hope I can release the v0.5 this month (January 2025).
 >
 > [Temporary documentation](https://atlas77-lang.github.io/atlas77-docs/docs/latest/index.html)
@@ -167,16 +166,16 @@ language_](#goal-of-the-language)).
 | Basic `std` Library      | **v0.5**         | Core utilities for `time`, `file`, `io`, `math`, `string`, `list`       | ✅      |
 | Import                   | **v0.5**         | Limited to standard library imports for now                             | ✅      |
 | Control Flow             | **v0.5**         | `if/else` statements for conditional logic, `while` loops for iteration | ✅      |
-| Match Expressions        | **v0.5.1**       | Pattern matching                                                        | 💭     |
-| Structs                  | **v0.5.1**       | User-defined types with named fields                                    | 🔧     |
-| Unions                   | **v0.5.1**       | Low-level data structures allowing overlapping memory layouts           | 💤     |
-| Enums                    | **v0.5.1**       | Enumerations with optional associated data for flexible value sets      | 🔧     |
-| Garbage Collection       | **v0.5.1**       | Automatic memory management using Reference Counting                    | ✅      |
-| Lambdas & Closures       | **v0.5.2**       | Inline, anonymous functions with captured variables                     | 🔧     |
-| Classes                  | **v0.5.2**       | Object-oriented programming support                                     | 🔧     |
-| Traits                   | **v0.5.2**       | Interfaces for defining shared behavior                                 | 🔧     |
-| Pointers                 | **v0.5.2**       | Basic pointer manipulation for low-level programming                    | 🔧     |
-| Imports                  | **v0.5.2**       | Importing code from other files                                         | 🔧     |
+| Match Expressions        | **v0.5.x**       | Pattern matching                                                        | 💭     |
+| Structs                  | **v0.5.x**       | User-defined types with named fields                                    | 🔧     |
+| Unions                   | **v0.5.x**       | Low-level data structures allowing overlapping memory layouts           | 💤     |
+| Enums                    | **v0.5.x**       | Enumerations with optional associated data for flexible value sets      | 🔧     |
+| Garbage Collection       | **v0.5.x**       | Automatic memory management using Reference Counting                    | ✅      |
+| Lambdas & Closures       | **v0.5.x**       | Inline, anonymous functions with captured variables                     | 🔧     |
+| Classes                  | **v0.5.x**       | Object-oriented programming support                                     | 🔧     |
+| Traits                   | **v0.5.x**       | Interfaces for defining shared behavior                                 | 🔧     |
+| Pointers                 | **v0.5.x**       | Basic pointer manipulation for low-level programming                    | 🔧     |
+| Imports                  | **v0.5.x**       | Importing code from other files                                         | 🔧     |
 | Generics                 | **v0.5.x**       | Type parameters for writing reusable code                               | 🔧     |
 | Standard Library         | **v0.5.x**       | A comprehensive standard library                                        | 💭     |
 | UFCS                     | **unknown**      | Universal Function Call Syntax (i.e. `foo.bar()` becomes `bar(foo)`)    | 💭     |
@@ -195,7 +194,7 @@ language_](#goal-of-the-language)).
 
 > As the language is still in alpha (not 1.0 yet), I won't make "alpha"/"beta" build, it doesn't really make sense.
 
-The beta phase (aka after 0.5.2 and beyond) will focus on stabilizing the language. All features will be finalized,
+The beta phase (aka after 0.5.x and beyond) will focus on stabilizing the language. All features will be finalized,
 tested extensively, and optimized for real-world use. This phase will serve as a release candidate.
 
 See the [open issues](https://github.com/atlas77-lang/Atlas77/issues) for a full list of proposed features (and known
@@ -208,7 +207,7 @@ issues).
 
 ## Goal of the language
 
-- Boostrapping the compiler
+- Bootstrapping the compiler
 - Making a simple ECS
 - Making a simple Game Engine with Vulkan bindings (maybe OpenGL too)
 

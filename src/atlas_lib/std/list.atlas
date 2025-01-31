@@ -3,5 +3,3 @@ public extern slice<T>(l: [T], start: int64, end: int64) -> [T]
 public extern pop<T>(l: [T]) -> T
 public extern push<T>(l: [T], val: T) -> [T]
 public extern remove<T>(l: [T], index: int64) -> [T]
-public extern test_generic<T, G>(l: [T], g: G) -> [T]
-

@@ -1,3 +1,6 @@
+mod case;
+
+use heck::{ToPascalCase, ToSnakeCase};
 use miette::{SourceOffset, SourceSpan};
 
 use crate::atlasc::atlas_frontend::parser::ast::{AstClass, AstNamedType};
@@ -21,6 +24,7 @@ const STRING_ATLAS: &str = include_str!("../../../atlas_lib/std/string.atlas");
 use crate::atlasc::atlas_hir::expr::{HirCastExpr, HirCharLiteralExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
 use crate::atlasc::atlas_hir::item::HirClass;
 use crate::atlasc::atlas_hir::signature::{HirClassFieldSignature, HirClassSignature};
+use crate::atlasc::atlas_hir::syntax_lowering_pass::case::Case;
 use crate::atlasc::atlas_hir::{
     arena::HirArena,
     error::{HirError, HirResult, UnsupportedExpr, UnsupportedStatement},
@@ -87,6 +91,10 @@ where
             AstItem::Func(f) => {
                 let fun = self.visit_func(f)?;
                 let name = self.arena.names().get(f.name.name);
+                if !name.is_snake_case() {
+                    eprintln!("Warning: {} is not snake case", name);
+                    eprintln!("Try using snake_case for function names e.g. {}", name.to_snake_case());
+                }
                 module_signature.functions.insert(name, fun.signature);
                 module_body.functions.insert(name, fun);
             }
@@ -106,6 +114,10 @@ where
             }
             AstItem::ExternFunction(e) => {
                 let name = self.arena.names().get(e.name.name);
+                if !name.is_snake_case() {
+                    eprintln!("Warning: {} is not snake case", name);
+                    eprintln!("Try using snake_case for function names e.g. {}", name.to_snake_case());
+                }
                 let ty = self.visit_ty(e.ret)?;
 
                 let mut params: Vec<&HirFunctionParameterSignature<'hir>> = Vec::new();
@@ -164,6 +176,10 @@ where
 
     fn visit_class(&self, node: &'ast AstClass<'ast>) -> HirResult<HirClass<'hir>> {
         let name = self.arena.names().get(node.name.name);
+        if !name.is_pascal_case() {
+            eprintln!("Warning: {} is not pascal case", name);
+            eprintln!("Try using PascalCase for class names e.g. {}", name.to_pascal_case());
+        }
         let mut methods = Vec::new();
         let mut fields = Vec::new();
         for method in node.methods.iter() {
@@ -388,6 +404,10 @@ where
             }
             AstStatement::Const(c) => {
                 let name = self.arena.names().get(c.name.name);
+                if !name.is_snake_case() {
+                    eprintln!("Warning: {} is not snake case", name);
+                    eprintln!("Try using snake_case for variable names e.g. {}", name.to_snake_case());
+                }
                 let ty = c.ty.map(|ty| self.visit_ty(ty)).transpose()?;
 
                 let value = self.visit_expr(c.value)?;
@@ -403,6 +423,10 @@ where
             }
             AstStatement::Let(l) => {
                 let name = self.arena.names().get(l.name.name);
+                if !name.is_snake_case() {
+                    eprintln!("Warning: {} is not snake case", name);
+                    eprintln!("Try using snake_case for variable names e.g. {}", name.to_snake_case());
+                }
                 let ty = l.ty.map(|ty| self.visit_ty(ty)).transpose()?;
 
                 let value = self.visit_expr(l.value)?;

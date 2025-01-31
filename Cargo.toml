@@ -43,3 +43,4 @@ logos = "0.15.0"
 serde = { version = "1.0.217", features = ["derive"] }
 rand = "0.9.0"
 time = { version = "0.3.37", features = ["formatting"] }
+heck = "0.5.0"
