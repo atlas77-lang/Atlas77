@@ -176,6 +176,7 @@ impl Program<'_> {
                 string_pool: vec![],
                 list_pool: vec![],
                 function_pool: vec![],
+                class_pool: vec![],
             },
             libraries: vec![],
         }
@@ -187,6 +188,22 @@ pub struct ConstantPool {
     pub string_pool: Vec<String>,
     pub list_pool: Vec<Constant>,
     pub function_pool: Vec<usize>,
+    pub class_pool: Vec<Class>,
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
+pub struct Class {
+    pub name: String,
+    pub nb_fields: usize,
+    /// Name of the methods
+    pub methods: Vec<ClassMethod>,
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
+pub struct ClassMethod {
+    pub name: String,
+    pub nb_args: usize,
+    pub pos: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]

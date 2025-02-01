@@ -34,17 +34,3 @@ func main() {
     }
     test();
 }
-
-//Should return a warning because "string" is not PascalCase
-//classes are ignored during compilation for now
-public class String {
-    private:
-        s: [char];
-        len: uint64;
-    public:
-        func String(s: [char]) {
-            self.len = len(s);
-            len.s = s;
-        }
-        func ~String() {}
-}

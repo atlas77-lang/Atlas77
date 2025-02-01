@@ -1,39 +1,130 @@
-public trait Shape {
-    func get_area(&self) -> int64;
-}
-
-public class Rectangle : Shape {
-    private:
-        width: int64;
-        height: int64;
+public class Int64 {
     public:
-        func new(width: int64, height: int64) -> Rectangle {
-            return Rectangle {
-                width: width,
-                height: height
-            }
+        value: int64;
+        const MAX_INT64: int64 = 9223372036854775807;
+        const MIN_INT64: int64 = -9223372036854775808;
+    
+    public:
+        /// Constructor to initialize the value
+        Int64(val: int64) {
+            self.value = val;
         }
-        func set_width(&self, w: int64) {
-            self.width = w;
-}
-        func set_height(&self, h: int64) {
-            self.height = h;
+        
+        /// Destructor
+        ~Int64() {}
+        
+        /// Static function to create an Int64 with value 0
+        func zero() -> Int64 {
+            return new Int64(0);
         }
-        func get_width(&self) -> int64 {
-            return self.width;
+        func max() -> Int64 {
+            return new Int64(Int64::MAX_INT64);
         }
-        func get_height(&self) -> int64 {
-            return self.height;
+        func min() -> Int64 {
+            return new Int64(Int64::MIN_INT64);
         }
-        #[override(Shape::get_area)]
-        func get_area(&self) -> int64 {
-            return self.width * self.height;
+        
+        /// Addition
+        func add(self, val: Int64) -> Int64 {
+            return new Int64(self.value + val.value);
         }
-}
-
-func main() -> int64 {
-    let r = Rectangle::new(10, 20);
-    r.set_width(30);
-    r.set_height(40);
-    return r.get_area(); true
+        operator +(self, val: Int64) -> Int64 {
+            return self.add(val);
+        }
+        
+        /// Subtraction
+        func sub(self, val: Int64) -> Int64 {
+            return new Int64(self.value - val.value);
+        }
+        operator -(self, val: Int64) -> Int64 {
+            return self.sub(val);
+        }
+        
+        /// Multiplication
+        func mul(self, val: Int64) -> Int64 {
+            return new Int64(self.value * val.value);
+        }
+        operator *(self, val: Int64) -> Int64 {
+            return self.mul(val);
+        }
+        
+        /// Division (Error handling for division by zero is done in the VM for now)
+        func div(self, val: Int64) -> Int64 {
+            return new Int64(self.value / val.value);
+        }
+        operator /(self, val: Int64) -> Int64 {
+            return self.div(val);
+        }
+        
+        /// Modulus (Error handling for division by zero is done in the VM for now)
+        func mod(self, val: Int64) -> Int64 {
+            return new Int64(self.value % val.value);
+        }
+        operator %(self, val: Int64) -> Int64 {
+            return self.mod(val);
+        }
+        
+        /// Equality
+        func eq(self, val: Int64) -> bool {
+            return self.value == val.value;
+        }
+        operator ==(self, val: Int64) -> bool {
+            return self.eq(val);
+        }
+        
+        /// Inequality
+        func ne(self, val: Int64) -> bool {
+            return self.value != val.value;
+        }
+        operator !=(self, val: Int64) -> bool {
+            return self.ne(val);
+        }
+        
+        /// Greater than
+        func gt(self, val: Int64) -> bool {
+            return self.value > val.value;
+        }
+        operator >(self, val: Int64) -> bool {
+            return self.gt(val);
+        }
+        
+        /// Greater than or equal to
+        func ge(self, val: Int64) -> bool {
+            return self.value >= val.value;
+        }
+        operator >=(self, val: Int64) -> bool {
+            return self.ge(val);
+        }
+        
+        /// Less than
+        func lt(self, val: Int64) -> bool {
+            return self.value < val.value;
+        }
+        operator <(self, val: Int64) -> bool {
+            return self.lt(val);
+        }
+        
+        /// Less than or equal to
+        func le(self, val: Int64) -> bool {
+            return self.value <= val.value;
+        }
+        operator <=(self, val: Int64) -> bool {
+            return self.le(val);
+        }
+        
+        /// Bitwise AND
+        func and(self, val: Int64) -> Int64 {
+            return new Int64(self.value & val.value);
+        }
+        operator &(self, val: Int64) -> Int64 {
+            return self.and(val);
+        }
+        
+        /// Bitwise OR
+        func or(self, val: Int64) -> Int64 {
+            return new Int64(self.value | val.value);
+        }
+        operator |(self, val: Int64) -> Int64 {
+            return self.or(val);
+        }
 }

@@ -1,5 +1,5 @@
 //All of the functions in comments are not implemented yet
 
-extern println<T>(s: T) -> unit
-extern print<T>(s: T) -> unit
-extern input() -> str
+public extern println<T>(s: T) -> unit
+public extern print<T>(s: T) -> unit
+public extern input() -> str

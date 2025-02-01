@@ -9,10 +9,39 @@ declare_error_type! {
     pub enum ParseError {
         UnexpectedEndOfFile(UnexpectedEndOfFileError),
         UnexpectedToken(UnexpectedTokenError),
+        OnlyOneConstructorAllowed(OnlyOneConstructorAllowedError),
+        NoFieldInClass(NoFieldInClassError),
     }
 }
 
 pub type ParseResult<T> = Result<T, ParseError>;
+
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(
+    code(syntax::no_field_in_class),
+    help("Add fields to the class")
+)]
+#[error("No fields in class")]
+pub struct NoFieldInClassError {
+    #[label = "no fields in class"]
+    pub span: SourceSpan,
+    #[source_code]
+    pub src: String,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(
+    code(syntax::only_one_constructor_allowed),
+    help("Only one constructor or destructor is allowed for classes")
+)]
+#[error("Only one constructor or destructor is allowed for classes")]
+pub struct OnlyOneConstructorAllowedError {
+    #[label = "only one constructor or destructor is allowed for classes"]
+    pub span: SourceSpan,
+    #[source_code]
+    pub src: String,
+}
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(

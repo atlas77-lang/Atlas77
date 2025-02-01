@@ -1,4 +1,4 @@
-mod case;
+pub mod case;
 
 use heck::{ToPascalCase, ToSnakeCase};
 use miette::{SourceOffset, SourceSpan};
@@ -149,6 +149,7 @@ where
                 }
                 let hir = self.arena.intern(HirFunctionSignature {
                     span: e.span.clone(),
+                    vis: e.vis.into(),
                     params,
                     generics,
                     type_params,
@@ -191,12 +192,14 @@ where
             let name = self.arena.names().get(field.name.name);
             fields.push(HirClassFieldSignature {
                 span: field.span.clone(),
+                vis: node.vis.into(),
                 name,
                 ty,
             });
         }
         let signature = self.arena.intern(HirClassSignature {
             span: node.span.clone(),
+            vis: node.vis.into(),
             methods: {
                 let mut map = std::collections::BTreeMap::new();
                 for method in methods.iter() {
@@ -291,7 +294,7 @@ where
                     self.arena,
                     allocated_ast,
                     self.ast_arena,
-                    IO_ATLAS.to_string(),
+                    FILE_ATLAS.to_string(),
                 ));
                 hir.lower()
             }
@@ -648,6 +651,16 @@ where
                             ty: self.arena.types().get_uninitialized_ty(),
                         })
                     }
+                    _ => {
+                        return Err(HirError::UnsupportedExpr(UnsupportedExpr {
+                            span: SourceSpan::new(
+                                SourceOffset::from(node.span().start),
+                                node.span().end - node.span().start,
+                            ),
+                            expr: format!("{:?}", node),
+                            src: self.src.clone(),
+                        }))
+                    }
                 };
                 Ok(hir)
             }
@@ -697,6 +710,7 @@ where
         let body = self.visit_block(node.body)?;
         let signature = self.arena.intern(HirFunctionSignature {
             span: node.span.clone(),
+            vis: node.vis.into(),
             params: parameters?,
             //Generics aren't supported yet for normal functions
             generics: None,

@@ -151,6 +151,14 @@ where
                     pos: start - bytecode.len() as isize,
                 });
             }
+            HirStatement::Const(c) => {
+                let mut value = Vec::new();
+                self.generate_bytecode_expr(&c.value, &mut value, src)?;
+                bytecode.push(Instruction::Store {
+                    var_name: self.arena._alloc(c.name.to_string()),
+                });
+                bytecode.append(&mut value);
+            }
             HirStatement::Let(l) => {
                 let mut value = Vec::new();
                 self.generate_bytecode_expr(&l.value, &mut value, src)?;

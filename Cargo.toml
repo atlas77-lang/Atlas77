@@ -13,7 +13,7 @@ readme = "README.md"
 
 
 [profile.release]
-opt-level = 3
+#opt-level = 3
 panic = "abort"
 lto = true
 codegen-units = 1
@@ -23,6 +23,9 @@ strip = "debuginfo"
 [profile.release.package."*"]
 opt-level = 3
 codegen-units = 1
+
+[lib]
+doctest = false
 
 [[bin]]
 name = "atlas_77"

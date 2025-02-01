@@ -37,8 +37,8 @@ impl Case for String {
     }
 
     #[inline(always)]
-    fn is_camel_case(&self) -> bool {
-        self.to_lower_camel_case() == *self
+    fn is_shouty_snake_case(&self) -> bool {
+        self.to_shouty_snake_case() == *self
     }
 
     #[inline(always)]
@@ -47,8 +47,8 @@ impl Case for String {
     }
 
     #[inline(always)]
-    fn is_shouty_snake_case(&self) -> bool {
-        self.to_shouty_snake_case() == *self
+    fn is_camel_case(&self) -> bool {
+        self.to_lower_camel_case() == *self
     }
 }
 
@@ -59,8 +59,8 @@ impl Case for &str {
     }
 
     #[inline(always)]
-    fn is_camel_case(&self) -> bool {
-        self.to_lower_camel_case() == *self
+    fn is_shouty_snake_case(&self) -> bool {
+        self.to_shouty_snake_case() == *self
     }
 
     #[inline(always)]
@@ -69,7 +69,7 @@ impl Case for &str {
     }
 
     #[inline(always)]
-    fn is_shouty_snake_case(&self) -> bool {
-        self.to_shouty_snake_case() == *self
+    fn is_camel_case(&self) -> bool {
+        self.to_lower_camel_case() == *self
     }
 }

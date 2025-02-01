@@ -1,5 +1,5 @@
 use atlas_77::{build, run, CompilationFlag};
-use clap::{command, Parser, Subcommand};
+use clap::{command, Parser};
 
 #[derive(Parser)] // requires `derive` feature
 #[command(name = "Atlas77")]

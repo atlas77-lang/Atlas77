@@ -97,27 +97,27 @@ pub enum TokenKind {
     #[token(",")]
     Comma,
     #[token("+")]
-    OpAdd,
+    Plus,
     #[token("+=")]
     OpAssignAdd,
     #[token("-")]
-    OpSub,
+    Minus,
     #[token("-=")]
     OpAssignSub,
     #[token("/")]
-    OpDiv,
+    Slash,
     #[token("/=")]
     OpAssignDiv,
     #[token("*")]
-    OpMul,
+    Star,
     #[token("*=")]
     OpAssignMul,
     #[token("%")]
-    OpMod,
-    #[token("=")]
-    OpAssign,
+    Percent,
     #[token("%=")]
     OpAssignMod,
+    #[token("=")]
+    OpAssign,
     #[token("\\")]
     BackSlash,
     #[token(";")]
@@ -126,12 +126,10 @@ pub enum TokenKind {
     Quote,
     #[token("?")]
     Interrogation,
-    #[token("@")]
-    Generic,
     #[token("==")]
-    OpEq,
+    EqEq,
     #[token("!=")]
-    OpNEq,
+    NEq,
     #[token("!")]
     Bang,
     #[token("..")]
@@ -147,13 +145,13 @@ pub enum TokenKind {
     #[token("<-")]
     LArrow,
     #[token("<=")]
-    OpLessThanEq,
+    LFatArrow,
     #[token("<")]
-    OpLessThan,
+    LAngle,
     #[token(">=")]
     OpGreaterThanEq,
     #[token(">")]
-    OpGreaterThan,
+    RAngle,
     #[token("&&")]
     OpAnd,
     #[token("&")]
@@ -163,11 +161,13 @@ pub enum TokenKind {
     #[token("|")]
     Pipe,
     #[token("=>")]
-    FatArrow,
+    RFatArrow,
     #[token("~")]
     Tilde,
     #[token("self")]
     KwSelf,
+    #[token("operator")]
+    KwOperator,
     #[token("class")]
     KwClass,
     #[token("new")]
@@ -177,7 +177,8 @@ pub enum TokenKind {
     #[token("func")]
     KwFunc,
     #[token("where")]
-    KwWhere, //Used for generics constraints and bounds (i.e. func foo(arg: @T) -> T where T: Add)
+    //Used for generics constraints and bounds (i.e. func foo(arg: @T) -> T where T: Add)
+    KwWhere,
     #[token("extern")]
     KwExtern,
     #[token("struct")]
