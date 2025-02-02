@@ -121,6 +121,11 @@ impl<'run> Atlas77VM<'run> {
     /// TODO: Add check for unsigned int
     pub fn execute_instruction(&mut self, instr: Instruction<'run>) -> RuntimeResult<()> {
         match instr {
+            Instruction::DeleteObj => {
+                let obj = self.stack.pop()?;
+                self.object_map.free(obj.as_object())?;
+                self.pc += 1;
+            }
             Instruction::PushInt(i) => {
                 let val = VMData::new_i64(i);
                 self.stack.push(val)?;

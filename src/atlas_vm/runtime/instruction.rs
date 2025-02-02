@@ -122,6 +122,19 @@ pub enum Instruction<'run> {
     },
     Return,
 
+    /// Delete the object from memory (the object pointer is at the top of the stack)
+    DeleteObj,
+    GetField,
+    SetField,
+    /// Create a new object
+    /// The information about the object is in the constant pool
+    NewObj {
+        class_name: &'run str,
+    },
+    /// This jumps to the correct position in the program to execute the method
+    ///
+    /// And creates a `self` variable in the var_map
+    CallMethod,
     Halt,
 }
 

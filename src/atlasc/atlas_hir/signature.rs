@@ -1,5 +1,6 @@
 use super::ty::{HirTy, HirUnitTy};
 use crate::atlasc::atlas_frontend::parser::ast::AstVisibility;
+use crate::atlasc::atlas_hir::expr::{HirBinaryOp, HirExpr};
 use logos::Span;
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -20,8 +21,14 @@ pub struct HirModuleSignature<'hir> {
 pub struct HirClassSignature<'hir> {
     pub span: Span,
     pub vis: HirVisibility,
-    pub methods: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
+    pub name: &'hir str,
+    pub methods: BTreeMap<&'hir str, &'hir HirClassMethodSignature<'hir>>,
     pub fields: BTreeMap<&'hir str, HirClassFieldSignature<'hir>>,
+    /// This is enough to know if the class implement them or not
+    pub operators: Vec<HirBinaryOp>,
+    pub constants: BTreeMap<&'hir str, &'hir HirClassConstSignature<'hir>>,
+    pub constructor: HirClassConstructorSignature<'hir>,
+    pub destructor: HirClassConstructorSignature<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -43,13 +50,53 @@ impl From<AstVisibility> for HirVisibility {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+//Also used for the destructor
+pub struct HirClassConstructorSignature<'hir> {
+    pub span: Span,
+    pub params: Vec<&'hir HirFunctionParameterSignature<'hir>>,
+    pub type_params: Vec<&'hir HirTypeParameterItemSignature<'hir>>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirClassConstSignature<'hir> {
+    pub span: Span,
+    pub vis: HirVisibility,
+    pub name: &'hir str,
+    pub name_span: Span,
+    pub ty: &'hir HirTy<'hir>,
+    pub ty_span: Span,
+    pub value: &'hir HirExpr<'hir>,
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct HirClassFieldSignature<'hir> {
     pub span: Span,
     pub vis: HirVisibility,
     pub name: &'hir str,
+    pub name_span: Span,
     pub ty: &'hir HirTy<'hir>,
+    pub ty_span: Span,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirClassMethodSignature<'hir> {
+    pub span: Span,
+    pub vis: HirVisibility,
+    pub modifier: HirClassMethodModifier,
+    pub params: Vec<&'hir HirFunctionParameterSignature<'hir>>,
+    pub generics: Option<Vec<&'hir HirTypeParameterItemSignature<'hir>>>,
+    pub type_params: Vec<&'hir HirTypeParameterItemSignature<'hir>>,
+    pub return_ty: &'hir HirTy<'hir>,
+    pub return_ty_span: Option<Span>,
+}
+
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
+pub enum HirClassMethodModifier {
+    Static,
+    Const,
+    #[default]
+    None,
 }
 
 #[derive(Debug, Clone, Serialize)]

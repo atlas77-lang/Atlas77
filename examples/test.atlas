@@ -1,15 +1,15 @@
-//Should return a warning because "string" is not PascalCase
-//classes are ignored during compilation for now
-public class String<T: Display + Foo, U: Display> {
-    public:
-        const HELLO_WORLD: [char] = ['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '!'];
+import "std/list"
+
+public class String {
     private:
         s: [char];
         len: uint64;
     public:
+        const HELLO_WORLD: [char] = ['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'];
+    public:
         String(s: [char]) {
-            self.len = len(s);
-            len.s = s;
+            self.len = len(s) as uint64;
+            self.s = s;
         }
         ~String() {
             delete self;
@@ -18,21 +18,16 @@ public class String<T: Display + Foo, U: Display> {
             return new String(String::HELLO_WORLD);
         }
         func len(self) -> uint64 {
-            return self.len;
+            return self.len + 5 as uint64;
         }
-        operator +(self, other: String) -> String {
-            let new_s: [char] = new [char; self.len + other.len];
-            let i = 0;
-            while i < self.len {
-                new_s[i] = self.s[i];
-                i = i + 1;
-            }
-            let j = 0;
-            while j < other.len {
-                new_s[i] = other.s[j];
-                i = i + 1;
-                j = j + 1;
-            }
-            return new String(new_s);
-        }
+}
+
+func main() {
+    let array = ['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'];
+    let s = new String(array);
+    s.len();
+    s.len;
+    String::hello_world().len();
+    new String(String::HELLO_WORLD);
+    delete s;
 }

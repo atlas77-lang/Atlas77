@@ -1,5 +1,5 @@
 use super::{signature::HirFunctionSignature, stmt::HirBlock};
-use crate::atlasc::atlas_hir::signature::{HirClassFieldSignature, HirClassSignature};
+use crate::atlasc::atlas_hir::signature::{HirClassFieldSignature, HirClassMethodSignature, HirClassSignature, HirFunctionParameterSignature, HirTypeParameterItemSignature};
 use logos::Span;
 use serde::Serialize;
 
@@ -29,6 +29,26 @@ pub struct HirClass<'hir> {
     pub name: &'hir str,
     pub name_span: Span,
     pub signature: &'hir HirClassSignature<'hir>,
-    pub methods: Vec<HirFunction<'hir>>,
+    pub methods: Vec<HirClassMethod<'hir>>,
     pub fields: Vec<HirClassFieldSignature<'hir>>,
+    pub constructor: HirClassConstructor<'hir>,
+    pub destructor: HirClassConstructor<'hir>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirClassMethod<'hir> {
+    pub span: Span,
+    pub name: &'hir str,
+    pub name_span: Span,
+    pub signature: &'hir HirClassMethodSignature<'hir>,
+    pub body: HirBlock<'hir>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+/// Also used for the destructor
+pub struct HirClassConstructor<'hir> {
+    pub span: Span,
+    pub params: Vec<&'hir HirFunctionParameterSignature<'hir>>,
+    pub type_params: Vec<&'hir HirTypeParameterItemSignature<'hir>>,
+    pub body: HirBlock<'hir>,
 }

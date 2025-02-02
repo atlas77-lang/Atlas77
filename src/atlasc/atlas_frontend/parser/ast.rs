@@ -63,7 +63,13 @@ impl AstItem<'_> {
 pub struct AstGeneric<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
-    pub constraints: &'ast [&'ast AstNamedType<'ast>],
+    pub constraints: &'ast [&'ast AstGenericConstraint<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub enum AstGenericConstraint<'ast> {
+    NamedType(AstNamedType<'ast>),
+    Operator(AstBinaryOp),
 }
 
 #[derive(Debug, Clone, Serialize, Default, Copy)]
@@ -86,11 +92,11 @@ pub struct AstClass<'ast> {
     pub operators: &'ast [&'ast AstOperatorOverload<'ast>],
     pub constants: &'ast [&'ast AstConst<'ast>],
     //todo: Add support for methods (AstFunction -> AstMethod)
-    pub methods: &'ast [&'ast AstFunction<'ast>],
+    pub methods: &'ast [&'ast AstMethod<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize, Default, Copy)]
-pub enum MethodModifier {
+pub enum AstMethodModifier {
     Static,
     Const,
     #[default]
@@ -127,9 +133,15 @@ pub struct AstDestructor<'ast> {
     pub body: &'ast AstBlock<'ast>,
 }
 
+#[derive(Debug, Clone, Serialize)]
 pub struct AstMethod<'ast> {
-    pub function: &'ast AstFunction<'ast>,
-    pub modifier: MethodModifier,
+    pub modifier: AstMethodModifier,
+    pub vis: AstVisibility,
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub args: &'ast [&'ast AstObjField<'ast>],
+    pub ret: &'ast AstType<'ast>,
+    pub body: &'ast AstBlock<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -252,7 +264,7 @@ pub struct AstBreakStmt {
 pub struct AstConst<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
-    pub ty: Option<&'ast AstType<'ast>>,
+    pub ty: &'ast AstType<'ast>,
     pub value: &'ast AstExpr<'ast>,
 }
 
@@ -366,7 +378,7 @@ pub struct AstFieldInit<'ast> {
 #[derive(Debug, Clone, Serialize)]
 pub struct AstStaticAccessExpr<'ast> {
     pub span: Span,
-    pub target: &'ast AstExpr<'ast>,
+    pub target: &'ast AstIdentifier<'ast>,
     pub field: &'ast AstIdentifier<'ast>,
 }
 

@@ -8,6 +8,7 @@ use crate::atlas_vm::RuntimeResult;
 pub struct Memory {
     mem: Vec<Object>,
     pub free: ObjectIndex,
+    pub used_space: usize,
 }
 
 #[repr(C)]
@@ -45,6 +46,7 @@ impl Memory {
                     rc: 0,
                 })
                 .collect(),
+            used_space: 0,
         }
     }
     pub fn clear(&mut self) {
@@ -58,6 +60,17 @@ impl Memory {
     }
 
     pub fn put(&mut self, object: ObjectKind) -> Result<ObjectIndex, RuntimeError> {
+        if self.used_space == self.mem.len() {
+            for i in self.mem.len()..(self.mem.len() * 2) {
+                self.mem.push(Object {
+                    kind: ObjectKind::Free {
+                        next: self.free,
+                    },
+                    rc: 0,
+                });
+                self.free = ObjectIndex::new(i as u64);
+            }
+        }
         let idx = self.free;
         let v = self.mem.get_mut(usize::from(self.free)).unwrap();
         let repl = std::mem::replace(v, Object { kind: object, rc: 1 });
@@ -74,7 +87,10 @@ impl Memory {
     }
 
     pub fn free(&mut self, index: ObjectIndex) -> RuntimeResult<()> {
-        //println!("Freeing object: {}", index);
+        if self.used_space < self.mem.len() / 2 {
+            //Shrink the memory
+            eprintln!("There needs to be a memory shrink here");
+        }
         let next = self.free;
         let v = self.mem.get(usize::from(index)).unwrap().kind.clone();
         match v {

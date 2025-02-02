@@ -26,7 +26,7 @@ pub mod ty;
 #[derive(Debug, Clone, Serialize, Default)]
 pub struct HirModuleBody<'hir> {
     pub functions: BTreeMap<&'hir str, HirFunction<'hir>>,
-    pub class: BTreeMap<&'hir str, &'hir HirClass<'hir>>,
+    pub classes: BTreeMap<&'hir str, HirClass<'hir>>,
     pub imports: Vec<&'hir HirImport<'hir>>,
 }
 

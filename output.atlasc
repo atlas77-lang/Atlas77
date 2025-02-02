@@ -1,10 +1,159 @@
 (
-    labels: [],
+    labels: [
+        (
+            name: "iterative_fib",
+            position: 0,
+            body: [
+                Store(
+                    var_name: "n",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "a",
+                ),
+                PushInt(1),
+                Store(
+                    var_name: "b",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "n",
+                ),
+                Lt,
+                JmpZ(
+                    pos: 19,
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                Store(
+                    var_name: "temp",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                Store(
+                    var_name: "a",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "temp",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                IAdd,
+                Store(
+                    var_name: "b",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "i",
+                ),
+                PushInt(1),
+                IAdd,
+                Store(
+                    var_name: "i",
+                ),
+                PushUnit,
+                Pop,
+                Jmp(
+                    pos: -22,
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "main",
+            position: 32,
+            body: [
+                PushInt(40),
+                CallFunction(
+                    name: "recursive_fib",
+                    args: 1,
+                ),
+                Store(
+                    var_name: "fib_40",
+                ),
+                Load(
+                    var_name: "fib_40",
+                ),
+                CastTo(String),
+                ExternCall(
+                    name: "println",
+                    args: 1,
+                ),
+                Pop,
+                Halt,
+            ],
+        ),
+        (
+            name: "recursive_fib",
+            position: 40,
+            body: [
+                Store(
+                    var_name: "n",
+                ),
+                Load(
+                    var_name: "n",
+                ),
+                PushInt(1),
+                Lte,
+                JmpZ(
+                    pos: 3,
+                ),
+                Load(
+                    var_name: "n",
+                ),
+                Return,
+                Jmp(
+                    pos: 11,
+                ),
+                Load(
+                    var_name: "n",
+                ),
+                PushInt(1),
+                ISub,
+                CallFunction(
+                    name: "recursive_fib",
+                    args: 1,
+                ),
+                Load(
+                    var_name: "n",
+                ),
+                PushInt(2),
+                ISub,
+                CallFunction(
+                    name: "recursive_fib",
+                    args: 1,
+                ),
+                IAdd,
+                Return,
+            ],
+        ),
+    ],
     entry_point: "main",
-    libraries: [],
+    libraries: [
+        (
+            name: "std/io",
+            is_std: true,
+        ),
+    ],
     global: (
         string_pool: [],
         list_pool: [],
         function_pool: [],
+        class_pool: [],
     ),
 )

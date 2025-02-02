@@ -483,7 +483,23 @@ where
                 self.generate_bytecode_expr(&a.size, bytecode, src.clone())?;
                 bytecode.push(Instruction::NewList);
             }
+            HirExpr::Delete(d) => {
+                self.generate_bytecode_expr(&d.expr, bytecode, src)?;
+                bytecode.push(Instruction::DeleteObj);
+            }
             HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: self.arena._alloc(i.name.to_string()) }),
+            _ => {
+                return Err(atlas_hir::error::HirError::UnsupportedExpr(
+                    UnsupportedExpr {
+                        span: SourceSpan::new(
+                            SourceOffset::from(expr.span().start),
+                            expr.span().end - expr.span().start,
+                        ),
+                        expr: format!("In the codegen: {:?}", expr),
+                        src: src.clone(),
+                    },
+                ))
+            }
         }
         Ok(())
     }

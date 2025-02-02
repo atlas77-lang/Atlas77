@@ -1,4 +1,4 @@
-use super::ty::HirTy;
+use super::ty::{HirTy, HirUnitTy};
 use logos::Span;
 use serde::Serialize;
 
@@ -18,9 +18,14 @@ pub enum HirExpr<'hir> {
     UnitLiteral(HirUnitLiteralExpr<'hir>),
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
     UnsignedIntegerLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
+    SelfLiteral(HirSelfLiteral<'hir>),
     StringLiteral(HirStringLiteralExpr<'hir>),
     ListLiteral(HirListLiteralExpr<'hir>),
     NewArray(HirNewArrayExpr<'hir>),
+    NewObj(HirNewObjExpr<'hir>),
+    Delete(HirDeleteExpr<'hir>),
+    FieldAccess(HirFieldAccessExpr<'hir>),
+    StaticAccess(HirStaticAccessExpr<'hir>),
 }
 
 impl HirExpr<'_> {
@@ -33,6 +38,7 @@ impl HirExpr<'_> {
             HirExpr::FloatLiteral(expr) => expr.span.clone(),
             HirExpr::CharLiteral(expr) => expr.span.clone(),
             HirExpr::UnitLiteral(expr) => expr.span.clone(),
+            HirExpr::SelfLiteral(expr) => expr.span.clone(),
             HirExpr::Unary(expr) => expr.span.clone(),
             HirExpr::Casting(expr) => expr.span.clone(),
             HirExpr::Indexing(expr) => expr.span.clone(),
@@ -42,6 +48,10 @@ impl HirExpr<'_> {
             HirExpr::StringLiteral(expr) => expr.span.clone(),
             HirExpr::ListLiteral(expr) => expr.span.clone(),
             HirExpr::NewArray(expr) => expr.span.clone(),
+            HirExpr::NewObj(expr) => expr.span.clone(),
+            HirExpr::Delete(expr) => expr.span.clone(),
+            HirExpr::FieldAccess(expr) => expr.span.clone(),
+            HirExpr::StaticAccess(expr) => expr.span.clone(),
         }
     }
 }
@@ -56,6 +66,7 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::FloatLiteral(expr) => expr.ty,
             HirExpr::CharLiteral(expr) => expr.ty,
             HirExpr::UnitLiteral(expr) => expr.ty,
+            HirExpr::SelfLiteral(expr) => expr.ty,
             HirExpr::Unary(expr) => expr.ty,
             HirExpr::Casting(expr) => expr.ty,
             HirExpr::Indexing(expr) => expr.ty,
@@ -65,8 +76,48 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::StringLiteral(expr) => expr.ty,
             HirExpr::ListLiteral(expr) => expr.ty,
             HirExpr::NewArray(expr) => expr.ty,
+            HirExpr::NewObj(expr) => expr.ty,
+            HirExpr::Delete(_) => &HirTy::Unit(HirUnitTy {}),
+            HirExpr::FieldAccess(expr) => expr.ty,
+            HirExpr::StaticAccess(expr) => expr.ty,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirSelfLiteral<'hir> {
+    pub span: Span,
+    pub ty: &'hir HirTy<'hir>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirStaticAccessExpr<'hir> {
+    pub span: Span,
+    pub target: Box<HirIdentExpr<'hir>>,
+    pub field: Box<HirIdentExpr<'hir>>,
+    pub ty: &'hir HirTy<'hir>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirFieldAccessExpr<'hir> {
+    pub span: Span,
+    pub target: Box<HirExpr<'hir>>,
+    pub field: Box<HirIdentExpr<'hir>>,
+    pub ty: &'hir HirTy<'hir>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirDeleteExpr<'hir> {
+    pub span: Span,
+    pub expr: Box<HirExpr<'hir>>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirNewObjExpr<'hir> {
+    pub span: Span,
+    pub ty: &'hir HirTy<'hir>,
+    pub args: Vec<HirExpr<'hir>>,
+    pub args_ty: Vec<&'hir HirTy<'hir>>,
 }
 
 #[derive(Debug, Clone, Serialize)]
