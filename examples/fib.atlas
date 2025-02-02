@@ -1,8 +1,33 @@
 import "std/io"
 
+public class Fibonacci {
+    public:
+        n: int64;
+    public:
+        Fibonacci(n: int64) {
+            self.n = n;
+        }
+        func fib(self) -> int64 {
+            let a = 0;
+            let b = 1;
+            let i = 0;
+            while i < self.n {
+                let temp = a;
+                a = b;
+                b = temp + b;
+                i = i + 1;
+            }
+            return a;
+        }
+}
+
 func main()  {
-    let fib_40 = recursive_fib(40);
-    println(fib_40 as str);
+    let fibonacci = new Fibonacci(20);
+    let n = fibonacci.n;
+    let res = fibonacci.fib();
+    println(res);
+    let fib_20 = recursive_fib(20);
+    println(fib_20 as str);
 }
 
 func recursive_fib(n: int64) -> int64 {

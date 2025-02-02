@@ -1,15 +1,30 @@
 pub mod atlas_vm;
-pub mod atlasc;
+pub mod atlas_c;
 pub mod atlas_lib;
 
-use atlasc::atlas_codegen::{arena::CodeGenArena, CodeGenUnit};
-use atlasc::atlas_frontend::parse;
-use atlasc::atlas_frontend::parser::arena::AstArena;
-use atlasc::atlas_hir::type_check_pass::TypeChecker;
-use atlasc::atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass};
+use atlas_c::{
+    atlas_codegen::{
+        arena::CodeGenArena,
+        CodeGenUnit
+    },
+    atlas_frontend::{
+        parser::arena::AstArena,
+        parse
+    },
+    atlas_hir::{
+        type_check_pass::TypeChecker,
+        arena::HirArena,
+        syntax_lowering_pass::AstSyntaxLoweringPass
+    },
+};
 use bumpalo::Bump;
 
-use std::{io::Write, path::PathBuf, time::Instant};
+use std::{
+    io::Write,
+    path::PathBuf,
+    time::Instant
+};
+use crate::atlas_vm::runtime::arena::RuntimeArena;
 //todo: The pipeline of the compiler should be more straightforward and should include the "debug" and "release" modes
 //todo: There should also be a function for each stage of the pipeline
 
@@ -89,7 +104,9 @@ pub fn run(path: String, _flag: CompilationFlag) -> miette::Result<()> {
     file.write_all(output.as_bytes()).unwrap();
 
     //run
-    let mut vm = atlas_vm::Atlas77VM::new(program);
+    let bump = Bump::new();
+    let runtime_arena = RuntimeArena::new(&bump);
+    let mut vm = atlas_vm::Atlas77VM::new(program, runtime_arena);
     let start = Instant::now();
     let res = vm.run();
     let end = Instant::now();

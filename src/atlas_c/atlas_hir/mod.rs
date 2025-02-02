@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::atlasc::atlas_hir::item::HirClass;
+use crate::atlas_c::atlas_hir::item::HirClass;
 use item::{HirFunction, HirImport};
 use serde::Serialize;
 use signature::HirModuleSignature;

@@ -4,8 +4,8 @@ use heck::{ToPascalCase, ToSnakeCase};
 use miette::{SourceOffset, SourceSpan};
 use std::collections::BTreeMap;
 
-use crate::atlasc::atlas_frontend::parser::ast::{AstClass, AstConstructor, AstDestructor, AstIdentifier, AstMethod, AstMethodModifier, AstNamedType};
-use crate::atlasc::atlas_frontend::{
+use crate::atlas_c::atlas_frontend::parser::ast::{AstClass, AstConstructor, AstDestructor, AstIdentifier, AstMethod, AstMethodModifier, AstNamedType};
+use crate::atlas_c::atlas_frontend::{
     parse,
     parser::{
         arena::AstArena,
@@ -22,11 +22,11 @@ const LIST_ATLAS: &str = include_str!("../../../atlas_lib/std/list.atlas");
 const MATH_ATLAS: &str = include_str!("../../../atlas_lib/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../atlas_lib/std/string.atlas");
 
-use crate::atlasc::atlas_hir::expr::{HirCastExpr, HirCharLiteralExpr, HirDeleteExpr, HirFieldAccessExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirNewObjExpr, HirSelfLiteral, HirStaticAccessExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
-use crate::atlasc::atlas_hir::item::{HirClass, HirClassConstructor, HirClassMethod};
-use crate::atlasc::atlas_hir::signature::{HirClassConstSignature, HirClassConstructorSignature, HirClassFieldSignature, HirClassMethodModifier, HirClassMethodSignature, HirClassSignature};
-use crate::atlasc::atlas_hir::syntax_lowering_pass::case::Case;
-use crate::atlasc::atlas_hir::{
+use crate::atlas_c::atlas_hir::expr::{HirCastExpr, HirCharLiteralExpr, HirDeleteExpr, HirFieldAccessExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirNewObjExpr, HirSelfLiteral, HirStaticAccessExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
+use crate::atlas_c::atlas_hir::item::{HirClass, HirClassConstructor, HirClassMethod};
+use crate::atlas_c::atlas_hir::signature::{HirClassConstSignature, HirClassConstructorSignature, HirClassFieldSignature, HirClassMethodModifier, HirClassMethodSignature, HirClassSignature};
+use crate::atlas_c::atlas_hir::syntax_lowering_pass::case::Case;
+use crate::atlas_c::atlas_hir::{
     arena::HirArena,
     error::{HirError, HirResult, UnsupportedExpr, UnsupportedStatement},
     expr::{
@@ -197,7 +197,7 @@ where
             let name = self.arena.names().get(field.name.name);
             fields.push(HirClassFieldSignature {
                 span: field.span.clone(),
-                vis: node.vis.into(),
+                vis: field.vis.into(),
                 name,
                 name_span: field.name.span.clone(),
                 ty,

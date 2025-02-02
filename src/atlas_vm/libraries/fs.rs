@@ -22,15 +22,15 @@ pub fn read_dir(state: VMState) -> Result<VMData, RuntimeError> {
     for entry in entries {
         let entry = entry.unwrap();
         let path = entry.path();
-        let path_str = path.to_str().unwrap();
-        let obj_idx = state.object_map.put(ObjectKind::String(path_str.to_string()));
+        let path_str = path.to_str().unwrap().to_string();
+        let obj_idx = state.object_map.put(ObjectKind::String(state.runtime_arena.alloc(path_str)));
         match obj_idx {
             Ok(index) => list.push(VMData::new_string(index)),
             Err(_) => return Err(RuntimeError::OutOfMemory),
         }
     }
 
-    let list_idx = state.object_map.put(ObjectKind::List(list));
+    let list_idx = state.object_map.put(ObjectKind::List(state.runtime_arena.alloc(list)));
     match list_idx {
         Ok(index) => Ok(VMData::new_list(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -43,7 +43,7 @@ pub fn read_file(state: VMState) -> Result<VMData, RuntimeError> {
     let path = raw_path.string();
 
     let content = std::fs::read_to_string(path).unwrap();
-    let obj_idx = state.object_map.put(ObjectKind::String(content));
+    let obj_idx = state.object_map.put(ObjectKind::String(state.runtime_arena.alloc(content)));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),

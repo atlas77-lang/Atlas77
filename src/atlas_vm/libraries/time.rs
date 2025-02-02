@@ -1,8 +1,9 @@
 // All of this is assuming that Time is of type: Time(sec: i64, nsec: i64)
 // Time will have a tag of 256 as it will be the first type defined by the compiler (0-255 are reserved for the compiler)
 
+use std::collections::HashMap;
 use crate::atlas_vm::errors::RuntimeError;
-use crate::atlas_vm::memory::object_map::{ObjectKind, Structure};
+use crate::atlas_vm::memory::object_map::{ObjectKind, Class};
 use crate::atlas_vm::memory::vm_data::VMData;
 use crate::atlas_vm::runtime::vm_state::VMState;
 use crate::atlas_vm::CallBack;
@@ -23,8 +24,12 @@ pub fn now(state: VMState) -> Result<VMData, RuntimeError> {
     let sec = duration.as_secs();
     let nsec = duration.subsec_nanos();
 
-    let obj_idx = state.object_map.put(ObjectKind::Structure(Structure {
-        fields: vec![VMData::new_i64(sec as i64), VMData::new_i64(nsec as i64)],
+    let mut fields = HashMap::new();
+    fields.insert("sec", VMData::new_i64(sec as i64));
+    fields.insert("nsec", VMData::new_i64(nsec as i64));
+
+    let obj_idx = state.object_map.put(ObjectKind::Class(Class {
+        fields,
     }));
     match obj_idx {
         Ok(index) => Ok(VMData::new_object(index)),
@@ -38,8 +43,8 @@ pub fn format_time_iso(state: VMState) -> Result<VMData, RuntimeError> {
     let raw_time_obj = state.object_map.get(time_ptr)?;
     let time_obj = raw_time_obj.structure();
 
-    let sec = time_obj.fields[0].as_i64();
-    let nsec = time_obj.fields[1].as_i64();
+    let sec = time_obj.fields.get("sec").unwrap().as_i64();
+    let nsec = time_obj.fields.get("nsec").unwrap().as_i64();
 
     let time =
         OffsetDateTime::from_unix_timestamp(sec).unwrap() + time::Duration::nanoseconds(nsec);
@@ -49,7 +54,7 @@ pub fn format_time_iso(state: VMState) -> Result<VMData, RuntimeError> {
             .unwrap();
     let formatted = time.format(&fmt).unwrap();
 
-    let obj_idx = state.object_map.put(ObjectKind::String(formatted));
+    let obj_idx = state.object_map.put(ObjectKind::String(state.runtime_arena.alloc(formatted)));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -65,8 +70,8 @@ pub fn format_time(state: VMState) -> Result<VMData, RuntimeError> {
     let raw_time_obj = state.object_map.get(time_ptr)?;
     let time_obj = raw_time_obj.structure();
 
-    let sec = time_obj.fields[0].as_i64();
-    let nsec = time_obj.fields[1].as_i64();
+    let sec = time_obj.fields.get("sec").unwrap().as_i64();
+    let nsec = time_obj.fields.get("nsec").unwrap().as_i64();
 
     let time =
         OffsetDateTime::from_unix_timestamp(sec).unwrap() + time::Duration::nanoseconds(nsec);
@@ -74,7 +79,7 @@ pub fn format_time(state: VMState) -> Result<VMData, RuntimeError> {
     let fmt = format_description::parse(fmt_str).unwrap();
     let formatted = time.format(&fmt).unwrap();
 
-    let obj_idx = state.object_map.put(ObjectKind::String(formatted));
+    let obj_idx = state.object_map.put(ObjectKind::String(state.runtime_arena.alloc(formatted)));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -90,17 +95,21 @@ pub fn elapsed(state: VMState) -> Result<VMData, RuntimeError> {
     let raw_time_obj = state.object_map.get(end_ptr)?;
     let end_obj = raw_time_obj.structure();
 
-    let start_sec = start_obj.fields[0].as_i64();
-    let start_nsec = start_obj.fields[1].as_i64();
+    let start_sec = start_obj.fields.get("sec").unwrap().as_i64();
+    let start_nsec = start_obj.fields.get("nsec").unwrap().as_i64();
 
-    let end_sec = end_obj.fields[0].as_i64();
-    let end_nsec = end_obj.fields[1].as_i64();
+    let end_sec = end_obj.fields.get("sec").unwrap().as_i64();
+    let end_nsec = end_obj.fields.get("nsec").unwrap().as_i64();
 
     let elapsed_sec = end_sec - start_sec;
     let elapsed_nsec = end_nsec - start_nsec;
 
-    let obj_idx = state.object_map.put(ObjectKind::Structure(Structure {
-        fields: vec![VMData::new_i64(elapsed_sec), VMData::new_i64(elapsed_nsec)],
+    let mut fields = HashMap::new();
+    fields.insert("sec", VMData::new_i64(elapsed_sec as i64));
+    fields.insert("nsec", VMData::new_i64(elapsed_nsec as i64));
+
+    let obj_idx = state.object_map.put(ObjectKind::Class(Class {
+        fields,
     }));
 
     match obj_idx {

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::atlas_vm::errors::RuntimeError;
 use crate::atlas_vm::memory::vm_data::VMData;
 use crate::atlas_vm::RuntimeResult;
@@ -5,8 +6,8 @@ use crate::atlas_vm::RuntimeResult;
 /// Probably should be renamed lmao
 ///
 /// Need to find a way to make the memory shrink, grows, and garbage collect unused memory (by scanning the stack & VarMap)
-pub struct Memory {
-    mem: Vec<Object>,
+pub struct Memory<'mem> {
+    mem: Vec<Object<'mem>>,
     pub free: ObjectIndex,
     pub used_space: usize,
 }
@@ -34,7 +35,7 @@ impl std::fmt::Display for ObjectIndex {
     }
 }
 
-impl Memory {
+impl<'mem> Memory<'mem> {
     pub fn new(space: usize) -> Self {
         Self {
             free: ObjectIndex::new(0),
@@ -59,7 +60,7 @@ impl Memory {
         }
     }
 
-    pub fn put(&mut self, object: ObjectKind) -> Result<ObjectIndex, RuntimeError> {
+    pub fn put(&mut self, object: ObjectKind<'mem>) -> Result<ObjectIndex, RuntimeError> {
         if self.used_space == self.mem.len() {
             for i in self.mem.len()..(self.mem.len() * 2) {
                 self.mem.push(Object {
@@ -92,10 +93,10 @@ impl Memory {
             eprintln!("There needs to be a memory shrink here");
         }
         let next = self.free;
-        let v = self.mem.get(usize::from(index)).unwrap().kind.clone();
+        let v = &mut self.mem.get_mut(usize::from(index)).unwrap().kind;
         match v {
-            ObjectKind::List(l) => {
-                for item in l {
+            ObjectKind::List(ref mut l) => {
+                for item in l.iter_mut() {
                     match item.tag {
                         VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
                             let obj_to_dec = item.as_object();
@@ -129,14 +130,14 @@ impl Memory {
 
     #[inline(always)]
     pub fn get(&mut self, index: ObjectIndex) -> RuntimeResult<ObjectKind> {
-        let kind = self.mem[usize::from(index)].kind.clone();
+        let kind = self.mem[usize::from(index)].kind;
         //println!("Getting object: {} {}", kind, index);
         self.rc_dec(index)?;
         Ok(kind)
     }
 
     #[inline(always)]
-    pub fn get_mut(&mut self, index: ObjectIndex) -> RuntimeResult<&mut ObjectKind> {
+    pub fn get_mut(&mut self, index: ObjectIndex) -> RuntimeResult<&mut ObjectKind<'mem>> {
         //You can decrement the rc here, because if it reaches 0 and still need to return a mutable reference, it's a bug
         self.rc_dec(index)?;
         let kind = &mut self.mem[usize::from(index)].kind;
@@ -164,12 +165,12 @@ impl Memory {
     }
 
     #[inline(always)]
-    pub fn raw_mut(&mut self) -> &mut [Object] {
+    pub fn raw_mut(&mut self) -> &mut [Object<'mem>] {
         &mut self.mem
     }
 }
 
-impl std::fmt::Display for Memory {
+impl std::fmt::Display for Memory<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, obj) in self.mem.iter().enumerate() {
             if let Object { kind: ObjectKind::Free { .. }, .. } = obj {
@@ -181,14 +182,14 @@ impl std::fmt::Display for Memory {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum ObjectKind {
-    String(String),
-    Structure(Structure),
-    List(Vec<VMData>),
+#[derive(Debug)]
+pub enum ObjectKind<'mem> {
+    String(&'mem mut str),
+    Class(Class<'mem>),
+    List(&'mem mut [VMData]),
     Free { next: ObjectIndex },
 }
-impl Default for ObjectKind {
+impl Default for ObjectKind<'_> {
     fn default() -> Self {
         ObjectKind::Free {
             next: ObjectIndex::default(),
@@ -196,70 +197,70 @@ impl Default for ObjectKind {
     }
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct Object {
-    pub kind: ObjectKind,
+#[derive(Debug, Default)]
+pub struct Object<'mem> {
+    pub kind: ObjectKind<'mem>,
     /// Reference count
     pub rc: usize,
 }
-impl std::fmt::Display for Object {
+impl std::fmt::Display for Object<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} (rc: {})", self.kind, self.rc)
     }
 }
 
-impl std::fmt::Display for ObjectKind {
+impl std::fmt::Display for ObjectKind<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ObjectKind::String(s) => write!(f, "`String`: \"{}\"", s),
-            ObjectKind::Structure(s) => write!(f, "{:?}", s),
+            ObjectKind::Class(s) => write!(f, "{:?}", s),
             ObjectKind::List(l) => write!(f, "{:?}", l),
             ObjectKind::Free { next } => write!(f, "Free: next -> {}", next),
         }
     }
 }
 
-impl ObjectKind {
-    pub fn new(data: impl Into<ObjectKind>) -> Self {
+impl<'mem> ObjectKind<'mem> {
+    pub fn new(data: impl Into<ObjectKind<'mem>>) -> Self {
         data.into()
     }
 
-    pub fn string(&self) -> &String {
+    pub fn string(&self) -> &'mem str {
         match &self {
             ObjectKind::String(s) => s,
             _ => unreachable!("Expected a string, got a {:?}", self),
         }
     }
 
-    pub fn string_mut(&mut self) -> &mut String {
+    pub fn string_mut(&mut self) -> &mut str {
         match self {
             ObjectKind::String(s) => s,
             _ => unreachable!("Expected a string, got a {:?}", self),
         }
     }
 
-    pub fn structure(&self) -> &Structure {
+    pub fn structure(&self) -> &Class<'mem> {
         match &self {
-            ObjectKind::Structure(s) => s,
+            ObjectKind::Class(s) => s,
             _ => unreachable!("Expected a structure, got a {:?}", self),
         }
     }
 
-    pub fn structure_mut(&mut self) -> &mut Structure {
+    pub fn structure_mut(&mut self) -> &mut Class<'mem> {
         match self {
-            ObjectKind::Structure(s) => s,
+            ObjectKind::Class(s) => s,
             _ => unreachable!("Expected a structure, got a {:?}", self),
         }
     }
 
-    pub fn list(&self) -> &Vec<VMData> {
+    pub fn list(&self) -> &'mem [VMData] {
         match &self {
             ObjectKind::List(l) => l,
             _ => unreachable!("Expected a list, got a {:?}", self),
         }
     }
 
-    pub fn list_mut(&mut self) -> &mut Vec<VMData> {
+    pub fn list_mut(&mut self) -> &'mem mut [VMData] {
         match self {
             ObjectKind::List(l) => l,
             _ => unreachable!("Expected a list, got a {:?}", self),
@@ -268,31 +269,25 @@ impl ObjectKind {
 }
 
 
-impl From<Structure> for ObjectKind {
-    fn from(value: Structure) -> Self {
-        ObjectKind::Structure(value)
+impl<'mem> From<Class<'mem>> for ObjectKind<'mem> {
+    fn from(value: Class) -> Self {
+        ObjectKind::Class(value)
     }
 }
 
-impl From<String> for ObjectKind {
-    fn from(value: String) -> Self {
+impl<'mem> From<&'mem mut str> for ObjectKind<'mem> {
+    fn from(value: &'mem mut str) -> Self {
         ObjectKind::String(value)
     }
 }
 
-impl From<Vec<VMData>> for ObjectKind {
-    fn from(value: Vec<VMData>) -> Self {
+impl<'mem> From<&'mem mut [VMData]> for ObjectKind<'mem> {
+    fn from(value: &'mem mut [VMData]) -> Self {
         ObjectKind::List(value)
     }
 }
 
-pub struct Class {
-    pub fields: Vec<VMData>,
-    /// Too much data duplication, should be a reference to an object that holds the method pointers
-    pub methods: Vec<VMData>,
-}
-
 #[derive(Clone, Debug)]
-pub struct Structure {
-    pub fields: Vec<VMData>,
+pub struct Class<'mem> {
+    pub fields: HashMap<&'mem str, VMData>,
 }

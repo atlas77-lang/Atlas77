@@ -26,7 +26,7 @@ enum AtlasRuntimeCLI {
     #[command(
         arg_required_else_help = true,
         about = "Compile a local package and all of its dependencies",
-        long_about = "Compile a local package and all of its dependencies. The output will be written to the current directory as `output.atlasc`. NB: That output file is not executable."
+        long_about = "Compile a local package and all of its dependencies. The output will be written to the current directory as `output.atlas_c`. NB: That output file is not executable."
     )]
     Build {
         file_path: String,

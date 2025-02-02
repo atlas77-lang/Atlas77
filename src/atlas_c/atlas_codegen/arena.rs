@@ -9,7 +9,7 @@ impl<'arena> CodeGenArena<'arena> {
         Self { allocator: bump }
     }
 
-    pub fn _alloc<T>(&self, v: T) -> &'arena mut T {
+    pub fn alloc<T>(&self, v: T) -> &'arena mut T {
         self.allocator.alloc(v)
     }
 

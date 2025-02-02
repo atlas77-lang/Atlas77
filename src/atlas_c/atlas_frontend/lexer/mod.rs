@@ -1,4 +1,4 @@
-use crate::atlasc::atlas_frontend::lexer::token::{LexingError, Token, TokenKind};
+use crate::atlas_c::atlas_frontend::lexer::token::{LexingError, Token, TokenKind};
 use logos::{Logos, Span};
 
 pub mod token;

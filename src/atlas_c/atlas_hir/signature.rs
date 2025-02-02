@@ -1,6 +1,6 @@
 use super::ty::{HirTy, HirUnitTy};
-use crate::atlasc::atlas_frontend::parser::ast::AstVisibility;
-use crate::atlasc::atlas_hir::expr::{HirBinaryOp, HirExpr};
+use crate::atlas_c::atlas_frontend::parser::ast::AstVisibility;
+use crate::atlas_c::atlas_hir::expr::{HirBinaryOp, HirExpr};
 use logos::Span;
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -31,7 +31,7 @@ pub struct HirClassSignature<'hir> {
     pub destructor: HirClassConstructorSignature<'hir>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum HirVisibility {
     Public,
     Private,

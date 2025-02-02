@@ -3,7 +3,7 @@ pub mod arena;
 mod table;
 
 use crate::atlas_vm::runtime::instruction::{ImportedLibrary, Instruction, Label, Program, Type};
-use crate::atlasc::atlas_hir::{
+use crate::atlas_c::atlas_hir::{
     error::{HirResult, UnsupportedExpr, UnsupportedStatement},
     expr::HirExpr,
     signature::HirFunctionParameterSignature,
@@ -12,14 +12,16 @@ use crate::atlasc::atlas_hir::{
     HirModule,
 };
 
-use crate::atlasc::atlas_codegen::table::Table;
-use crate::atlasc::atlas_hir;
-use crate::atlasc::atlas_hir::expr::UnaryOp;
+use crate::atlas_c::atlas_codegen::table::Table;
+use crate::atlas_c::atlas_hir;
+use crate::atlas_c::atlas_hir::expr::{UnaryOp};
 use arena::CodeGenArena;
 use miette::{SourceOffset, SourceSpan};
+use crate::atlas_c::atlas_hir::error::{HirError};
+use crate::atlas_c::atlas_hir::item::HirClass;
 
 /// Result of codegen
-pub type CodegenResult<T> = Result<T, atlas_hir::error::HirError>;
+pub type CodegenResult<T> = Result<T, HirError>;
 
 /// Unit of codegen
 pub struct CodeGenUnit<'hir, 'gen>
@@ -34,14 +36,12 @@ where
     //store the function position
     _global: Table<&'hir str>,
     current_pos: usize,
-    //todo: remove this
+    current_class_name: Option<&'hir str>,
+    //todo: Replace this with the path of the current module to be codegen
     src: String,
 }
 
-impl<'hir, 'gen> CodeGenUnit<'hir, 'gen>
-where
-    'gen: 'hir,
-{
+impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
     /// Create a new CodeGenUnit
     pub fn new(hir: HirModule<'hir>, arena: CodeGenArena<'gen>, src: String) -> Self {
         Self {
@@ -51,9 +51,11 @@ where
             _variables: Table::new(),
             _global: Table::new(),
             current_pos: 0,
+            current_class_name: None,
             src,
         }
     }
+
     /// Take the HIR and convert it to a VM representation
     pub fn compile(&mut self) -> CodegenResult<Program> {
         let mut labels: Vec<Label> = Vec::new();
@@ -77,6 +79,9 @@ where
 
             self.current_pos += len;
         }
+        for class in self.hir.body.classes.iter() {
+
+        }
         self.program.entry_point = String::from("main");
         self.program.labels = labels;
         let libraries = self
@@ -91,6 +96,17 @@ where
             .collect::<Vec<_>>();
         self.program.libraries = libraries;
         Ok(self.program.clone())
+    }
+
+    fn generate_bytecode_class(
+        &mut self,
+        class: &HirClass<'hir>,
+        bytecode: &mut Vec<Instruction<'gen>>,
+        src: String
+    ) -> HirResult<()> {
+        self.current_class_name = Some(class.name);
+        todo!("CodeGenUnit::generate_bytecode_class");
+        self.current_class_name = None;
     }
 
     fn generate_bytecode_block(
@@ -155,7 +171,7 @@ where
                 let mut value = Vec::new();
                 self.generate_bytecode_expr(&c.value, &mut value, src)?;
                 bytecode.push(Instruction::Store {
-                    var_name: self.arena._alloc(c.name.to_string()),
+                    var_name: self.arena.alloc(c.name.to_string()),
                 });
                 bytecode.append(&mut value);
             }
@@ -163,7 +179,7 @@ where
                 let mut value = Vec::new();
                 self.generate_bytecode_expr(&l.value, &mut value, src)?;
                 value.push(Instruction::Store {
-                    var_name: self.arena._alloc(l.name.to_string()),
+                    var_name: self.arena.alloc(l.name.to_string()),
                 });
                 bytecode.append(&mut value);
             }
@@ -200,7 +216,7 @@ where
                     HirExpr::Ident(i) => {
                         self.generate_bytecode_expr(&a.rhs, bytecode, src.clone())?;
                         bytecode.push(Instruction::Store {
-                            var_name: self.arena._alloc(i.name.to_string()),
+                            var_name: self.arena.alloc(i.name.to_string()),
                         });
                     }
                     HirExpr::Indexing(i) => {
@@ -212,6 +228,16 @@ where
                         self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
                         //Store the value in the list
                         bytecode.push(Instruction::ListStore);
+                    }
+                    HirExpr::FieldAccess(field_access) => {
+                        //Get the Class pointer
+                        self.generate_bytecode_expr(&field_access.target, bytecode, src.clone())?;
+                        //Get the value
+                        self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
+                        //Store the value in the field
+                        bytecode.push(Instruction::SetField {
+                            field_name: self.arena.alloc(String::from(field_access.field.name))
+                        })
                     }
                     _ => {
                         return Err(atlas_hir::error::HirError::UnsupportedExpr(
@@ -426,18 +452,26 @@ where
                         let func = self.hir.signature.functions.get(i.name).unwrap();
                         if func.is_external {
                             bytecode.push(Instruction::ExternCall {
-                                name: self.arena._alloc(i.name.to_string()),
-                                args: f.args.len() as u8,
+                                function_name: self.arena.alloc(i.name.to_string()),
+                                nb_args: f.args.len() as u8,
                             });
                         } else {
                             bytecode.push(Instruction::CallFunction {
-                                name: self.arena._alloc(i.name.to_string()),
-                                args: f.args.len() as u8,
+                                function_name: self.arena.alloc(i.name.to_string()),
+                                nb_args: f.args.len() as u8,
                             });
                         }
                     }
+                    HirExpr::FieldAccess(field_access) => {
+                        //Get the Class pointer:
+                        self.generate_bytecode_expr(&field_access.target, bytecode, src.clone())?;
+                        bytecode.push(Instruction::CallMethod {
+                            method_name: self.arena.alloc(String::from(field_access.field.name)),
+                            nb_args: f.args.len() as u8,
+                        })
+                    }
                     _ => {
-                        return Err(atlas_hir::error::HirError::UnsupportedExpr(
+                        return Err(HirError::UnsupportedExpr(
                             UnsupportedExpr {
                                 span: SourceSpan::new(
                                     SourceOffset::from(expr.span().start),
@@ -487,7 +521,36 @@ where
                 self.generate_bytecode_expr(&d.expr, bytecode, src)?;
                 bytecode.push(Instruction::DeleteObj);
             }
-            HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: self.arena._alloc(i.name.to_string()) }),
+            HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: self.arena.alloc(i.name.to_string()) }),
+            HirExpr::SelfLiteral(_) => bytecode.push(Instruction::Load { var_name: self.arena.alloc(String::from("self")) }),
+            HirExpr::FieldAccess(field_access) => {
+                println!("HirExpr::FieldAccess: {:?}", field_access);
+                self.generate_bytecode_expr(field_access.target.as_ref(), bytecode, src.clone())?;
+                bytecode.push(Instruction::GetField {
+                    field_name: self.arena.alloc(String::from(field_access.field.name))
+                })
+            }
+            HirExpr::NewObj(new_obj) => {
+                //Todo: No idea if this shit works tbh
+                let class_name = match new_obj.ty {
+                    HirTy::Named(class_name) => class_name,
+                    //This should never happen :shrug:
+                    _ => return Err(HirError::UnsupportedExpr(UnsupportedExpr{
+                        span: SourceSpan::new(
+                            SourceOffset::from(new_obj.span.start),
+                            new_obj.span.end - new_obj.span.start
+                        ),
+                        expr: format!("No constructor for {}", new_obj.ty),
+                        src: src.clone(),
+                    }))
+                };
+                for arg in new_obj.args.iter() {
+                    self.generate_bytecode_expr(arg, bytecode, src.clone())?;
+                }
+                bytecode.push(Instruction::NewObj {
+                    class_name: self.arena.alloc(class_name.name.to_string()),
+                });
+            }
             _ => {
                 return Err(atlas_hir::error::HirError::UnsupportedExpr(
                     UnsupportedExpr {
@@ -512,7 +575,7 @@ where
         let args = args.iter().rev().cloned().collect::<Vec<_>>();
         for arg in args {
             bytecode.push(Instruction::Store {
-                var_name: self.arena._alloc(arg.name.to_string()),
+                var_name: self.arena.alloc(arg.name.to_string()),
             });
         }
         Ok(())

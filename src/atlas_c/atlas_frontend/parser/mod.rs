@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use miette::{SourceOffset, SourceSpan};
 
-use crate::atlasc::atlas_frontend::parser::error::{NoFieldInClassError, OnlyOneConstructorAllowedError, ParseError, ParseResult, UnexpectedTokenError};
+use crate::atlas_c::atlas_frontend::parser::error::{NoFieldInClassError, OnlyOneConstructorAllowedError, ParseError, ParseResult, UnexpectedTokenError};
 use ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBlock, AstBooleanLiteral, AstBooleanType,
     AstBreakStmt, AstCallExpr, AstConst, AstContinueStmt, AstExpr, AstExternFunction,
@@ -18,9 +18,9 @@ use ast::{
     AstUnsignedIntegerLiteral, AstUnsignedIntegerType, AstWhileExpr,
 };
 
-use crate::atlasc::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
-use crate::atlasc::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstConstructor, AstDeleteObjExpr, AstDestructor, AstGeneric, AstGenericConstraint, AstListLiteral, AstListType, AstMethod, AstMethodModifier, AstNewArrayExpr, AstNewObjExpr, AstOperatorOverload, AstSelf, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
-use crate::atlasc::atlas_hir::syntax_lowering_pass::case::Case;
+use crate::atlas_c::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
+use crate::atlas_c::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstConstructor, AstDeleteObjExpr, AstDestructor, AstGeneric, AstGenericConstraint, AstListLiteral, AstListType, AstMethod, AstMethodModifier, AstNewArrayExpr, AstNewObjExpr, AstOperatorOverload, AstSelf, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
+use crate::atlas_c::atlas_hir::syntax_lowering_pass::case::Case;
 use arena::AstArena;
 use logos::Span;
 
@@ -200,6 +200,8 @@ impl<'ast> Parser<'ast> {
         let mut constants = vec![];
         let mut curr_vis = self.parse_current_vis(AstVisibility::Private)?;
         while self.current().kind() != TokenKind::RBrace {
+            curr_vis = self.parse_current_vis(curr_vis)?;
+            println!("Current Visibility: {:?}", curr_vis);
             match self.current().kind() {
                 TokenKind::Identifier(s) => {
                     if s == class_name.name {
@@ -246,7 +248,9 @@ impl<'ast> Parser<'ast> {
                     operators.push(self.parse_operator()?);
                 }
                 TokenKind::KwFunc => {
-                    methods.push(self.parse_method()?);
+                    let mut method = self.parse_method()?;
+                    method.vis = curr_vis;
+                    methods.push(method);
                 }
                 _ => {
                     return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
@@ -262,7 +266,6 @@ impl<'ast> Parser<'ast> {
                     }))
                 }
             }
-            curr_vis = self.parse_current_vis(curr_vis)?;
         }
 
         let end = self.expect(TokenKind::RBrace)?.span();
@@ -1419,57 +1422,23 @@ mod tests {
     use miette::Result;
 
     use super::*;
-    use crate::atlasc::atlas_frontend::lexer::AtlasLexer;
+    use crate::atlas_c::atlas_frontend::lexer::AtlasLexer;
 
     #[test]
     fn test_parse_struct() -> Result<()> {
         let input = r#"
-        import "foo.atlas" as foo
-        import "std/io"
         public class Foo {
             public:
-                bar: &str;
-                baz: f64;
+                bar: int64;
             private:
-                qux: i64;
-            public:
-                func create() -> Foo {
-                    return new Foo {
-                        bar: "Hello World",
-                        baz: 3.14,
-                        qux: 42,
-                    };
+                func private_func() -> int64 {
+                    return 0;
                 }
-        }
-        //struct fields are public by default
-        struct Foo {
-            bar: &str;
-            baz: f64;
-        }
-        extern print(val: &str) -> unit
-        func main() -> i64 {
-            let test: str = "Hello World";
-            if test {
-                print(test);
-            } else {
-                print("Goodbye World");
-            }
-            while test {
-                break;
-                continue;
-                return b;
-                let a: i64 = "a";
-            }
-            print("Hello World");
-            index[0];
-            0 as i64;
-        }
-        func cast() -> i64 {
-            let a: i64 = 42;
-            let b: f64 = a as f64;
-            return b as i64;
-        }
-        "#
+            public:
+                func public_func() -> int64 {
+                    return 0;
+                }
+        }"#
             .to_string();
         let mut lexer = AtlasLexer::new("<stdin>", input.clone());
         //lexer.set_source(input.to_string());
@@ -1532,7 +1501,7 @@ mod tests {
                                     .collect::<String>(),
                                 c.methods
                                     .iter()
-                                    .map(|m| format!("{:?}", m))
+                                    .map(|m| format!("{:?} func {}() -> {:?}", m.vis, m.name.name, m.ret))
                                     .collect::<String>()
                             );
                         }

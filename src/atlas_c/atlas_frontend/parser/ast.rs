@@ -1,4 +1,4 @@
-use crate::atlasc::atlas_frontend::lexer::token::TokenKind;
+use crate::atlas_c::atlas_frontend::lexer::token::TokenKind;
 use logos::Span;
 use serde::Serialize;
 

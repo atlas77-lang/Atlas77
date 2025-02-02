@@ -8,10 +8,10 @@ use libraries::{
     fs::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
     string::STRING_FUNCTIONS, time::TIME_FUNCTIONS,
 };
-use runtime::instruction::{Instruction, Label, Program, Type};
+use runtime::{instruction::{Instruction, Label, Program, Type}, arena::RuntimeArena};
 use std::collections::HashMap;
 
-use crate::atlas_vm::memory::object_map::ObjectKind;
+use crate::atlas_vm::memory::object_map::{ObjectKind, Class};
 use crate::atlas_vm::memory::varmap::{Key, VarMap};
 use crate::atlas_vm::memory::{object_map::Memory, stack::Stack, vm_data::VMData};
 
@@ -22,14 +22,15 @@ pub struct Atlas77VM<'run> {
     pub program: Program<'run>,
     pub stack: Stack,
     stack_frame: Vec<(usize, usize)>, //previous pc and previous stack top
-    pub object_map: Memory,
+    pub object_map: Memory<'run>,
+    pub runtime_arena: RuntimeArena<'run>,
     pub var_map: VarMap<'run>,
     pub extern_fn: HashMap<&'run str, CallBack>,
     pub pc: usize,
 }
 
 impl<'run> Atlas77VM<'run> {
-    pub fn new(program: Program<'run>) -> Self {
+    pub fn new(program: Program<'run>, runtime_arena: RuntimeArena<'run>) -> Self {
         let mut extern_fn: HashMap<&str, CallBack> = HashMap::new();
         program.libraries.iter().for_each(|lib| {
             if lib.is_std {
@@ -75,6 +76,7 @@ impl<'run> Atlas77VM<'run> {
             stack_frame: Vec::new(),
             object_map: Memory::new(1024),
             var_map: VarMap::new(),
+            runtime_arena,
             extern_fn,
             pc: 0,
         }
@@ -126,6 +128,25 @@ impl<'run> Atlas77VM<'run> {
                 self.object_map.free(obj.as_object())?;
                 self.pc += 1;
             }
+            Instruction::NewObj { class_name } => {
+                let class = self.
+                    program
+                    .global
+                    .class_pool
+                    .iter()
+                    .find(|c| c.name == class_name)
+                    //It should exist
+                    .unwrap();
+                let mut fields = Vec::new();
+                for _ in 0..class.nb_fields {
+                    fields.push(VMData::new_unit());
+                }
+                let class_ptr = self.object_map.put(ObjectKind::Class(Class {
+                    fields: HashMap::new()
+                }))?;
+                self.stack.push(VMData::new_object(class_ptr))?;
+                self.pc += 1;
+            }
             Instruction::PushInt(i) => {
                 let val = VMData::new_i64(i);
                 self.stack.push(val)?;
@@ -157,7 +178,7 @@ impl<'run> Atlas77VM<'run> {
                 self.pc += 1;
             }
             Instruction::PushStr(u) => {
-                let string = self.program.global.string_pool[u].clone();
+                let string = self.runtime_arena.alloc(self.program.global.string_pool[u].clone());
                 let ptr = match self.object_map.put(ObjectKind::String(string)) {
                     Ok(ptr) => ptr,
                     Err(_) => return Err(RuntimeError::OutOfMemory),
@@ -219,7 +240,7 @@ impl<'run> Atlas77VM<'run> {
                 let val = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = match t {
                     Type::String => {
-                        let string = val.to_string();
+                        let string = self.runtime_arena.alloc(val.to_string());
                         let ptr = match self.object_map.put(ObjectKind::String(string)) {
                             Ok(ptr) => {
                                 ptr
@@ -458,19 +479,20 @@ impl<'run> Atlas77VM<'run> {
             }
             Instruction::NewList => {
                 let size = self.stack.pop()?;
-                let list = vec![VMData::new_unit(); size.as_u64() as usize];
+                let list = self.runtime_arena.alloc(vec![VMData::new_unit(); size.as_u64() as usize]);
                 let ptr = self.object_map.put(ObjectKind::List(list))?;
 
                 self.stack.push(VMData::new_list(ptr))?;
                 self.pc += 1;
             }
-            Instruction::ExternCall { name, .. } => {
+            Instruction::ExternCall { function_name: name, .. } => {
                 let consts = HashMap::new();
                 let vm_state = runtime::vm_state::VMState::new(
                     &mut self.stack,
                     &mut self.object_map,
                     &consts,
                     &mut self.var_map,
+                    &self.runtime_arena,
                 );
                 let extern_fn: &CallBack = self.extern_fn.get::<&str>(&name).unwrap();
                 let res = extern_fn(vm_state)?;
@@ -483,7 +505,7 @@ impl<'run> Atlas77VM<'run> {
                 self.stack_frame.push((pc, sp));
                 self.pc = fn_ptr.as_fn_ptr();
             }
-            Instruction::CallFunction { name, args } => {
+            Instruction::CallFunction { function_name: name, nb_args: args } => {
                 let label: &Label<'_> = self
                     .program
                     .labels

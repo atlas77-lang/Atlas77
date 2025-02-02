@@ -109,23 +109,31 @@ pub enum Instruction<'run> {
     },
     /// Call a function by taking the top of the stack value as the fn_ptr
     Call {
-        args: u8,
+        nb_args: u8,
     },
 
     CallFunction {
-        name: &'run str,
-        args: u8,
+        function_name: &'run str,
+        nb_args: u8,
     },
     ExternCall {
-        name: &'run str,
-        args: u8,
+        function_name: &'run str,
+        nb_args: u8,
     },
     Return,
 
     /// Delete the object from memory (the object pointer is at the top of the stack)
     DeleteObj,
-    GetField,
-    SetField,
+    /// Stack:
+    /// - **[ClassPtr,] -> [FieldValue,]**
+    GetField {
+        field_name: &'run str,
+    },
+    /// Stack:
+    /// - [ClassPtr, Value] -> []
+    SetField {
+        field_name: &'run str,
+    },
     /// Create a new object
     /// The information about the object is in the constant pool
     NewObj {
@@ -134,7 +142,12 @@ pub enum Instruction<'run> {
     /// This jumps to the correct position in the program to execute the method
     ///
     /// And creates a `self` variable in the var_map
-    CallMethod,
+    ///
+    /// Todo: Make this efficient
+    CallMethod {
+        method_name: &'run str,
+        nb_args: u8,
+    },
     Halt,
 }
 
@@ -210,6 +223,7 @@ pub struct Class {
     pub nb_fields: usize,
     /// Name of the methods
     pub methods: Vec<ClassMethod>,
+    pub constructor_nb_args: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]

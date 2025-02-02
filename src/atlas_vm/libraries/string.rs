@@ -39,9 +39,9 @@ pub fn trim(state: VMState) -> Result<VMData, RuntimeError> {
     let string_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
     let string = state.object_map.get(string_ptr)?.string().clone();
 
-    let trimmed = string.trim();
+    let trimmed = string.trim().to_string();
 
-    let obj_idx = state.object_map.put(ObjectKind::String(trimmed.to_string()));
+    let obj_idx = state.object_map.put(ObjectKind::String(state.runtime_arena.alloc(trimmed)));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -55,7 +55,7 @@ pub fn to_upper(state: VMState) -> Result<VMData, RuntimeError> {
 
     let upper = string.to_uppercase();
 
-    let obj_idx = state.object_map.put(ObjectKind::String(upper));
+    let obj_idx = state.object_map.put(ObjectKind::String(state.runtime_arena.alloc(upper)));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -69,7 +69,7 @@ pub fn to_lower(state: VMState) -> Result<VMData, RuntimeError> {
 
     let lower = string.to_lowercase();
 
-    let obj_idx = state.object_map.put(ObjectKind::String(lower));
+    let obj_idx = state.object_map.put(ObjectKind::String(state.runtime_arena.alloc(lower)));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -85,18 +85,18 @@ pub fn split(state: VMState) -> Result<VMData, RuntimeError> {
     let string = raw_string.string();
 
     let split_strings: Vec<String> = string.split(delimiter).map(|s| s.to_string()).collect();
-    let list: Vec<VMData> = split_strings
+    let list = split_strings
         .into_iter()
         .map(|s| {
-            let obj_idx = match state.object_map.put(ObjectKind::String(s)) {
+            let obj_idx = match state.object_map.put(ObjectKind::String(state.runtime_arena.alloc(s))) {
                 Ok(index) => index,
                 Err(_) => panic!("Out of memory"),
             };
             VMData::new_string(obj_idx)
         })
-        .collect();
+        .collect::<Vec<_>>();
 
-    let list_idx = state.object_map.put(ObjectKind::List(list));
+    let list_idx = state.object_map.put(ObjectKind::List(state.runtime_arena.alloc(list)));
     match list_idx {
         Ok(index) => Ok(VMData::new_list(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),

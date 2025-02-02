@@ -1,7 +1,7 @@
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
-use crate::atlasc::atlas_frontend::lexer::token::Token;
+use crate::atlas_c::atlas_frontend::lexer::token::Token;
 use crate::declare_error_type;
 
 declare_error_type! {
@@ -61,7 +61,7 @@ pub struct UnexpectedEndOfFileError {
 #[error("Found unexpected token during parsing")]
 pub struct UnexpectedTokenError {
     pub token: Token,
-    pub expected: crate::atlasc::atlas_frontend::lexer::TokenVec,
+    pub expected: crate::atlas_c::atlas_frontend::lexer::TokenVec,
     #[label("was not expecting to find '{token}' in this position, expected one of: {expected}")]
     pub span: SourceSpan,
     #[source_code]

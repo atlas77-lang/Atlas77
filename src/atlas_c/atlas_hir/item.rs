@@ -1,5 +1,5 @@
 use super::{signature::HirFunctionSignature, stmt::HirBlock};
-use crate::atlasc::atlas_hir::signature::{HirClassFieldSignature, HirClassMethodSignature, HirClassSignature, HirFunctionParameterSignature, HirTypeParameterItemSignature};
+use crate::atlas_c::atlas_hir::signature::{HirClassFieldSignature, HirClassMethodSignature, HirClassSignature, HirFunctionParameterSignature, HirTypeParameterItemSignature};
 use logos::Span;
 use serde::Serialize;
 

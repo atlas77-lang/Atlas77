@@ -78,16 +78,46 @@
             name: "main",
             position: 32,
             body: [
-                PushInt(40),
+                PushInt(20),
+                NewObj(
+                    class_name: "Fibonacci",
+                ),
+                Store(
+                    var_name: "fibonacci",
+                ),
+                Load(
+                    var_name: "fibonacci",
+                ),
+                GetField(
+                    field_name: "n",
+                ),
+                Store(
+                    var_name: "n",
+                ),
+                Load(
+                    var_name: "fibonacci",
+                ),
+                Store(
+                    var_name: "res",
+                ),
+                Load(
+                    var_name: "res",
+                ),
+                ExternCall(
+                    name: "println",
+                    args: 1,
+                ),
+                Pop,
+                PushInt(20),
                 CallFunction(
                     name: "recursive_fib",
                     args: 1,
                 ),
                 Store(
-                    var_name: "fib_40",
+                    var_name: "fib_20",
                 ),
                 Load(
-                    var_name: "fib_40",
+                    var_name: "fib_20",
                 ),
                 CastTo(String),
                 ExternCall(
@@ -100,7 +130,7 @@
         ),
         (
             name: "recursive_fib",
-            position: 40,
+            position: 51,
             body: [
                 Store(
                     var_name: "n",

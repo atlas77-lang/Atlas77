@@ -28,6 +28,13 @@ pub enum HirExpr<'hir> {
     StaticAccess(HirStaticAccessExpr<'hir>),
 }
 
+pub fn is_self_access(field_access_expr: &HirFieldAccessExpr) -> bool {
+    match field_access_expr.target.as_ref() {
+        HirExpr::SelfLiteral(_) => true,
+        _ => false,
+    }
+}
+
 impl HirExpr<'_> {
     pub(crate) fn span(&self) -> Span {
         match self {
