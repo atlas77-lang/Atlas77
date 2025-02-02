@@ -90,19 +90,16 @@ impl<'mem> Memory<'mem> {
     pub fn free(&mut self, index: ObjectIndex) -> RuntimeResult<()> {
         let next = self.free;
         let v = self.mem.get_mut(usize::from(index)).unwrap().kind.clone();
-        match v {
-            ObjectKind::List(list) => {
-                for item in list {
-                    match item.tag {
-                        VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
-                            let obj_to_dec = item.as_object();
-                            self.rc_dec(obj_to_dec)?;
-                        }
-                        _ => {}
+        if let ObjectKind::List(list) = v {
+            for item in list {
+                match item.tag {
+                    VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                        let obj_to_dec = item.as_object();
+                        self.rc_dec(obj_to_dec)?;
                     }
+                    _ => {}
                 }
             }
-            _ => {}
         }
         let v = self.mem.get_mut(usize::from(index)).unwrap();
         let repl = std::mem::replace(
@@ -270,13 +267,13 @@ impl<'mem> From<Class<'mem>> for ObjectKind<'mem> {
     }
 }
 
-impl<'mem> From<String> for ObjectKind<'mem> {
+impl From<String> for ObjectKind<'_> {
     fn from(value: String) -> Self {
         ObjectKind::String(value)
     }
 }
 
-impl<'mem> From<Vec<VMData>> for ObjectKind<'mem> {
+impl From<Vec<VMData>> for ObjectKind<'_> {
     fn from(value: Vec<VMData>) -> Self {
         ObjectKind::List(value)
     }

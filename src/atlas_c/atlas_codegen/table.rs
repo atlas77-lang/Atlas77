@@ -1,17 +1,19 @@
 use std::borrow::Borrow;
 use std::fmt;
 
-pub struct Table<T> {
+//ignore unused
+
+pub struct _Table<T> {
     pub items: Vec<T>,
 }
 
-impl<T> Table<T> {
+impl<T> _Table<T> {
     pub fn new() -> Self {
         Self { items: Vec::new() }
     }
 }
 
-impl<T> Iterator for Table<T> {
+impl<T> Iterator for _Table<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -19,12 +21,12 @@ impl<T> Iterator for Table<T> {
     }
 }
 
-impl<T> Table<T> {
+impl<T> _Table<T> {
     pub fn _insert(&mut self, item: T)
     where
         T: PartialEq,
     {
-        if self.has(&item) {
+        if self._has(&item) {
             return;
         }
         self.items.push(item)
@@ -36,7 +38,7 @@ impl<T> Table<T> {
     {
         self.items.iter().position(|x| x.borrow() == item.borrow())
     }
-    pub fn has<K>(&self, item: &K) -> bool
+    pub fn _has<K>(&self, item: &K) -> bool
     where
         T: Borrow<K>,
         K: PartialEq,
@@ -55,7 +57,7 @@ impl<T> Table<T> {
     pub fn _clear(&mut self) {
         self.items.clear()
     }
-    pub fn _extend(&mut self, other: Table<T>) {
+    pub fn _extend(&mut self, other: _Table<T>) {
         self.items.extend(other.items);
     }
     pub fn _remove<K>(&mut self, item: &K)
@@ -67,7 +69,7 @@ impl<T> Table<T> {
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for Table<T> {
+impl<T: fmt::Debug> fmt::Debug for _Table<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Table").field("Items", &self.items).finish()
     }

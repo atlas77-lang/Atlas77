@@ -46,7 +46,7 @@ pub fn input(state: VMState) -> Result<VMData, RuntimeError> {
     std::io::stdin().read_line(&mut input).unwrap();
     let obj_index = state
         .object_map
-        .put(ObjectKind::String((input.trim().to_string())));
+        .put(ObjectKind::String(input.trim().to_string()));
     match obj_index {
         Ok(index) => {
             println!("Input: {}", input.trim());

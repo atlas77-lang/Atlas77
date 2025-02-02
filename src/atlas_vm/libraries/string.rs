@@ -42,7 +42,7 @@ pub fn trim(state: VMState) -> Result<VMData, RuntimeError> {
 
     let trimmed = string.trim().to_string();
 
-    let obj_idx = state.object_map.put(ObjectKind::String((trimmed)));
+    let obj_idx = state.object_map.put(ObjectKind::String(trimmed));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -56,7 +56,7 @@ pub fn to_upper(state: VMState) -> Result<VMData, RuntimeError> {
 
     let upper = string.to_uppercase();
 
-    let obj_idx = state.object_map.put(ObjectKind::String((upper)));
+    let obj_idx = state.object_map.put(ObjectKind::String(upper));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -70,7 +70,7 @@ pub fn to_lower(state: VMState) -> Result<VMData, RuntimeError> {
 
     let lower = string.to_lowercase();
 
-    let obj_idx = state.object_map.put(ObjectKind::String((lower)));
+    let obj_idx = state.object_map.put(ObjectKind::String(lower));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -89,7 +89,7 @@ pub fn split(state: VMState) -> Result<VMData, RuntimeError> {
     let list = split_strings
         .into_iter()
         .map(|s| {
-            let obj_idx = match state.object_map.put(ObjectKind::String((s))) {
+            let obj_idx = match state.object_map.put(ObjectKind::String(s)) {
                 Ok(index) => index,
                 Err(_) => panic!("Out of memory"),
             };
@@ -97,7 +97,7 @@ pub fn split(state: VMState) -> Result<VMData, RuntimeError> {
         })
         .collect::<Vec<_>>();
 
-    let list_idx = state.object_map.put(ObjectKind::List((list)));
+    let list_idx = state.object_map.put(ObjectKind::List(list));
     match list_idx {
         Ok(index) => Ok(VMData::new_list(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -117,7 +117,7 @@ pub fn from_chars(state: VMState) -> RuntimeResult<VMData> {
         })
         .collect();
 
-    let obj_idx = state.object_map.put(ObjectKind::String((string)));
+    let obj_idx = state.object_map.put(ObjectKind::String(string));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),

@@ -20,7 +20,6 @@ use ast::{
 
 use crate::atlas_c::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
 use crate::atlas_c::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstConstructor, AstDeleteObjExpr, AstDestructor, AstGeneric, AstGenericConstraint, AstListLiteral, AstListType, AstMethod, AstMethodModifier, AstNewArrayExpr, AstNewObjExpr, AstOperatorOverload, AstSelf, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
-use crate::atlas_c::atlas_hir::syntax_lowering_pass::case::Case;
 use arena::AstArena;
 use logos::Span;
 
@@ -844,12 +843,10 @@ impl<'ast> Parser<'ast> {
                 node
             }
             TokenKind::KwNew => {
-                let node = self.parse_new_obj()?;
-                node
+                self.parse_new_obj()?
             }
             TokenKind::KwDelete => {
-                let node = self.parse_delete_obj()?;
-                node
+                self.parse_delete_obj()?
             }
             TokenKind::LBracket => {
                 let start = self.advance();

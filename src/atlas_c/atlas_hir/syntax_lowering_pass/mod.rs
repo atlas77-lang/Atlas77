@@ -128,7 +128,7 @@ where
                 let mut type_params: Vec<&HirTypeParameterItemSignature<'_>> = Vec::new();
 
                 let generics = if e.generics.is_some() {
-                    Some(e.generics.unwrap().into_iter().map(|g| self.visit_generic(g)).collect::<HirResult<Vec<_>>>()?)
+                    Some(e.generics.unwrap().iter().map(|g| self.visit_generic(g)).collect::<HirResult<Vec<_>>>()?)
                 } else {
                     None
                 };
@@ -194,7 +194,7 @@ where
 
         let mut fields = Vec::new();
         for field in node.fields.iter() {
-            let ty = self.visit_ty(&field.ty)?;
+            let ty = self.visit_ty(field.ty)?;
             let name = self.arena.names().get(field.name.name);
             fields.push(HirClassFieldSignature {
                 span: field.span.clone(),
@@ -213,9 +213,9 @@ where
 
         let mut constants: BTreeMap<&'hir str, &'hir HirClassConstSignature<'hir>> = BTreeMap::new();
         for constant in node.constants.iter() {
-            let ty = self.visit_ty(&constant.ty)?;
+            let ty = self.visit_ty(constant.ty)?;
             let name = self.arena.names().get(constant.name.name);
-            let const_expr = self.visit_expr(&constant.value)?;
+            let const_expr = self.visit_expr(constant.value)?;
             let value = match ConstantValue::try_from(const_expr) {
                 Ok(value) => value,
                 Err(_) => {
@@ -243,13 +243,13 @@ where
         let destructor = self.visit_destructor(node.destructor)?;
         let constructor_signature = HirClassConstructorSignature {
             span: node.span.clone(),
-            params: constructor.params.iter().map(|p| *p).collect(),
-            type_params: constructor.type_params.iter().map(|p| *p).collect(),
+            params: constructor.params.to_vec(),
+            type_params: constructor.type_params.to_vec(),
         };
         let destructor_signature = HirClassConstructorSignature {
             span: node.span.clone(),
-            params: destructor.params.iter().map(|p| *p).collect(),
-            type_params: destructor.type_params.iter().map(|p| *p).collect(),
+            params: destructor.params.to_vec(),
+            type_params: destructor.type_params.to_vec(),
         };
 
         let signature = self.arena.intern(HirClassSignature {
@@ -364,7 +364,7 @@ where
         let constructor = constructor.unwrap();
         let mut params: Vec<&'hir HirFunctionParameterSignature<'hir>> = Vec::new();
         for param in constructor.args.iter() {
-            let ty = self.visit_ty(&param.ty)?;
+            let ty = self.visit_ty(param.ty)?;
             let name = self.arena.names().get(param.name.name);
             params.push(self.arena.intern(HirFunctionParameterSignature {
                 span: param.span.clone(),
@@ -387,7 +387,7 @@ where
             span: constructor.span.clone(),
             params,
             type_params,
-            body: self.visit_block(&constructor.body)?,
+            body: self.visit_block(constructor.body)?,
         };
         Ok(hir)
     }
@@ -408,7 +408,7 @@ where
         let destructor = destructor.unwrap();
         let mut params: Vec<&'hir HirFunctionParameterSignature<'hir>> = Vec::new();
         for param in destructor.args.iter() {
-            let ty = self.visit_ty(&param.ty)?;
+            let ty = self.visit_ty(param.ty)?;
             let name = self.arena.names().get(param.name.name);
             params.push(self.arena.intern(HirFunctionParameterSignature {
                 span: param.span.clone(),
@@ -431,7 +431,7 @@ where
             span: destructor.span.clone(),
             params,
             type_params,
-            body: self.visit_block(&destructor.body)?,
+            body: self.visit_block(destructor.body)?,
         };
         Ok(hir)
     }
@@ -805,9 +805,6 @@ where
                 });
                 Ok(hir)
             }
-            AstExpr::IfElse(i_e) => {
-                todo!("IfElse as an expression is not supported yet")
-            }
             AstExpr::Delete(d) => {
                 let hir = HirExpr::Delete(HirDeleteExpr {
                     span: node.span(),
@@ -890,16 +887,6 @@ where
                             ty: self.arena.types().get_uninitialized_ty(),
                         })
                     }
-                    _ => {
-                        return Err(HirError::UnsupportedExpr(UnsupportedExpr {
-                            span: SourceSpan::new(
-                                SourceOffset::from(node.span().start),
-                                node.span().end - node.span().start,
-                            ),
-                            expr: format!("{:?}", node),
-                            src: self.src.clone(),
-                        }))
-                    }
                 };
                 Ok(hir)
             }
@@ -931,8 +918,7 @@ where
             }
 
             _ => {
-                //todo: StaticAccess
-                //todo: FieldAccess
+                //todo: if/else as an expression
                 Err(HirError::UnsupportedExpr(UnsupportedExpr {
                     span: SourceSpan::new(
                         SourceOffset::from(node.span().start),

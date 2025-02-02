@@ -5,26 +5,26 @@ pub mod atlas_lib;
 use atlas_c::{
     atlas_codegen::{
         arena::CodeGenArena,
-        CodeGenUnit
+        CodeGenUnit,
     },
     atlas_frontend::{
+        parse,
         parser::arena::AstArena,
-        parse
     },
     atlas_hir::{
-        type_check_pass::TypeChecker,
         arena::HirArena,
-        syntax_lowering_pass::AstSyntaxLoweringPass
+        syntax_lowering_pass::AstSyntaxLoweringPass,
+        type_check_pass::TypeChecker,
     },
 };
 use bumpalo::Bump;
 
+use crate::atlas_vm::runtime::arena::RuntimeArena;
 use std::{
     io::Write,
     path::PathBuf,
-    time::Instant
+    time::Instant,
 };
-use crate::atlas_vm::runtime::arena::RuntimeArena;
 //todo: The pipeline of the compiler should be more straightforward and should include the "debug" and "release" modes
 //todo: There should also be a function for each stage of the pipeline
 
@@ -33,8 +33,8 @@ pub enum CompilationFlag {
     Debug,
 }
 
-fn get_path(path: &String) -> PathBuf {
-    let mut path_buf = PathBuf::from(path.clone());
+fn get_path(path: &str) -> PathBuf {
+    let mut path_buf = PathBuf::from(path.to_owned());
     if let Ok(current_dir) = std::env::current_dir() {
         if !path_buf.is_absolute() {
             path_buf = current_dir.join(path_buf);

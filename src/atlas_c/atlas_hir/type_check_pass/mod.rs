@@ -116,7 +116,6 @@ pub struct ContextVariable<'hir> {
     pub ty: &'hir HirTy<'hir>,
     pub ty_span: Span,
     pub is_mut: bool,
-    span: Span,
 }
 
 impl<'hir> TypeChecker<'hir> {
@@ -179,7 +178,6 @@ impl<'hir> TypeChecker<'hir> {
                         ty: param.ty,
                         ty_span: param.ty_span.clone(),
                         is_mut: false,
-                        span: param.span.clone(),
                     },
                 );
         }
@@ -211,7 +209,6 @@ impl<'hir> TypeChecker<'hir> {
                         ty: param.ty,
                         ty_span: param.ty_span.clone(),
                         is_mut: false,
-                        span: param.span.clone(),
                     },
                 );
         }
@@ -242,7 +239,6 @@ impl<'hir> TypeChecker<'hir> {
                         ty: param.ty,
                         ty_span: param.ty_span.clone(),
                         is_mut: false,
-                        span: param.span.clone(),
                     },
                 );
         }
@@ -273,7 +269,6 @@ impl<'hir> TypeChecker<'hir> {
                         ty: param.ty,
                         ty_span: param.ty_span.clone(),
                         is_mut: false,
-                        span: param.span.clone(),
                     },
                 );
         }
@@ -442,7 +437,6 @@ impl<'hir> TypeChecker<'hir> {
                             ty: const_ty,
                             ty_span: c.ty_span.clone().unwrap_or(c.name_span.clone()),
                             is_mut: false,
-                            span: c.span.clone(),
                         },
                     );
 
@@ -481,7 +475,6 @@ impl<'hir> TypeChecker<'hir> {
                             ty: var_ty,
                             ty_span: l.ty_span.clone().unwrap_or(l.name_span.clone()),
                             is_mut: true,
-                            span: l.span.clone(),
                         },
                     );
                 if HirTyId::from(expr_ty) != ty {
@@ -1133,8 +1126,8 @@ impl<'hir> TypeChecker<'hir> {
             //This only take the name of the generic type (e.g. `T` in `extern foo<T>(a: T) -> T`)
             //So `extern foo<T>(a: [T]) -> T` won't be correctly type checked
 
-            if let Some(name) = self.get_generic_name(param.ty) {
-                let ty = if let Some(ty) = self.get_generic_ty(param.ty, arg) {
+            if let Some(name) = Self::get_generic_name(param.ty) {
+                let ty = if let Some(ty) = Self::get_generic_ty(param.ty, arg) {
                     ty
                 } else {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
@@ -1165,7 +1158,7 @@ impl<'hir> TypeChecker<'hir> {
 
         let mut monomorphized = signature.clone();
         monomorphized.params = params;
-        if let Some(name) = self.get_generic_name(monomorphized.return_ty) {
+        if let Some(name) = Self::get_generic_name(monomorphized.return_ty) {
             let actual_generic_ty = generics.iter().find(|(n, _)| *n == name).unwrap().1;
             let return_ty = self.get_generic_ret_ty(monomorphized.return_ty, actual_generic_ty);
 
@@ -1178,9 +1171,9 @@ impl<'hir> TypeChecker<'hir> {
         Ok(signature.return_ty)
     }
 
-    fn get_generic_name(&self, ty: &'hir HirTy<'hir>) -> Option<&'hir str> {
+    fn get_generic_name(ty: &'hir HirTy<'hir>) -> Option<&'hir str> {
         match ty {
-            HirTy::List(l) => self.get_generic_name(l.inner),
+            HirTy::List(l) => Self::get_generic_name(l.inner),
             HirTy::Named(n) => Some(n.name),
             _ => None,
         }
@@ -1198,9 +1191,9 @@ impl<'hir> TypeChecker<'hir> {
 
     /// Return the type of the generic after monormophization
     /// e.g. `foo<T>(a: T) -> T` with `foo(42)` will return `int64`
-    fn get_generic_ty(&self, ty: &'hir HirTy<'hir>, given_ty: &'hir HirTy<'hir>) -> Option<&'hir HirTy<'hir>> {
+    fn get_generic_ty(ty: &'hir HirTy<'hir>, given_ty: &'hir HirTy<'hir>) -> Option<&'hir HirTy<'hir>> {
         match (ty, given_ty) {
-            (HirTy::List(l1), HirTy::List(l2)) => self.get_generic_ty(l1.inner, l2.inner),
+            (HirTy::List(l1), HirTy::List(l2)) => Self::get_generic_ty(l1.inner, l2.inner),
             (HirTy::Named(_), _) => {
                 Some(given_ty)
             }

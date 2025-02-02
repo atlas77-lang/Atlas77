@@ -5,14 +5,14 @@ pub mod token;
 
 #[derive(Debug)]
 pub struct AtlasLexer<'lex> {
-    path: &'lex str,
+    _path: &'lex str,
     pub source: String,
 }
 
 impl<'lex> AtlasLexer<'lex> {
-    pub fn new(path: &'lex str, source: String) -> Self {
+    pub fn new(_path: &'lex str, source: String) -> Self {
         AtlasLexer {
-            path,
+            _path,
             source,
         }
     }

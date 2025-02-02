@@ -29,10 +29,7 @@ pub enum HirExpr<'hir> {
 }
 
 pub fn is_self_access(field_access_expr: &HirFieldAccessExpr) -> bool {
-    match field_access_expr.target.as_ref() {
-        HirExpr::SelfLiteral(_) => true,
-        _ => false,
-    }
+    matches!(field_access_expr.target.as_ref(), HirExpr::SelfLiteral(_))
 }
 
 impl HirExpr<'_> {

@@ -13,7 +13,7 @@ use crate::atlas_c::atlas_hir::{
 use crate::atlas_vm::runtime::instruction::{ConstantClass, ImportedLibrary, Instruction, Label, Program, Type};
 use std::collections::BTreeMap;
 
-use crate::atlas_c::atlas_codegen::table::Table;
+use crate::atlas_c::atlas_codegen::table::_Table;
 use crate::atlas_c::atlas_hir;
 use crate::atlas_c::atlas_hir::error::HirError;
 use crate::atlas_c::atlas_hir::expr::HirUnaryOp;
@@ -34,11 +34,10 @@ where
     program: Program<'gen>,
     arena: CodeGenArena<'gen>,
     //simulate a var_map so the codegen can translate it into stack operations
-    _variables: Table<&'hir str>,
+    _variables: _Table<&'hir str>,
     //store the function position
-    _global: Table<&'hir str>,
+    _global: _Table<&'hir str>,
     current_pos: usize,
-    current_class_name: Option<&'hir str>,
     string_pool: Vec<&'gen str>,
     class_pool: Vec<ConstantClass<'gen>>,
     //todo: Replace this with the path of the current module to be codegen
@@ -52,10 +51,9 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             hir,
             program: Program::new(),
             arena,
-            _variables: Table::new(),
-            _global: Table::new(),
+            _variables: _Table::new(),
+            _global: _Table::new(),
             current_pos: 0,
-            current_class_name: None,
             string_pool: Vec::new(),
             class_pool: Vec::new(),
             src,
@@ -553,7 +551,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         self.generate_bytecode_expr(&field_access.target, bytecode, src.clone())?;
                         //Get the arguments
                         for arg in f.args.iter() {
-                            self.generate_bytecode_expr(&arg, bytecode, src.clone())?;
+                            self.generate_bytecode_expr(arg, bytecode, src.clone())?;
                         }
 
                         let class_name = match field_access.target.ty() {
@@ -578,7 +576,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     }
                     HirExpr::StaticAccess(static_access) => {
                         for arg in f.args.iter() {
-                            self.generate_bytecode_expr(&arg, bytecode, src.clone())?;
+                            self.generate_bytecode_expr(arg, bytecode, src.clone())?;
                         }
                         bytecode.push(Instruction::StaticCall {
                             method_name: self.arena.alloc(format!("{}::{}", static_access.target.name, static_access.field.name)),
@@ -646,7 +644,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             }
             HirExpr::StaticAccess(static_access) => {
                 match static_access.field.ty {
-                    HirTy::String(s) => {
+                    HirTy::String(_) => {
                         let target_name = static_access.target.name;
                         let class_signature = self.hir.signature.classes.get(target_name).unwrap();
                         let value = match class_signature.constants.get(static_access.field.name).unwrap().value {
@@ -666,7 +664,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         let index = self.string_pool.len() - 1;
                         bytecode.push(Instruction::PushStr(index));
                     }
-                    HirTy::Float64(f) => {
+                    HirTy::Float64(_) => {
                         let class_signature = self.hir.signature.classes.get(static_access.target.name).unwrap();
                         let value = match class_signature.constants.get(static_access.field.name).unwrap().value {
                             ConstantValue::Float(f) => *f,
@@ -683,7 +681,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         };
                         bytecode.push(Instruction::PushFloat(value));
                     }
-                    HirTy::Int64(i) => {
+                    HirTy::Int64(_) => {
                         let class_signature = self.hir.signature.classes.get(static_access.target.name).unwrap();
                         let value = match class_signature.constants.get(static_access.field.name).unwrap().value {
                             ConstantValue::Int(i) => *i,
@@ -700,7 +698,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         };
                         bytecode.push(Instruction::PushInt(value));
                     }
-                    HirTy::Char(c) => {
+                    HirTy::Char(_) => {
                         let class_signature = self.hir.signature.classes.get(static_access.target.name).unwrap();
                         let value = match class_signature.constants.get(static_access.field.name).unwrap().value {
                             ConstantValue::Char(c) => *c,
@@ -717,7 +715,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         };
                         bytecode.push(Instruction::PushChar(value));
                     }
-                    HirTy::UInt64(u) => {
+                    HirTy::UInt64(_) => {
                         let class_signature = self.hir.signature.classes.get(static_access.target.name).unwrap();
                         let value = match class_signature.constants.get(static_access.field.name).unwrap().value {
                             ConstantValue::UInt(u) => *u,
@@ -782,18 +780,6 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     //+1 for the self reference (it's implicit)
                     nb_args: new_obj.args.len() as u8,
                 });
-            }
-            _ => {
-                return Err(atlas_hir::error::HirError::UnsupportedExpr(
-                    UnsupportedExpr {
-                        span: SourceSpan::new(
-                            SourceOffset::from(expr.span().start),
-                            expr.span().end - expr.span().start,
-                        ),
-                        expr: format!("In the codegen: {:?}", expr),
-                        src: src.clone(),
-                    },
-                ))
             }
         }
         Ok(())

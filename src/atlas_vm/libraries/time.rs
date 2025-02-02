@@ -54,7 +54,7 @@ pub fn format_time_iso(state: VMState) -> Result<VMData, RuntimeError> {
             .unwrap();
     let formatted = time.format(&fmt).unwrap();
 
-    let obj_idx = state.object_map.put(ObjectKind::String((formatted)));
+    let obj_idx = state.object_map.put(ObjectKind::String(formatted));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -79,7 +79,7 @@ pub fn format_time(state: VMState) -> Result<VMData, RuntimeError> {
     let fmt = format_description::parse(fmt_str).unwrap();
     let formatted = time.format(&fmt).unwrap();
 
-    let obj_idx = state.object_map.put(ObjectKind::String((formatted)));
+    let obj_idx = state.object_map.put(ObjectKind::String(formatted));
     match obj_idx {
         Ok(index) => Ok(VMData::new_string(index)),
         Err(_) => Err(RuntimeError::OutOfMemory),
@@ -108,8 +108,8 @@ pub fn elapsed(state: VMState) -> Result<VMData, RuntimeError> {
     let elapsed_nsec = end_nsec - start_nsec;
 
     let mut fields = HashMap::new();
-    fields.insert("sec", VMData::new_i64(elapsed_sec as i64));
-    fields.insert("nsec", VMData::new_i64(elapsed_nsec as i64));
+    fields.insert("sec", VMData::new_i64(elapsed_sec));
+    fields.insert("nsec", VMData::new_i64(elapsed_nsec));
 
     let obj_idx = state.object_map.put(ObjectKind::Class(Class {
         fields,

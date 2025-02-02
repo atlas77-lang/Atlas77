@@ -260,7 +260,7 @@ impl<'run> Atlas77VM<'run> {
                 let val = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = match t {
                     Type::String => {
-                        let string = (val.to_string());
+                        let string = val.to_string();
                         let ptr = match self.object_map.put(ObjectKind::String(string)) {
                             Ok(ptr) => {
                                 ptr
@@ -499,7 +499,7 @@ impl<'run> Atlas77VM<'run> {
             }
             Instruction::NewList => {
                 let size = self.stack.pop()?;
-                let list = (vec![VMData::new_unit(); size.as_u64() as usize]);
+                let list = vec![VMData::new_unit(); size.as_u64() as usize];
                 let ptr = self.object_map.put(ObjectKind::List(list))?;
 
                 self.stack.push(VMData::new_list(ptr))?;
