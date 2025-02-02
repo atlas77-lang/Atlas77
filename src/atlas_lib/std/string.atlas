@@ -5,5 +5,33 @@ public extern to_upper(s: str) -> str
 public extern to_lower(s: str) -> str
 public extern split(s: str, sep: str) -> [str]
 public extern str_cmp(s1: str, s2: str) -> int64
+public extern to_chars(s: str) -> [char]
+public extern from_chars(s: [char]) -> str
 
-
+public class String {
+    private:
+        //Because you can't index a `str` directly, we need to store the string as a list of characters
+        s: [char];
+    public:
+        len: uint64;
+    public:
+        String(s: str) {
+            self.s = to_chars(s);
+            self.len = len(self.s);
+        }
+        ~String() {
+            //delete self.s;
+        }
+        func from_chars(s: [char]) -> String {
+            return new String(from_chars(s));
+        }
+        func get(self, i: uint64) -> char {
+            return self.s[i];
+        }
+        func set(self, i: uint64, c: char) {
+            self.s[i] = c;
+        }
+        func to_str(self) -> str {
+            return from_chars(self.s);
+        }
+}

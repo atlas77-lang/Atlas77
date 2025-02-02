@@ -502,7 +502,7 @@ impl<'hir> TypeChecker<'hir> {
                 Ok(())
             }
             _ => {
-                todo!("TypeChecker::check_stmt")
+                todo!("TypeChecker::check_stmt: {:?}", stmt)
             }
         }
     }
@@ -515,19 +515,21 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::UnitLiteral(_) => Ok(self.arena.types().get_unit_ty()),
             HirExpr::CharLiteral(_) => Ok(self.arena.types().get_char_ty()),
             HirExpr::StringLiteral(_) => Ok(self.arena.types().get_str_ty()),
-            HirExpr::SelfLiteral(_) => {
+            HirExpr::SelfLiteral(s) => {
                 let class_name = match self.current_class_name {
                     Some(class_name) => class_name,
                     None => return Err(HirError::AccessingClassFieldOutsideClass(AccessingClassFieldOutsideClassError {
                         span: SourceSpan::new(
                             SourceOffset::from(expr.span().start),
-                            expr.span().end - expr.span().start
+                            expr.span().end - expr.span().start,
                         ),
-                        src: self.src.clone()
+                        src: self.src.clone(),
                     }))
                 };
                 let class = self.signature.classes.get(class_name).unwrap();
-                Ok(self.arena.types().get_named_ty(class.name, class.span.clone()))
+                let self_ty = self.arena.types().get_named_ty(class.name, class.span.clone());
+                s.ty = self_ty;
+                Ok(self_ty)
             }
             HirExpr::NewArray(a) => {
                 let size_ty = self.check_expr(a.size.as_mut())?;
@@ -583,7 +585,7 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::Unary(u) => {
                 let ty = self.check_expr(&mut u.expr)?;
                 match u.op {
-                    Some(expr::UnaryOp::Neg) => {
+                    Some(expr::HirUnaryOp::Neg) => {
                         if HirTyId::from(ty) != HirTyId::compute_integer64_ty_id() {
                             return Err(HirError::TryingToNegateUnsigned(
                                 TryingToNegateUnsignedError {
@@ -649,7 +651,7 @@ impl<'hir> TypeChecker<'hir> {
                 match target {
                     HirTy::List(l) => Ok(l.inner),
                     _ => {
-                        todo!("TypeChecker::check_expr")
+                        todo!("TypeChecker::check_expr: {:?}", target)
                     }
                 }
             }
@@ -765,14 +767,14 @@ impl<'hir> TypeChecker<'hir> {
                             if let Some((_, method_signature)) = method {
                                 //Check if you're currently in the class, if not check is the method public
                                 if self.current_class_name != Some(n.name) && method_signature.vis != HirVisibility::Public {
-                                    return Err(HirError::AccessingPrivateField(AccessingPrivateFieldError{
+                                    return Err(HirError::AccessingPrivateField(AccessingPrivateFieldError {
                                         span: SourceSpan::new(
                                             SourceOffset::from(expr.span().start),
-                                            expr.span().end - expr.span().start
+                                            expr.span().end - expr.span().start,
                                         ),
                                         kind: FieldKind::Function,
-                                        src: self.src.clone()
-                                    }))
+                                        src: self.src.clone(),
+                                    }));
                                 }
                                 if method_signature.modifier == HirClassMethodModifier::Static {
                                     return Err(HirError::UnsupportedExpr(UnsupportedExpr {
@@ -816,6 +818,7 @@ impl<'hir> TypeChecker<'hir> {
                                 field_access.ty = method_signature.return_ty;
                                 func_expr.ty = method_signature.return_ty;
                                 field_access.field.ty = method_signature.return_ty;
+
                                 Ok(method_signature.return_ty)
                             } else {
                                 Err(HirError::UnknownType(UnknownTypeError {
@@ -843,43 +846,43 @@ impl<'hir> TypeChecker<'hir> {
                             }))
                         }
                     }
-                    HirExpr::StaticAccess(s) => {
-                        let class = match self.signature.classes.get(s.target.name) {
+                    HirExpr::StaticAccess(static_access) => {
+                        let class = match self.signature.classes.get(static_access.target.name) {
                             Some(c) => *c,
                             None => {
                                 return Err(HirError::UnknownType(UnknownTypeError {
-                                    name: s.target.name.to_string(),
+                                    name: static_access.target.name.to_string(),
                                     span: SourceSpan::new(
-                                        SourceOffset::from(s.span.start),
-                                        s.span.end - s.span.start,
+                                        SourceOffset::from(static_access.span.start),
+                                        static_access.span.end - static_access.span.start,
                                     ),
                                     src: self.src.clone(),
                                 }));
                             }
                         };
-                        let func = class.methods.iter().find(|m| *m.0 == s.field.name);
-                        if let Some(func) = func {
-                            if func.1.modifier == HirClassMethodModifier::None || func.1.modifier == HirClassMethodModifier::Const {
+                        let func = class.methods.iter().find(|m| *m.0 == static_access.field.name);
+                        if let Some((_, method_signature)) = func {
+                            if method_signature.modifier == HirClassMethodModifier::None || method_signature.modifier == HirClassMethodModifier::Const {
                                 return Err(HirError::UnsupportedExpr(UnsupportedExpr {
                                     span: SourceSpan::new(
-                                        SourceOffset::from(s.span.start),
-                                        s.span.end - s.span.start,
+                                        SourceOffset::from(static_access.span.start),
+                                        static_access.span.end - static_access.span.start,
                                     ),
                                     expr: "Instance method call".to_string(),
                                     src: self.src.clone(),
                                 }));
                             }
-                            if func.1.params.len() != func_expr.args.len() {
+                            if method_signature.params.len() != func_expr.args.len() {
                                 return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
-                                    expected_ty: format!("{:?}", func.1),
+                                    expected_ty: format!("{:?}", method_signature),
                                     span: SourceSpan::new(
-                                        SourceOffset::from(s.span.start),
-                                        s.span.end - s.span.start,
+                                        SourceOffset::from(static_access.span.start),
+                                        static_access.span.end - static_access.span.start,
                                     ),
                                     src: self.src.clone(),
                                 }));
                             }
-                            for (param, arg) in func.1.params.iter().zip(func_expr.args.iter_mut()) {
+                            for (param, arg) in method_signature.params.iter().zip(func_expr.args.iter_mut()) {
                                 let arg_ty = self.check_expr(arg)?;
                                 if HirTyId::from(arg_ty) != HirTyId::from(param.ty) {
                                     return Err(HirError::TypeMismatch(TypeMismatchError {
@@ -897,13 +900,19 @@ impl<'hir> TypeChecker<'hir> {
                                     }));
                                 }
                             }
-                            Ok(func.1.return_ty)
+
+                            static_access.ty = method_signature.return_ty;
+                            func_expr.ty = method_signature.return_ty;
+                            static_access.target.ty = self.arena.types().get_named_ty(class.name, class.span.clone());
+                            static_access.field.ty = method_signature.return_ty;
+
+                            Ok(method_signature.return_ty)
                         } else {
                             Err(HirError::UnknownType(UnknownTypeError {
-                                name: s.field.name.to_string(),
+                                name: static_access.field.name.to_string(),
                                 span: SourceSpan::new(
-                                    SourceOffset::from(s.span.start),
-                                    s.span.end - s.span.start,
+                                    SourceOffset::from(static_access.span.start),
+                                    static_access.span.end - static_access.span.start,
                                 ),
                                 src: self.src
                                     .clone(),
@@ -942,11 +951,11 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::Delete(d) => {
                 let to_delete = self.check_expr(&mut d.expr)?;
                 match to_delete {
-                    HirTy::Named(_) => {
+                    HirTy::Named(_) | HirTy::List(_) => {
                         Ok(self.arena.types().get_unit_ty())
                     }
                     _ => {
-                        return Err(HirError::TypeMismatch(TypeMismatchError {
+                        Err(HirError::TypeMismatch(TypeMismatchError {
                             actual_type: format!("{}", to_delete),
                             actual_loc: SourceSpan::new(
                                 SourceOffset::from(d.expr.span().start),
@@ -958,7 +967,7 @@ impl<'hir> TypeChecker<'hir> {
                                 d.expr.span().end - d.expr.span().start,
                             ),
                             src: self.src.clone(),
-                        }));
+                        }))
                     }
                 }
             }
@@ -1034,15 +1043,15 @@ impl<'hir> TypeChecker<'hir> {
                     };
                     let field = class.fields.iter().find(|f| *f.0 == field_access.field.name);
                     if let Some((_, field_signature)) = field {
-                        if self.current_class_name != Some(n.name) && field_signature.vis != HirVisibility::Public  {
+                        if self.current_class_name != Some(n.name) && field_signature.vis != HirVisibility::Public {
                             return Err(HirError::AccessingPrivateField(AccessingPrivateFieldError {
                                 span: SourceSpan::new(
                                     SourceOffset::from(expr.span().start),
-                                    expr.span().end - expr.span().start
+                                    expr.span().end - expr.span().start,
                                 ),
                                 kind: FieldKind::Field,
-                                src: self.src.clone()
-                            }))
+                                src: self.src.clone(),
+                            }));
                         }
                         field_access.ty = field_signature.ty;
                         field_access.field.ty = field_signature.ty;
@@ -1087,9 +1096,12 @@ impl<'hir> TypeChecker<'hir> {
                         }));
                     }
                 };
-                let field = class.constants.iter().find(|f| *f.0 == static_access.field.name);
-                if let Some(field) = field {
-                    Ok(field.1.ty)
+                let constant = class.constants.iter().find(|f| *f.0 == static_access.field.name);
+                if let Some((_, const_signature)) = constant {
+                    static_access.target.ty = self.arena.types().get_named_ty(class.name, class.span.clone());
+                    static_access.field.ty = const_signature.ty;
+                    static_access.ty = const_signature.ty;
+                    Ok(const_signature.ty)
                 } else {
                     Err(HirError::UnknownType(UnknownTypeError {
                         name: static_access.field.name.to_string(),
@@ -1100,16 +1112,6 @@ impl<'hir> TypeChecker<'hir> {
                         src: self.src.clone(),
                     }))
                 }
-            }
-            _ => {
-                Err(HirError::UnsupportedExpr(UnsupportedExpr {
-                    span: SourceSpan::new(
-                        SourceOffset::from(expr.span().start),
-                        expr.span().end - expr.span().start,
-                    ),
-                    expr: format!("In the TypeChecker: {:?}", expr),
-                    src: self.src.clone(),
-                }))
             }
         }
     }

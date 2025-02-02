@@ -234,14 +234,14 @@ pub enum HirBinaryOp {
 #[derive(Debug, Clone, Serialize)]
 pub struct UnaryOpExpr<'hir> {
     pub span: Span,
-    pub op: Option<UnaryOp>,
+    pub op: Option<HirUnaryOp>,
     pub expr: Box<HirExpr<'hir>>,
     /// The type of the result of the expression.
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub enum UnaryOp {
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub enum HirUnaryOp {
     Neg,
     Not,
 }

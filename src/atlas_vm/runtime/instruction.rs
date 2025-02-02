@@ -1,8 +1,10 @@
 //NB: This is a dumb down version of the instruction set.
 //A more powerful version will be done for the v0.5.2 & v0.5.3
 
+use std::collections::BTreeMap;
 use std::ops::Index;
 
+use crate::atlas_c::atlas_hir::signature::ConstantValue;
 use serde::{Deserialize, Serialize};
 
 #[repr(u8)]
@@ -112,7 +114,7 @@ pub enum Instruction<'run> {
         nb_args: u8,
     },
 
-    CallFunction {
+    FunctionCall {
         function_name: &'run str,
         nb_args: u8,
     },
@@ -142,9 +144,11 @@ pub enum Instruction<'run> {
     /// This jumps to the correct position in the program to execute the method
     ///
     /// And creates a `self` variable in the var_map
-    ///
-    /// Todo: Make this efficient
-    CallMethod {
+    MethodCall {
+        method_name: &'run str,
+        nb_args: u8,
+    },
+    StaticCall {
         method_name: &'run str,
         nb_args: u8,
     },
@@ -165,7 +169,7 @@ pub struct Program<'run> {
     pub labels: Vec<Label<'run>>,
     pub entry_point: String,
     pub libraries: Vec<ImportedLibrary>,
-    pub global: ConstantPool,
+    pub global: ConstantPool<'run>,
 }
 
 impl<'run> Index<usize> for Program<'run> {
@@ -199,10 +203,10 @@ impl Program<'_> {
             labels: vec![],
             entry_point: String::new(),
             global: ConstantPool {
-                string_pool: vec![],
-                list_pool: vec![],
-                function_pool: vec![],
-                class_pool: vec![],
+                string_pool: &[],
+                list_pool: &[],
+                function_pool: &[],
+                class_pool: &[],
             },
             libraries: vec![],
         }
@@ -210,43 +214,26 @@ impl Program<'_> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
-pub struct ConstantPool {
-    pub string_pool: Vec<String>,
-    pub list_pool: Vec<Constant>,
-    pub function_pool: Vec<usize>,
-    pub class_pool: Vec<Class>,
+pub struct ConstantPool<'run> {
+    //todo: Vec<T> -> &'run [T]
+    pub string_pool: &'run [&'run str],
+    pub list_pool: &'run [ConstantValue],
+    pub function_pool: &'run [usize],
+    pub class_pool: &'run [ConstantClass<'run>],
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
-pub struct Class {
-    pub name: String,
-    pub nb_fields: usize,
-    /// Name of the methods
-    pub methods: Vec<ClassMethod>,
+pub struct ConstantClass<'run> {
+    pub name: &'run str,
+    pub fields: Vec<&'run str>,
     pub constructor_nb_args: usize,
+    pub constants: BTreeMap<&'run str, ConstantValue>,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
-pub struct ClassMethod {
-    pub name: String,
-    pub nb_args: usize,
-    pub pos: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
-//Temporary solution to the constant pool
-pub enum Constant {
-    String(String),
-    List(Vec<Constant>),
-    Integer(i64),
-    Float(f64),
-    UnsignedInteger(u64),
-    Bool(bool),
-}
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub struct Label<'run> {
-    pub name: String,
+    pub name: &'run str,
     pub position: usize,
-    pub body: Vec<Instruction<'run>>,
+    pub body: &'run [Instruction<'run>],
 }

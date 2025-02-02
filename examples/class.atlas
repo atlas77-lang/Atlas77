@@ -1,8 +1,11 @@
+import "std/io"
+
 public class Int64 {
     public:
         value: int64;
+        //todo: Have a comptime runtime
         const MAX_INT64: int64 = 9223372036854775807;
-        const MIN_INT64: int64 = -9223372036854775808;
+        const MIN_INT64: int64 = -9223372036854775807;
     
     public:
         /// Constructor to initialize the value
@@ -28,103 +31,67 @@ public class Int64 {
         func add(self, val: Int64) -> Int64 {
             return new Int64(self.value + val.value);
         }
-        operator +(self, val: Int64) -> Int64 {
-            return self.add(val);
-        }
         
         /// Subtraction
         func sub(self, val: Int64) -> Int64 {
             return new Int64(self.value - val.value);
-        }
-        operator -(self, val: Int64) -> Int64 {
-            return self.sub(val);
         }
         
         /// Multiplication
         func mul(self, val: Int64) -> Int64 {
             return new Int64(self.value * val.value);
         }
-        operator *(self, val: Int64) -> Int64 {
-            return self.mul(val);
-        }
         
         /// Division (Error handling for division by zero is done in the VM for now)
         func div(self, val: Int64) -> Int64 {
             return new Int64(self.value / val.value);
-        }
-        operator /(self, val: Int64) -> Int64 {
-            return self.div(val);
         }
         
         /// Modulus (Error handling for division by zero is done in the VM for now)
         func mod(self, val: Int64) -> Int64 {
             return new Int64(self.value % val.value);
         }
-        operator %(self, val: Int64) -> Int64 {
-            return self.mod(val);
-        }
         
         /// Equality
         func eq(self, val: Int64) -> bool {
             return self.value == val.value;
-        }
-        operator ==(self, val: Int64) -> bool {
-            return self.eq(val);
         }
         
         /// Inequality
         func ne(self, val: Int64) -> bool {
             return self.value != val.value;
         }
-        operator !=(self, val: Int64) -> bool {
-            return self.ne(val);
-        }
         
         /// Greater than
         func gt(self, val: Int64) -> bool {
             return self.value > val.value;
-        }
-        operator >(self, val: Int64) -> bool {
-            return self.gt(val);
         }
         
         /// Greater than or equal to
         func ge(self, val: Int64) -> bool {
             return self.value >= val.value;
         }
-        operator >=(self, val: Int64) -> bool {
-            return self.ge(val);
-        }
         
         /// Less than
         func lt(self, val: Int64) -> bool {
             return self.value < val.value;
-        }
-        operator <(self, val: Int64) -> bool {
-            return self.lt(val);
         }
         
         /// Less than or equal to
         func le(self, val: Int64) -> bool {
             return self.value <= val.value;
         }
-        operator <=(self, val: Int64) -> bool {
-            return self.le(val);
-        }
-        
-        /// Bitwise AND
-        func and(self, val: Int64) -> Int64 {
-            return new Int64(self.value & val.value);
-        }
-        operator &(self, val: Int64) -> Int64 {
-            return self.and(val);
-        }
-        
-        /// Bitwise OR
-        func or(self, val: Int64) -> Int64 {
-            return new Int64(self.value | val.value);
-        }
-        operator |(self, val: Int64) -> Int64 {
-            return self.or(val);
-        }
+}
+
+func main() {
+    let a = new Int64(0);
+    let b = new Int64(1);
+    let i = new Int64(0);
+    while i.lt(a) {
+        let temp = a;
+        a = b;
+        b = temp.add(b);
+        i = i.add(new Int64(1));
+    }
+    println(a.value);
 }

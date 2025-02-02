@@ -103,13 +103,6 @@ pub enum AstMethodModifier {
     None,
 }
 
-#[derive(Debug, Clone, Serialize, Default, Copy)]
-pub enum ClassFieldModifier {
-    Const,
-    #[default]
-    None,
-}
-
 #[derive(Debug, Clone, Serialize)]
 pub struct AstOperatorOverload<'ast> {
     pub span: Span,

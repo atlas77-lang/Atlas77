@@ -8,10 +8,10 @@ use libraries::{
     fs::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
     string::STRING_FUNCTIONS, time::TIME_FUNCTIONS,
 };
-use runtime::{instruction::{Instruction, Label, Program, Type}, arena::RuntimeArena};
+use runtime::{arena::RuntimeArena, instruction::{Instruction, Label, Program, Type}};
 use std::collections::HashMap;
 
-use crate::atlas_vm::memory::object_map::{ObjectKind, Class};
+use crate::atlas_vm::memory::object_map::{Class, ObjectKind};
 use crate::atlas_vm::memory::varmap::{Key, VarMap};
 use crate::atlas_vm::memory::{object_map::Memory, stack::Stack, vm_data::VMData};
 
@@ -137,14 +137,34 @@ impl<'run> Atlas77VM<'run> {
                     .find(|c| c.name == class_name)
                     //It should exist
                     .unwrap();
-                let mut fields = Vec::new();
-                for _ in 0..class.nb_fields {
-                    fields.push(VMData::new_unit());
+                let mut fields = HashMap::new();
+                for field in class.fields.iter() {
+                    fields.insert(*field, VMData::new_unit());
                 }
                 let class_ptr = self.object_map.put(ObjectKind::Class(Class {
-                    fields: HashMap::new()
+                    fields
                 }))?;
                 self.stack.push(VMData::new_object(class_ptr))?;
+                self.pc += 1;
+            }
+            Instruction::GetField { field_name } => {
+                let obj = self.stack.pop()?;
+                let obj_ptr = obj.as_object();
+                //This handle `rc_dec`
+                let raw_obj = self.object_map.get(obj_ptr)?;
+                let class = raw_obj.class();
+                let field = class.fields.get(field_name).unwrap();
+                self.stack.push_with_rc(*field, &mut self.object_map)?;
+                self.pc += 1;
+            }
+            Instruction::SetField { field_name } => {
+                //No need to pop_with_rc here because the value isn't lost
+                let val = self.stack.pop()?;
+                let obj = self.stack.pop()?;
+                let obj_ptr = obj.as_object();
+                let raw_obj = self.object_map.get_mut(obj_ptr)?;
+                let class = raw_obj.class_mut();
+                class.fields.insert(field_name, val);
                 self.pc += 1;
             }
             Instruction::PushInt(i) => {
@@ -178,8 +198,8 @@ impl<'run> Atlas77VM<'run> {
                 self.pc += 1;
             }
             Instruction::PushStr(u) => {
-                let string = self.runtime_arena.alloc(self.program.global.string_pool[u].clone());
-                let ptr = match self.object_map.put(ObjectKind::String(string)) {
+                let string = self.program.global.string_pool[u];
+                let ptr = match self.object_map.put(ObjectKind::String(String::from(string))) {
                     Ok(ptr) => ptr,
                     Err(_) => return Err(RuntimeError::OutOfMemory),
                 };
@@ -240,7 +260,7 @@ impl<'run> Atlas77VM<'run> {
                 let val = self.stack.pop_with_rc(&mut self.object_map)?;
                 let res = match t {
                     Type::String => {
-                        let string = self.runtime_arena.alloc(val.to_string());
+                        let string = (val.to_string());
                         let ptr = match self.object_map.put(ObjectKind::String(string)) {
                             Ok(ptr) => {
                                 ptr
@@ -479,7 +499,7 @@ impl<'run> Atlas77VM<'run> {
             }
             Instruction::NewList => {
                 let size = self.stack.pop()?;
-                let list = self.runtime_arena.alloc(vec![VMData::new_unit(); size.as_u64() as usize]);
+                let list = (vec![VMData::new_unit(); size.as_u64() as usize]);
                 let ptr = self.object_map.put(ObjectKind::List(list))?;
 
                 self.stack.push(VMData::new_list(ptr))?;
@@ -492,7 +512,6 @@ impl<'run> Atlas77VM<'run> {
                     &mut self.object_map,
                     &consts,
                     &mut self.var_map,
-                    &self.runtime_arena,
                 );
                 let extern_fn: &CallBack = self.extern_fn.get::<&str>(&name).unwrap();
                 let res = extern_fn(vm_state)?;
@@ -501,18 +520,41 @@ impl<'run> Atlas77VM<'run> {
             }
             Instruction::DirectCall { pos, args } => {
                 let fn_ptr: VMData = self.stack[pos];
-                let (pc, sp): (usize, usize) = (self.pc, self.stack.top - args as usize);
+                let (pc, sp) = (self.pc, self.stack.top - args as usize);
                 self.stack_frame.push((pc, sp));
                 self.pc = fn_ptr.as_fn_ptr();
             }
-            Instruction::CallFunction { function_name: name, nb_args: args } => {
+            Instruction::FunctionCall { function_name: name, nb_args: args } => {
                 let label: &Label<'_> = self
                     .program
                     .labels
                     .iter()
                     .find(|label: &&Label<'_>| label.name == name)
                     .unwrap();
-                let (pc, sp): (usize, usize) = (self.pc, self.stack.top - args as usize);
+                let (pc, sp) = (self.pc, self.stack.top - args as usize);
+                self.stack_frame.push((pc, sp));
+                self.pc = label.position;
+            }
+            Instruction::StaticCall { method_name, nb_args } => {
+                let label: &Label<'_> = self
+                    .program
+                    .labels
+                    .iter()
+                    .find(|label: &&Label<'_>| label.name == method_name)
+                    .unwrap();
+                let (pc, sp) = (self.pc, self.stack.top - nb_args as usize);
+                self.stack_frame.push((pc, sp));
+                self.pc = label.position;
+            }
+            Instruction::MethodCall { method_name, nb_args } => {
+                let label: &Label<'_> = self
+                    .program
+                    .labels
+                    .iter()
+                    .find(|label: &&Label<'_>| label.name == method_name)
+                    .unwrap();
+                //+1 for self
+                let (pc, sp) = (self.pc, self.stack.top - (nb_args + 1) as usize);
                 self.stack_frame.push((pc, sp));
                 self.pc = label.position;
             }

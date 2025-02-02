@@ -1,21 +1,484 @@
 (
     labels: [
         (
-            name: "iterative_fib",
+            name: "main",
             position: 0,
             body: [
+                PushStr(0),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
+                PushUnsignedInt(12),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('H'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('e'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(2),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('l'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(3),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('l'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(4),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('o'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(5),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar(' '),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(6),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('W'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(7),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('o'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(8),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('r'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(9),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('l'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(10),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('d'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(11),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('!'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
                 Store(
-                    var_name: "n",
+                    var_name: "chars",
+                ),
+                NewObj(
+                    class_name: "String",
+                ),
+                Load(
+                    var_name: "chars",
+                ),
+                MethodCall(
+                    method_name: "String.String",
+                    nb_args: 1,
+                ),
+                Store(
+                    var_name: "s",
+                ),
+                Load(
+                    var_name: "s",
+                ),
+                MethodCall(
+                    method_name: "String.to_str",
+                    nb_args: 0,
+                ),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
+                PushInt(0),
+                Load(
+                    var_name: "s",
                 ),
                 PushInt(0),
-                Store(
-                    var_name: "a",
+                MethodCall(
+                    method_name: "String.get",
+                    nb_args: 1,
                 ),
-                PushInt(1),
+                PushChar('z'),
+                SetField(
+                    field_name: "value",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "s",
+                ),
+                MethodCall(
+                    method_name: "String.to_str",
+                    nb_args: 0,
+                ),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
+                StaticCall(
+                    method_name: "String::hello_world",
+                    nb_args: 0,
+                ),
                 Store(
-                    var_name: "b",
+                    var_name: "s2",
+                ),
+                Load(
+                    var_name: "s2",
+                ),
+                MethodCall(
+                    method_name: "String.to_str",
+                    nb_args: 0,
+                ),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
+                PushStr(1),
+                Store(
+                    var_name: "s3",
+                ),
+                Load(
+                    var_name: "s3",
+                ),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
+                Halt,
+            ],
+        ),
+        (
+            name: "Char.to_str",
+            position: 122,
+            body: [
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field_name: "value",
+                ),
+                CastTo(String),
+                Return,
+            ],
+        ),
+        (
+            name: "Char.Char",
+            position: 127,
+            body: [
+                Store(
+                    var_name: "val",
+                ),
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "val",
+                ),
+                SetField(
+                    field_name: "value",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "self",
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "String::hello_world",
+            position: 136,
+            body: [
+                PushUnsignedInt(8),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('W'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('e'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(2),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('l'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(3),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('c'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(4),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('o'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(5),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('m'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(6),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('e'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(7),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('!'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Store(
+                    var_name: "chars",
+                ),
+                NewObj(
+                    class_name: "String",
+                ),
+                Load(
+                    var_name: "chars",
+                ),
+                MethodCall(
+                    method_name: "String.String",
+                    nb_args: 1,
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "String.get",
+            position: 199,
+            body: [
+                Store(
+                    var_name: "i",
+                ),
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field_name: "s",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                ListLoad,
+                Return,
+            ],
+        ),
+        (
+            name: "String.set",
+            position: 206,
+            body: [
+                Store(
+                    var_name: "c",
+                ),
+                Store(
+                    var_name: "i",
+                ),
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field_name: "s",
+                ),
+                Load(
+                    var_name: "c",
+                ),
+                ListStore,
+                PushUnit,
+                Pop,
+            ],
+        ),
+        (
+            name: "String.to_str",
+            position: 216,
+            body: [
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field_name: "len",
+                ),
+                NewList,
+                Store(
+                    var_name: "chars",
                 ),
                 PushInt(0),
+                CastTo(UnsignedInteger),
                 Store(
                     var_name: "i",
                 ),
@@ -23,43 +486,43 @@
                     var_name: "i",
                 ),
                 Load(
-                    var_name: "n",
+                    var_name: "self",
+                ),
+                GetField(
+                    field_name: "len",
                 ),
                 Lt,
                 JmpZ(
-                    pos: 19,
+                    pos: 18,
                 ),
                 Load(
-                    var_name: "a",
-                ),
-                Store(
-                    var_name: "temp",
+                    var_name: "i",
                 ),
                 Load(
-                    var_name: "b",
-                ),
-                Store(
-                    var_name: "a",
-                ),
-                PushUnit,
-                Pop,
-                Load(
-                    var_name: "temp",
+                    var_name: "chars",
                 ),
                 Load(
-                    var_name: "b",
+                    var_name: "self",
                 ),
-                IAdd,
-                Store(
-                    var_name: "b",
+                GetField(
+                    field_name: "s",
                 ),
+                Load(
+                    var_name: "i",
+                ),
+                ListLoad,
+                GetField(
+                    field_name: "value",
+                ),
+                ListStore,
                 PushUnit,
                 Pop,
                 Load(
                     var_name: "i",
                 ),
                 PushInt(1),
-                IAdd,
+                CastTo(UnsignedInteger),
+                UIAdd,
                 Store(
                     var_name: "i",
                 ),
@@ -69,106 +532,55 @@
                     pos: -22,
                 ),
                 Load(
-                    var_name: "a",
+                    var_name: "chars",
+                ),
+                ExternCall(
+                    function_name: "from_chars",
+                    nb_args: 1,
                 ),
                 Return,
             ],
         ),
         (
-            name: "main",
-            position: 32,
-            body: [
-                PushInt(20),
-                NewObj(
-                    class_name: "Fibonacci",
-                ),
-                Store(
-                    var_name: "fibonacci",
-                ),
-                Load(
-                    var_name: "fibonacci",
-                ),
-                GetField(
-                    field_name: "n",
-                ),
-                Store(
-                    var_name: "n",
-                ),
-                Load(
-                    var_name: "fibonacci",
-                ),
-                Store(
-                    var_name: "res",
-                ),
-                Load(
-                    var_name: "res",
-                ),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Pop,
-                PushInt(20),
-                CallFunction(
-                    name: "recursive_fib",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "fib_20",
-                ),
-                Load(
-                    var_name: "fib_20",
-                ),
-                CastTo(String),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Pop,
-                Halt,
-            ],
-        ),
-        (
-            name: "recursive_fib",
-            position: 51,
+            name: "String.String",
+            position: 250,
             body: [
                 Store(
-                    var_name: "n",
+                    var_name: "s",
+                ),
+                Store(
+                    var_name: "self",
                 ),
                 Load(
-                    var_name: "n",
-                ),
-                PushInt(1),
-                Lte,
-                JmpZ(
-                    pos: 3,
+                    var_name: "self",
                 ),
                 Load(
-                    var_name: "n",
+                    var_name: "s",
                 ),
-                Return,
-                Jmp(
-                    pos: 11,
+                SetField(
+                    field_name: "s",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "self",
                 ),
                 Load(
-                    var_name: "n",
+                    var_name: "s",
                 ),
-                PushInt(1),
-                ISub,
-                CallFunction(
-                    name: "recursive_fib",
-                    args: 1,
+                ExternCall(
+                    function_name: "len",
+                    nb_args: 1,
                 ),
+                CastTo(UnsignedInteger),
+                SetField(
+                    field_name: "len",
+                ),
+                PushUnit,
+                Pop,
                 Load(
-                    var_name: "n",
+                    var_name: "self",
                 ),
-                PushInt(2),
-                ISub,
-                CallFunction(
-                    name: "recursive_fib",
-                    args: 1,
-                ),
-                IAdd,
                 Return,
             ],
         ),
@@ -176,14 +588,45 @@
     entry_point: "main",
     libraries: [
         (
+            name: "std/string",
+            is_std: true,
+        ),
+        (
             name: "std/io",
+            is_std: true,
+        ),
+        (
+            name: "std/list",
             is_std: true,
         ),
     ],
     global: (
-        string_pool: [],
+        string_pool: [
+            "Hello, world!",
+            "Welcome!",
+        ],
         list_pool: [],
         function_pool: [],
-        class_pool: [],
+        class_pool: [
+            (
+                name: "Char",
+                fields: [
+                    "value",
+                ],
+                constructor_nb_args: 1,
+                constants: {},
+            ),
+            (
+                name: "String",
+                fields: [
+                    "s",
+                    "len",
+                ],
+                constructor_nb_args: 1,
+                constants: {
+                    "welcome": String("Welcome!"),
+                },
+            ),
+        ],
     ),
 )

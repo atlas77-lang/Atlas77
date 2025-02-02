@@ -1,7 +1,7 @@
-use std::fmt;
-use std::fmt::Formatter;
 use crate::declare_error_type;
 use miette::{Diagnostic, SourceSpan as Span};
+use std::fmt;
+use std::fmt::Formatter;
 use thiserror::Error;
 //todo: Implement my own error type, because miette doesn't let me return just warnings
 declare_error_type! {
@@ -19,11 +19,22 @@ declare_error_type! {
         EmptyListLiteral(EmptyListLiteralError),
         AccessingClassFieldOutsideClass(AccessingClassFieldOutsideClassError),
         AccessingPrivateField(AccessingPrivateFieldError),
+        NonConstantValue(NonConstantValueError),
     }
 }
 
 /// Handy type alias for all HIR-related errors.
 pub type HirResult<T> = Result<T, HirError>;
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::non_constant_value))]
+#[error("You can't assign a non-constant value to a constant field")]
+pub struct NonConstantValueError {
+    #[label("Trying to assign a non-constant value to a constant field")]
+    pub span: Span,
+    #[source_code]
+    pub src: String,
+}
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(code(sema::self_access_outside_class))]

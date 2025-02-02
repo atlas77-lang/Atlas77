@@ -22,9 +22,10 @@ const LIST_ATLAS: &str = include_str!("../../../atlas_lib/std/list.atlas");
 const MATH_ATLAS: &str = include_str!("../../../atlas_lib/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../atlas_lib/std/string.atlas");
 
+use crate::atlas_c::atlas_hir::error::NonConstantValueError;
 use crate::atlas_c::atlas_hir::expr::{HirCastExpr, HirCharLiteralExpr, HirDeleteExpr, HirFieldAccessExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirNewObjExpr, HirSelfLiteral, HirStaticAccessExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
 use crate::atlas_c::atlas_hir::item::{HirClass, HirClassConstructor, HirClassMethod};
-use crate::atlas_c::atlas_hir::signature::{HirClassConstSignature, HirClassConstructorSignature, HirClassFieldSignature, HirClassMethodModifier, HirClassMethodSignature, HirClassSignature};
+use crate::atlas_c::atlas_hir::signature::{ConstantValue, HirClassConstSignature, HirClassConstructorSignature, HirClassFieldSignature, HirClassMethodModifier, HirClassMethodSignature, HirClassSignature};
 use crate::atlas_c::atlas_hir::syntax_lowering_pass::case::Case;
 use crate::atlas_c::atlas_hir::{
     arena::HirArena,
@@ -32,7 +33,7 @@ use crate::atlas_c::atlas_hir::{
     expr::{
         HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirExpr,
         HirFloatLiteralExpr, HirFunctionCallExpr, HirIdentExpr, HirIntegerLiteralExpr,
-        HirUnsignedIntegerLiteralExpr, UnaryOp, UnaryOpExpr,
+        HirUnaryOp, HirUnsignedIntegerLiteralExpr, UnaryOpExpr,
     },
     item::HirFunction,
     signature::{HirFunctionParameterSignature, HirFunctionSignature, HirModuleSignature, HirTypeParameterItemSignature},
@@ -214,7 +215,19 @@ where
         for constant in node.constants.iter() {
             let ty = self.visit_ty(&constant.ty)?;
             let name = self.arena.names().get(constant.name.name);
-            let value = self.visit_expr(&constant.value)?;
+            let const_expr = self.visit_expr(&constant.value)?;
+            let value = match ConstantValue::try_from(const_expr) {
+                Ok(value) => value,
+                Err(_) => {
+                    return Err(HirError::NonConstantValue(NonConstantValueError {
+                        span: SourceSpan::new(
+                            SourceOffset::from(constant.value.span().start),
+                            constant.value.span().end - constant.value.span().start,
+                        ),
+                        src: self.src.clone(),
+                    }))
+                }
+            };
             constants.insert(name, self.arena.intern(HirClassConstSignature {
                 span: constant.span.clone(),
                 vis: node.vis.into(),
@@ -729,8 +742,8 @@ where
                 let hir = HirExpr::Unary(UnaryOpExpr {
                     span: node.span(),
                     op: match u.op {
-                        Some(AstUnaryOp::Neg) => Some(UnaryOp::Neg),
-                        Some(AstUnaryOp::Not) => Some(UnaryOp::Not),
+                        Some(AstUnaryOp::Neg) => Some(HirUnaryOp::Neg),
+                        Some(AstUnaryOp::Not) => Some(HirUnaryOp::Not),
                         _ => None,
                     },
                     expr: Box::new(expr.clone()),

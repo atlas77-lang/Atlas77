@@ -201,7 +201,6 @@ impl<'ast> Parser<'ast> {
         let mut curr_vis = self.parse_current_vis(AstVisibility::Private)?;
         while self.current().kind() != TokenKind::RBrace {
             curr_vis = self.parse_current_vis(curr_vis)?;
-            println!("Current Visibility: {:?}", curr_vis);
             match self.current().kind() {
                 TokenKind::Identifier(s) => {
                     if s == class_name.name {
@@ -634,7 +633,6 @@ impl<'ast> Parser<'ast> {
             let t = self.parse_type()?;
             Some(self.arena.alloc(t))
         } else {
-            eprintln!("Warning: Type inference is still unstable. {:?} @{:?}", name.name, start);
             None
         };
 

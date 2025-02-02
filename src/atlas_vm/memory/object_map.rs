@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use crate::atlas_vm::errors::RuntimeError;
 use crate::atlas_vm::memory::vm_data::VMData;
 use crate::atlas_vm::RuntimeResult;
+use std::collections::HashMap;
 
 /// Probably should be renamed lmao
 ///
@@ -88,15 +88,11 @@ impl<'mem> Memory<'mem> {
     }
 
     pub fn free(&mut self, index: ObjectIndex) -> RuntimeResult<()> {
-        if self.used_space < self.mem.len() / 2 {
-            //Shrink the memory
-            eprintln!("There needs to be a memory shrink here");
-        }
         let next = self.free;
-        let v = &mut self.mem.get_mut(usize::from(index)).unwrap().kind;
+        let v = self.mem.get_mut(usize::from(index)).unwrap().kind.clone();
         match v {
-            ObjectKind::List(ref mut l) => {
-                for item in l.iter_mut() {
+            ObjectKind::List(list) => {
+                for item in list {
                     match item.tag {
                         VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
                             let obj_to_dec = item.as_object();
@@ -130,8 +126,7 @@ impl<'mem> Memory<'mem> {
 
     #[inline(always)]
     pub fn get(&mut self, index: ObjectIndex) -> RuntimeResult<ObjectKind> {
-        let kind = self.mem[usize::from(index)].kind;
-        //println!("Getting object: {} {}", kind, index);
+        let kind = self.mem[usize::from(index)].kind.clone();
         self.rc_dec(index)?;
         Ok(kind)
     }
@@ -182,11 +177,11 @@ impl std::fmt::Display for Memory<'_> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ObjectKind<'mem> {
-    String(&'mem mut str),
+    String(String),
     Class(Class<'mem>),
-    List(&'mem mut [VMData]),
+    List(Vec<VMData>),
     Free { next: ObjectIndex },
 }
 impl Default for ObjectKind<'_> {
@@ -197,7 +192,7 @@ impl Default for ObjectKind<'_> {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Object<'mem> {
     pub kind: ObjectKind<'mem>,
     /// Reference count
@@ -225,42 +220,42 @@ impl<'mem> ObjectKind<'mem> {
         data.into()
     }
 
-    pub fn string(&self) -> &'mem str {
+    pub fn string(&self) -> &String {
         match &self {
             ObjectKind::String(s) => s,
             _ => unreachable!("Expected a string, got a {:?}", self),
         }
     }
 
-    pub fn string_mut(&mut self) -> &mut str {
+    pub fn string_mut(&mut self) -> &mut String {
         match self {
             ObjectKind::String(s) => s,
             _ => unreachable!("Expected a string, got a {:?}", self),
         }
     }
 
-    pub fn structure(&self) -> &Class<'mem> {
+    pub fn class(&self) -> &Class<'mem> {
         match &self {
             ObjectKind::Class(s) => s,
             _ => unreachable!("Expected a structure, got a {:?}", self),
         }
     }
 
-    pub fn structure_mut(&mut self) -> &mut Class<'mem> {
+    pub fn class_mut(&mut self) -> &mut Class<'mem> {
         match self {
             ObjectKind::Class(s) => s,
             _ => unreachable!("Expected a structure, got a {:?}", self),
         }
     }
 
-    pub fn list(&self) -> &'mem [VMData] {
+    pub fn list(&self) -> &Vec<VMData> {
         match &self {
             ObjectKind::List(l) => l,
             _ => unreachable!("Expected a list, got a {:?}", self),
         }
     }
 
-    pub fn list_mut(&mut self) -> &'mem mut [VMData] {
+    pub fn list_mut(&mut self) -> &mut Vec<VMData> {
         match self {
             ObjectKind::List(l) => l,
             _ => unreachable!("Expected a list, got a {:?}", self),
@@ -270,19 +265,19 @@ impl<'mem> ObjectKind<'mem> {
 
 
 impl<'mem> From<Class<'mem>> for ObjectKind<'mem> {
-    fn from(value: Class) -> Self {
+    fn from(value: Class<'mem>) -> Self {
         ObjectKind::Class(value)
     }
 }
 
-impl<'mem> From<&'mem mut str> for ObjectKind<'mem> {
-    fn from(value: &'mem mut str) -> Self {
+impl<'mem> From<String> for ObjectKind<'mem> {
+    fn from(value: String) -> Self {
         ObjectKind::String(value)
     }
 }
 
-impl<'mem> From<&'mem mut [VMData]> for ObjectKind<'mem> {
-    fn from(value: &'mem mut [VMData]) -> Self {
+impl<'mem> From<Vec<VMData>> for ObjectKind<'mem> {
+    fn from(value: Vec<VMData>) -> Self {
         ObjectKind::List(value)
     }
 }
