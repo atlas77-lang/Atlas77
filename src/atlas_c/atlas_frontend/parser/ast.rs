@@ -1,3 +1,4 @@
+use crate::atlas_c::atlas_frontend::lexer::token::TokenKind;
 use logos::Span;
 use serde::Serialize;
 
@@ -45,6 +46,32 @@ impl AstItem<'_> {
     }
 }
 
+/// And ASTGeneric carries the name of the generic type as well as the constraints
+///
+/// Example:
+/// ```cpp
+/// public class Foo<T: Display + Debug> {
+///     public:
+///         x: T;
+///     public:
+///         func print(self) {
+///            println(x);
+///        }
+/// }
+/// ```
+#[derive(Debug, Clone, Serialize)]
+pub struct AstGeneric<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub constraints: &'ast [&'ast AstGenericConstraint<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub enum AstGenericConstraint<'ast> {
+    NamedType(AstNamedType<'ast>),
+    Operator(AstBinaryOp),
+}
+
 #[derive(Debug, Clone, Serialize, Default, Copy)]
 pub enum AstVisibility {
     Public,
@@ -59,7 +86,55 @@ pub struct AstClass<'ast> {
     pub vis: AstVisibility,
     pub fields: &'ast [&'ast AstObjField<'ast>],
     pub field_span: Span,
-    pub methods: &'ast [&'ast AstFunction<'ast>],
+    pub constructor: Option<&'ast AstConstructor<'ast>>,
+    pub destructor: Option<&'ast AstDestructor<'ast>>,
+    pub generics: &'ast [&'ast AstGeneric<'ast>],
+    pub operators: &'ast [&'ast AstOperatorOverload<'ast>],
+    pub constants: &'ast [&'ast AstConst<'ast>],
+    //todo: Add support for methods (AstFunction -> AstMethod)
+    pub methods: &'ast [&'ast AstMethod<'ast>],
+}
+
+#[derive(Debug, Clone, Serialize, Default, Copy)]
+pub enum AstMethodModifier {
+    Static,
+    Const,
+    #[default]
+    None,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstOperatorOverload<'ast> {
+    pub span: Span,
+    pub op: AstBinaryOp,
+    pub args: &'ast [&'ast AstObjField<'ast>],
+    pub body: &'ast AstBlock<'ast>,
+    pub ret: &'ast AstType<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstConstructor<'ast> {
+    pub span: Span,
+    pub args: &'ast [&'ast AstObjField<'ast>],
+    pub body: &'ast AstBlock<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstDestructor<'ast> {
+    pub span: Span,
+    pub args: &'ast [&'ast AstObjField<'ast>],
+    pub body: &'ast AstBlock<'ast>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstMethod<'ast> {
+    pub modifier: AstMethodModifier,
+    pub vis: AstVisibility,
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub args: &'ast [&'ast AstObjField<'ast>],
+    pub ret: &'ast AstType<'ast>,
+    pub body: &'ast AstBlock<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -123,6 +198,7 @@ pub struct AstObjField<'ast> {
 pub struct AstExternFunction<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
+    pub generics: Option<&'ast [&'ast AstNamedType<'ast>]>,
     pub args_name: &'ast [&'ast AstIdentifier<'ast>],
     pub args_ty: &'ast [&'ast AstType<'ast>],
     pub ret: &'ast AstType<'ast>,
@@ -181,7 +257,7 @@ pub struct AstBreakStmt {
 pub struct AstConst<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
-    pub ty: Option<&'ast AstType<'ast>>,
+    pub ty: &'ast AstType<'ast>,
     pub value: &'ast AstExpr<'ast>,
 }
 
@@ -213,6 +289,7 @@ pub enum AstExpr<'ast> {
     FieldAccess(AstFieldAccessExpr<'ast>),
     StaticAccess(AstStaticAccessExpr<'ast>),
     NewObj(AstNewObjExpr<'ast>),
+    Delete(AstDeleteObjExpr<'ast>),
     NewArray(AstNewArrayExpr<'ast>),
     _Block(AstBlock<'ast>),
     Assign(AstAssignExpr<'ast>),
@@ -235,12 +312,19 @@ impl AstExpr<'_> {
             AstExpr::FieldAccess(e) => e.span.clone(),
             AstExpr::StaticAccess(e) => e.span.clone(),
             AstExpr::NewObj(e) => e.span.clone(),
+            AstExpr::Delete(e) => e.span.clone(),
             AstExpr::NewArray(e) => e.span.clone(),
             AstExpr::_Block(e) => e.span.clone(),
             AstExpr::Assign(e) => e.span.clone(),
             AstExpr::Casting(e) => e.span.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstDeleteObjExpr<'ast> {
+    pub span: Span,
+    pub target: &'ast AstExpr<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -267,7 +351,7 @@ pub struct AstBlock<'ast> {
 pub struct AstNewObjExpr<'ast> {
     pub span: Span,
     pub ty: &'ast AstIdentifier<'ast>,
-    pub fields: &'ast [&'ast AstFieldInit<'ast>],
+    pub args: &'ast [&'ast AstExpr<'ast>],
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -287,7 +371,7 @@ pub struct AstFieldInit<'ast> {
 #[derive(Debug, Clone, Serialize)]
 pub struct AstStaticAccessExpr<'ast> {
     pub span: Span,
-    pub target: &'ast AstExpr<'ast>,
+    pub target: &'ast AstIdentifier<'ast>,
     pub field: &'ast AstIdentifier<'ast>,
 }
 
@@ -350,6 +434,26 @@ pub enum AstBinaryOp {
     Gte,
 }
 
+impl TryFrom<TokenKind> for AstBinaryOp {
+    type Error = String;
+    fn try_from(value: TokenKind) -> Result<Self, Self::Error> {
+        match value {
+            TokenKind::Plus => Ok(AstBinaryOp::Add),
+            TokenKind::Minus => Ok(AstBinaryOp::Sub),
+            TokenKind::Star => Ok(AstBinaryOp::Mul),
+            TokenKind::Slash => Ok(AstBinaryOp::Div),
+            TokenKind::Percent => Ok(AstBinaryOp::Mod),
+            TokenKind::EqEq => Ok(AstBinaryOp::Eq),
+            TokenKind::NEq => Ok(AstBinaryOp::NEq),
+            TokenKind::LAngle => Ok(AstBinaryOp::Lt),
+            TokenKind::LFatArrow => Ok(AstBinaryOp::Lte),
+            TokenKind::RAngle => Ok(AstBinaryOp::Gt),
+            TokenKind::OpGreaterThanEq => Ok(AstBinaryOp::Gte),
+            _ => Err(format!("{:?}", value)),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct AstIfElseExpr<'ast> {
     pub span: Span,
@@ -390,7 +494,9 @@ pub enum AstLiteral<'ast> {
     Integer(AstIntegerLiteral),
     UnsignedInteger(AstUnsignedIntegerLiteral),
     Float(AstFloatLiteral),
+    Char(AstCharLiteral),
     Unit(AstUnitLiteral),
+    SelfLiteral(AstSelf),
     String(AstStringLiteral<'ast>),
     Boolean(AstBooleanLiteral),
     List(AstListLiteral<'ast>),
@@ -402,12 +508,25 @@ impl AstLiteral<'_> {
             AstLiteral::Integer(l) => l.span.clone(),
             AstLiteral::UnsignedInteger(l) => l.span.clone(),
             AstLiteral::Float(l) => l.span.clone(),
+            AstLiteral::Char(l) => l.span.clone(),
             AstLiteral::Unit(l) => l.span.clone(),
+            AstLiteral::SelfLiteral(l) => l.span.clone(),
             AstLiteral::String(l) => l.span.clone(),
             AstLiteral::Boolean(l) => l.span.clone(),
             AstLiteral::List(l) => l.span.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstSelf {
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstCharLiteral {
+    pub span: Span,
+    pub value: char,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -458,6 +577,8 @@ pub enum AstType<'ast> {
     Integer(AstIntegerType),
     Float(AstFloatType),
     UnsignedInteger(AstUnsignedIntegerType),
+    Char(AstCharType),
+    SelfTy(AstSelfType),
     String(AstStringType),
     Named(AstNamedType<'ast>),
     Pointer(AstPointerType<'ast>),
@@ -474,6 +595,8 @@ impl AstType<'_> {
             AstType::Integer(t) => t.span.clone(),
             AstType::Float(t) => t.span.clone(),
             AstType::UnsignedInteger(t) => t.span.clone(),
+            AstType::Char(t) => t.span.clone(),
+            AstType::SelfTy(t) => t.span.clone(),
             AstType::String(t) => t.span.clone(),
             AstType::Named(t) => t.span.clone(),
             AstType::Pointer(t) => t.span.clone(),
@@ -482,6 +605,16 @@ impl AstType<'_> {
             AstType::Generic(t) => t.span.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstCharType {
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstSelfType {
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize)]

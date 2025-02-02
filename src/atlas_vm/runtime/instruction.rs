@@ -1,8 +1,10 @@
 //NB: This is a dumb down version of the instruction set.
 //A more powerful version will be done for the v0.5.2 & v0.5.3
 
+use std::collections::BTreeMap;
 use std::ops::Index;
 
+use crate::atlas_c::atlas_hir::signature::ConstantValue;
 use serde::{Deserialize, Serialize};
 
 #[repr(u8)]
@@ -13,6 +15,7 @@ pub enum Type {
     UnsignedInteger,
     Boolean,
     String,
+    Char,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -21,6 +24,7 @@ pub enum Instruction<'run> {
     PushFloat(f64),
     PushUnsignedInt(u64),
     PushBool(bool),
+    PushChar(char),
     /// Push a string from the constant pool
     /// The string is directly put in the memory and its pointer is pushed to the stack
     PushStr(usize),
@@ -107,19 +111,47 @@ pub enum Instruction<'run> {
     },
     /// Call a function by taking the top of the stack value as the fn_ptr
     Call {
-        args: u8,
+        nb_args: u8,
     },
 
-    CallFunction {
-        name: &'run str,
-        args: u8,
+    FunctionCall {
+        function_name: &'run str,
+        nb_args: u8,
     },
     ExternCall {
-        name: &'run str,
-        args: u8,
+        function_name: &'run str,
+        nb_args: u8,
     },
     Return,
 
+    /// Delete the object from memory (the object pointer is at the top of the stack)
+    DeleteObj,
+    /// Stack:
+    /// - **[ClassPtr,] -> [FieldValue,]**
+    GetField {
+        field_name: &'run str,
+    },
+    /// Stack:
+    /// - [ClassPtr, Value] -> []
+    SetField {
+        field_name: &'run str,
+    },
+    /// Create a new object
+    /// The information about the object is in the constant pool
+    NewObj {
+        class_name: &'run str,
+    },
+    /// This jumps to the correct position in the program to execute the method
+    ///
+    /// And creates a `self` variable in the var_map
+    MethodCall {
+        method_name: &'run str,
+        nb_args: u8,
+    },
+    StaticCall {
+        method_name: &'run str,
+        nb_args: u8,
+    },
     Halt,
 }
 
@@ -137,7 +169,7 @@ pub struct Program<'run> {
     pub labels: Vec<Label<'run>>,
     pub entry_point: String,
     pub libraries: Vec<ImportedLibrary>,
-    pub global: ConstantPool,
+    pub global: ConstantPool<'run>,
 }
 
 impl<'run> Index<usize> for Program<'run> {
@@ -171,9 +203,10 @@ impl Program<'_> {
             labels: vec![],
             entry_point: String::new(),
             global: ConstantPool {
-                string_pool: vec![],
-                list_pool: vec![],
-                function_pool: vec![],
+                string_pool: &[],
+                list_pool: &[],
+                function_pool: &[],
+                class_pool: &[],
             },
             libraries: vec![],
         }
@@ -181,26 +214,26 @@ impl Program<'_> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
-pub struct ConstantPool {
-    pub string_pool: Vec<String>,
-    pub list_pool: Vec<Constant>,
-    pub function_pool: Vec<usize>,
+pub struct ConstantPool<'run> {
+    //todo: Vec<T> -> &'run [T]
+    pub string_pool: &'run [&'run str],
+    pub list_pool: &'run [ConstantValue],
+    pub function_pool: &'run [usize],
+    pub class_pool: &'run [ConstantClass<'run>],
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
-//Temporary solution to the constant pool
-pub enum Constant {
-    String(String),
-    List(Vec<Constant>),
-    Integer(i64),
-    Float(f64),
-    UnsignedInteger(u64),
-    Bool(bool),
+pub struct ConstantClass<'run> {
+    pub name: &'run str,
+    pub fields: Vec<&'run str>,
+    pub constructor_nb_args: usize,
+    pub constants: BTreeMap<&'run str, ConstantValue>,
 }
+
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub struct Label<'run> {
-    pub name: String,
+    pub name: &'run str,
     pub position: usize,
-    pub body: Vec<Instruction<'run>>,
+    pub body: &'run [Instruction<'run>],
 }

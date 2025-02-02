@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 #[derive(Debug, Default)]
 pub struct VarMap<'run> {
-    var_map: HashMap<Key<'run>, VMData>,
+    pub var_map: HashMap<Key<'run>, VMData>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -24,18 +24,15 @@ impl<'run> VarMap<'run> {
     /// Because stack.pop() doesn't decrement the reference count of the value.
     pub fn insert(&mut self, key: Key<'run>, value: VMData, mem: &mut Memory) -> RuntimeResult<VMData> {
         let old_data = self.var_map.insert(key, value);
-        match old_data {
-            Some(old_data) => {
-                match old_data.tag {
-                    VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
-                        mem.rc_dec(old_data.as_object())?;
-                    }
-                    _ => {}
+        if let Some(old_data) = old_data {
+            match old_data.tag {
+                VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                    mem.rc_dec(old_data.as_object())?;
                 }
+                _ => {}
             }
-            None => {}
         }
-        Ok(old_data.unwrap_or_else(|| VMData::new_unit()))
+        Ok(old_data.unwrap_or(VMData::new_unit()))
     }
     pub fn get(&self, key: &Key<'run>) -> Option<&VMData> {
         self.var_map.get(key)

@@ -1,59 +1,33 @@
-import "std/io"
 import "std/list"
 
-//mat-mul
-func mat_mul(a: [[int64]], b: [[int64]]) -> [[int64]] {
-    let a_rows = len_double(a);
-    let a_cols = len(a[0]);
-    let b_rows = len_double(b);
-    let b_cols = len(b[0]);
-    let i_res = 0;
-    let result = new [[int64]; a_rows];
-    while i_res < a_rows {
-        result[i_res] = new [int64; b_cols];
-        i_res = i_res + 1;
-    }
-    let i = 0;
-    while i < a_rows {
-        let j = 0;
-        while j < b_cols {
-            let k = 0;
-            let sum = 0;
-            while k < a_cols {
-                sum = sum + a[i][k] * b[k][j];
-                k = k + 1;
-            }
-            result[i][j] = sum;
-            j = j + 1;
+public class String {
+    private:
+        s: [char];
+        len: uint64;
+    public:
+        const HELLO_WORLD: [char] = ['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'];
+    public:
+        String(s: [char]) {
+            self.len = len(s) as uint64;
+            self.s = s;
         }
-        i = i + 1;
-    }
-    return result;
+        ~String() {
+            delete self;
+        }
+        func hello_world() -> String {
+            return new String(String::HELLO_WORLD);
+        }
+        func len(self) -> uint64 {
+            return self.len + 5 as uint64;
+        }
 }
 
 func main() {
-    let a: [[int64]] = [[1, 2, 3], [4, 5, 6]];
-    let b: [[int64]] = [[7, 8], [9, 10], [11, 12]];
-    let result = mat_mul(a, b);
-    let i = 0;
-    while i < len_double(result) {
-        let j = 0;
-        while j < len(result[0]) {
-            print(" ");
-            print(result[i][j] as str);
-            j = j + 1;
-        }
-        println("");
-        i = i + 1;
-    }
-    //The result should be: [[58, 64], [139, 154]]
-
-    if "Hello" == "Hello" {
-        println("Hello is equal to Hello");
-    } else {
-        //This happens as of now but it will be fixed in the future with operator overloading
-        println("Hello is not equal to Hello for some reason");
-    }
-
-    println("Done");
+    let array = ['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'];
+    let s = new String(array);
+    s.len();
+    s.len;
+    String::hello_world().len();
+    new String(String::HELLO_WORLD);
+    delete s;
 }

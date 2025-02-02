@@ -48,7 +48,10 @@ pub fn input(state: VMState) -> Result<VMData, RuntimeError> {
         .object_map
         .put(ObjectKind::String(input.trim().to_string()));
     match obj_index {
-        Ok(index) => Ok(VMData::new_string(index)),
+        Ok(index) => {
+            println!("Input: {}", input.trim());
+            Ok(VMData::new_string(index))
+        }
         Err(_) => Err(RuntimeError::OutOfMemory),
     }
 }

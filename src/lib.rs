@@ -1,16 +1,30 @@
 pub mod atlas_vm;
-pub mod atlasc;
+pub mod atlas_c;
 pub mod atlas_lib;
 
-use atlasc::atlas_codegen::{arena::CodeGenArena, CodeGenUnit};
-use atlasc::atlas_frontend::parse;
-use atlasc::atlas_frontend::parser::arena::AstArena;
-use atlasc::atlas_hir::type_check_pass::TypeChecker;
-use atlasc::atlas_hir::{arena::HirArena, syntax_lowering_pass::AstSyntaxLoweringPass};
+use atlas_c::{
+    atlas_codegen::{
+        arena::CodeGenArena,
+        CodeGenUnit,
+    },
+    atlas_frontend::{
+        parse,
+        parser::arena::AstArena,
+    },
+    atlas_hir::{
+        arena::HirArena,
+        syntax_lowering_pass::AstSyntaxLoweringPass,
+        type_check_pass::TypeChecker,
+    },
+};
 use bumpalo::Bump;
 
-use std::{io::Write, path::PathBuf, time::Instant};
-
+use crate::atlas_vm::runtime::arena::RuntimeArena;
+use std::{
+    io::Write,
+    path::PathBuf,
+    time::Instant,
+};
 //todo: The pipeline of the compiler should be more straightforward and should include the "debug" and "release" modes
 //todo: There should also be a function for each stage of the pipeline
 
@@ -19,8 +33,8 @@ pub enum CompilationFlag {
     Debug,
 }
 
-fn get_path(path: &String) -> PathBuf {
-    let mut path_buf = PathBuf::from(path.clone());
+fn get_path(path: &str) -> PathBuf {
+    let mut path_buf = PathBuf::from(path.to_owned());
     if let Ok(current_dir) = std::env::current_dir() {
         if !path_buf.is_absolute() {
             path_buf = current_dir.join(path_buf);
@@ -90,15 +104,17 @@ pub fn run(path: String, _flag: CompilationFlag) -> miette::Result<()> {
     file.write_all(output.as_bytes()).unwrap();
 
     //run
+    let bump = Bump::new();
+    let runtime_arena = RuntimeArena::new(&bump);
+    let mut vm = atlas_vm::Atlas77VM::new(program, runtime_arena);
     let start = Instant::now();
-    let mut vm = atlas_vm::Atlas77VM::new(program);
     let res = vm.run();
     let end = Instant::now();
     match res {
         Ok(_) => {
             println!(
-                "Program ran successfully (time: {}ms)",
-                (end - start).as_millis()
+                "Program ran successfully (time: {}µs)",
+                (end - start).as_micros()
             );
         }
         Err(e) => {

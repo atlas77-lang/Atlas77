@@ -1,5 +1,5 @@
 use atlas_77::{build, run, CompilationFlag};
-use clap::{command, Parser, Subcommand};
+use clap::{command, Parser};
 
 #[derive(Parser)] // requires `derive` feature
 #[command(name = "Atlas77")]
@@ -26,7 +26,7 @@ enum AtlasRuntimeCLI {
     #[command(
         arg_required_else_help = true,
         about = "Compile a local package and all of its dependencies",
-        long_about = "Compile a local package and all of its dependencies. The output will be written to the current directory as `output.atlasc`. NB: That output file is not executable."
+        long_about = "Compile a local package and all of its dependencies. The output will be written to the current directory as `output.atlas_c`. NB: That output file is not executable."
     )]
     Build {
         file_path: String,
@@ -39,6 +39,8 @@ enum AtlasRuntimeCLI {
 
 
 fn main() -> miette::Result<()> {
+    //Set Backtrace to 1
+    std::env::set_var("RUST_BACKTRACE", "1");
     match AtlasRuntimeCLI::parse() {
         AtlasRuntimeCLI::Run { file_path, release, debug } => {
             if release && debug {

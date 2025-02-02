@@ -261,9 +261,20 @@ impl VMData {
     enum_variant_function!(as_u64, is_u64, TAG_U64, u64);
     enum_variant_function!(as_bool, is_bool, TAG_BOOL, bool);
     enum_variant_function!(as_char, is_char, TAG_CHAR, char);
-    enum_variant_function!(as_unit, is_unit, TAG_UNIT, ());
     enum_variant_function!(as_stack_ptr, is_stack_ptr, TAG_STACK_PTR, usize);
     enum_variant_function!(as_fn_ptr, is_fn_ptr, TAG_FN_PTR, usize);
+    //Clippy doesn't like #[must_use] on () return types
+    #[inline(always)]
+    pub fn as_unit(self) {
+        unsafe {
+            self.data.as_unit
+        }
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn is_unit(self) -> bool {
+        self.tag == Self::TAG_UNIT
+    }
 
     #[inline(always)]
     #[must_use]

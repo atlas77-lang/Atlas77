@@ -1,6 +1,11 @@
-use miette::{SourceOffset, SourceSpan};
+pub mod case;
 
-use crate::atlasc::atlas_frontend::{
+use heck::{ToPascalCase, ToSnakeCase};
+use miette::{SourceOffset, SourceSpan};
+use std::collections::BTreeMap;
+
+use crate::atlas_c::atlas_frontend::parser::ast::{AstClass, AstConstructor, AstDestructor, AstIdentifier, AstMethod, AstMethodModifier, AstNamedType};
+use crate::atlas_c::atlas_frontend::{
     parse,
     parser::{
         arena::AstArena,
@@ -17,14 +22,18 @@ const LIST_ATLAS: &str = include_str!("../../../atlas_lib/std/list.atlas");
 const MATH_ATLAS: &str = include_str!("../../../atlas_lib/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../atlas_lib/std/string.atlas");
 
-use crate::atlasc::atlas_hir::expr::{HirCastExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
-use crate::atlasc::atlas_hir::{
+use crate::atlas_c::atlas_hir::error::NonConstantValueError;
+use crate::atlas_c::atlas_hir::expr::{HirCastExpr, HirCharLiteralExpr, HirDeleteExpr, HirFieldAccessExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirNewObjExpr, HirSelfLiteral, HirStaticAccessExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
+use crate::atlas_c::atlas_hir::item::{HirClass, HirClassConstructor, HirClassMethod};
+use crate::atlas_c::atlas_hir::signature::{ConstantValue, HirClassConstSignature, HirClassConstructorSignature, HirClassFieldSignature, HirClassMethodModifier, HirClassMethodSignature, HirClassSignature};
+use crate::atlas_c::atlas_hir::syntax_lowering_pass::case::Case;
+use crate::atlas_c::atlas_hir::{
     arena::HirArena,
     error::{HirError, HirResult, UnsupportedExpr, UnsupportedStatement},
     expr::{
         HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirExpr,
         HirFloatLiteralExpr, HirFunctionCallExpr, HirIdentExpr, HirIntegerLiteralExpr,
-        HirUnsignedIntegerLiteralExpr, UnaryOp, UnaryOpExpr,
+        HirUnaryOp, HirUnsignedIntegerLiteralExpr, UnaryOpExpr,
     },
     item::HirFunction,
     signature::{HirFunctionParameterSignature, HirFunctionSignature, HirModuleSignature, HirTypeParameterItemSignature},
@@ -84,8 +93,18 @@ where
             AstItem::Func(f) => {
                 let fun = self.visit_func(f)?;
                 let name = self.arena.names().get(f.name.name);
+                if !name.is_snake_case() {
+                    eprintln!("Warning: {} is not snake case", name);
+                    eprintln!("Try using snake_case for function names e.g. {}", name.to_snake_case());
+                }
                 module_signature.functions.insert(name, fun.signature);
                 module_body.functions.insert(name, fun);
+            }
+            //todo: add support for classes
+            AstItem::Class(c) => {
+                let class = self.visit_class(c)?;
+                module_signature.classes.insert(class.name, class.signature);
+                module_body.classes.insert(class.name, class);
             }
             AstItem::Import(i) => {
                 let hir = self.visit_import(i)?;
@@ -99,10 +118,20 @@ where
             }
             AstItem::ExternFunction(e) => {
                 let name = self.arena.names().get(e.name.name);
+                if !name.is_snake_case() {
+                    eprintln!("Warning: {} is not snake case", name);
+                    eprintln!("Try using snake_case for function names e.g. {}", name.to_snake_case());
+                }
                 let ty = self.visit_ty(e.ret)?;
 
                 let mut params: Vec<&HirFunctionParameterSignature<'hir>> = Vec::new();
                 let mut type_params: Vec<&HirTypeParameterItemSignature<'_>> = Vec::new();
+
+                let generics = if e.generics.is_some() {
+                    Some(e.generics.unwrap().iter().map(|g| self.visit_generic(g)).collect::<HirResult<Vec<_>>>()?)
+                } else {
+                    None
+                };
 
                 for (arg_name, arg_ty) in e.args_name.iter().zip(e.args_ty.iter()) {
                     let hir_arg_ty = self.visit_ty(arg_ty)?;
@@ -124,7 +153,9 @@ where
                 }
                 let hir = self.arena.intern(HirFunctionSignature {
                     span: e.span.clone(),
+                    vis: e.vis.into(),
                     params,
+                    generics,
                     type_params,
                     return_ty: ty,
                     return_ty_span: Some(e.ret.span()),
@@ -135,6 +166,274 @@ where
             _ => {}
         }
         Ok(())
+    }
+
+    //todo: Add constraints to generics
+    fn visit_generic(&self, generics: &'ast AstNamedType) -> HirResult<&'hir HirTypeParameterItemSignature<'hir>> {
+        let name = self.arena.names().get(generics.name.name);
+        let hir = self.arena.intern(HirTypeParameterItemSignature {
+            span: generics.span.clone(),
+            name,
+            name_span: generics.name.span.clone(),
+        });
+        Ok(hir)
+    }
+
+    fn visit_class(&self, node: &'ast AstClass<'ast>) -> HirResult<HirClass<'hir>> {
+        let name = self.arena.names().get(node.name.name);
+        if !name.is_pascal_case() {
+            eprintln!("Warning: {} is not pascal case", name);
+            eprintln!("Try using PascalCase for class names e.g. {}", name.to_pascal_case());
+        }
+
+        let mut methods = Vec::new();
+        for method in node.methods.iter() {
+            let fun = self.visit_method(method)?;
+            methods.push(fun);
+        }
+
+        let mut fields = Vec::new();
+        for field in node.fields.iter() {
+            let ty = self.visit_ty(field.ty)?;
+            let name = self.arena.names().get(field.name.name);
+            fields.push(HirClassFieldSignature {
+                span: field.span.clone(),
+                vis: field.vis.into(),
+                name,
+                name_span: field.name.span.clone(),
+                ty,
+                ty_span: field.ty.span(),
+            });
+        }
+
+        let mut operators = Vec::new();
+        for operator in node.operators.iter() {
+            operators.push(self.visit_bin_op(&operator.op)?);
+        }
+
+        let mut constants: BTreeMap<&'hir str, &'hir HirClassConstSignature<'hir>> = BTreeMap::new();
+        for constant in node.constants.iter() {
+            let ty = self.visit_ty(constant.ty)?;
+            let name = self.arena.names().get(constant.name.name);
+            let const_expr = self.visit_expr(constant.value)?;
+            let value = match ConstantValue::try_from(const_expr) {
+                Ok(value) => value,
+                Err(_) => {
+                    return Err(HirError::NonConstantValue(NonConstantValueError {
+                        span: SourceSpan::new(
+                            SourceOffset::from(constant.value.span().start),
+                            constant.value.span().end - constant.value.span().start,
+                        ),
+                        src: self.src.clone(),
+                    }))
+                }
+            };
+            constants.insert(name, self.arena.intern(HirClassConstSignature {
+                span: constant.span.clone(),
+                vis: node.vis.into(),
+                name,
+                name_span: constant.name.span.clone(),
+                ty,
+                ty_span: constant.ty.span(),
+                value: self.arena.intern(value),
+            }));
+        }
+
+        let constructor = self.visit_constructor(node.constructor, &fields)?;
+        let destructor = self.visit_destructor(node.destructor)?;
+        let constructor_signature = HirClassConstructorSignature {
+            span: node.span.clone(),
+            params: constructor.params.to_vec(),
+            type_params: constructor.type_params.to_vec(),
+        };
+        let destructor_signature = HirClassConstructorSignature {
+            span: node.span.clone(),
+            params: destructor.params.to_vec(),
+            type_params: destructor.type_params.to_vec(),
+        };
+
+        let signature = self.arena.intern(HirClassSignature {
+            span: node.span.clone(),
+            vis: node.vis.into(),
+            name,
+            methods: {
+                let mut map = BTreeMap::new();
+                for method in methods.iter() {
+                    map.insert(method.name, method.signature);
+                }
+                map
+            },
+            fields: {
+                let mut map = BTreeMap::new();
+                for field in fields.iter() {
+                    map.insert(field.name, field.clone());
+                }
+                map
+            },
+            operators,
+            constants,
+            constructor: constructor_signature,
+            destructor: destructor_signature,
+        });
+
+        Ok(HirClass {
+            span: node.span.clone(),
+            name,
+            name_span: node.name.span.clone(),
+            signature,
+            methods,
+            fields,
+            constructor,
+            destructor,
+        })
+    }
+
+    fn visit_method(&self, node: &'ast AstMethod<'ast>) -> HirResult<HirClassMethod<'hir>> {
+        let type_parameters = node
+            .args
+            .iter()
+            .map(|arg| self.visit_type_param_item(arg))
+            .collect::<HirResult<Vec<_>>>();
+        let ret_type_span = node.ret.span();
+        let ret_type = self.visit_ty(node.ret)?;
+        let parameters = node
+            .args
+            .iter()
+            .map(|arg| self.visit_func_param(arg))
+            .collect::<HirResult<Vec<_>>>();
+
+        let body = self.visit_block(node.body)?;
+        let signature = self.arena.intern(HirClassMethodSignature {
+            modifier: match node.modifier {
+                AstMethodModifier::Const => HirClassMethodModifier::Const,
+                AstMethodModifier::Static => HirClassMethodModifier::Static,
+                AstMethodModifier::None => HirClassMethodModifier::None,
+            },
+            span: node.span.clone(),
+            vis: node.vis.into(),
+            params: parameters?,
+            //Generics aren't supported yet for normal functions
+            generics: None,
+            type_params: type_parameters?,
+            return_ty: ret_type,
+            return_ty_span: Some(ret_type_span),
+        });
+        let method = HirClassMethod {
+            span: node.span.clone(),
+            name: self.arena.names().get(node.name.name),
+            name_span: node.name.span.clone(),
+            signature,
+            body,
+        };
+        Ok(method)
+    }
+
+    fn visit_constructor(&self, constructor: Option<&'ast AstConstructor<'ast>>, fields: &[HirClassFieldSignature<'hir>]) -> HirResult<HirClassConstructor<'hir>> {
+        if constructor.is_none() {
+            let mut params: Vec<&'hir HirFunctionParameterSignature<'hir>> = Vec::new();
+            for field in fields.iter() {
+                let ty = field.ty;
+                let name = field.name;
+                params.push(self.arena.intern(HirFunctionParameterSignature {
+                    span: field.span.clone(),
+                    name,
+                    name_span: field.name_span.clone(),
+                    ty,
+                    ty_span: field.ty_span.clone(),
+                }));
+            }
+            let mut type_params: Vec<&'hir HirTypeParameterItemSignature<'hir>> = Vec::new();
+            for type_param in params.iter() {
+                type_params.push(self.arena.intern(HirTypeParameterItemSignature {
+                    span: type_param.span.clone(),
+                    name: type_param.name,
+                    name_span: type_param.name_span.clone(),
+                }));
+            }
+            let hir = HirClassConstructor {
+                span: logos::Span::default(),
+                params,
+                type_params,
+                body: HirBlock {
+                    span: logos::Span::default(),
+                    statements: Vec::new(),
+                },
+            };
+            return Ok(hir);
+        }
+        let constructor = constructor.unwrap();
+        let mut params: Vec<&'hir HirFunctionParameterSignature<'hir>> = Vec::new();
+        for param in constructor.args.iter() {
+            let ty = self.visit_ty(param.ty)?;
+            let name = self.arena.names().get(param.name.name);
+            params.push(self.arena.intern(HirFunctionParameterSignature {
+                span: param.span.clone(),
+                name,
+                name_span: param.name.span.clone(),
+                ty,
+                ty_span: param.ty.span(),
+            }));
+        }
+
+        let mut type_params: Vec<&'hir HirTypeParameterItemSignature<'hir>> = Vec::new();
+        for type_param in params.iter() {
+            type_params.push(self.arena.intern(HirTypeParameterItemSignature {
+                span: type_param.span.clone(),
+                name: type_param.name,
+                name_span: type_param.name_span.clone(),
+            }));
+        }
+        let hir = HirClassConstructor {
+            span: constructor.span.clone(),
+            params,
+            type_params,
+            body: self.visit_block(constructor.body)?,
+        };
+        Ok(hir)
+    }
+
+    fn visit_destructor(&self, destructor: Option<&'ast AstDestructor<'ast>>) -> HirResult<HirClassConstructor<'hir>> {
+        if destructor.is_none() {
+            let hir = HirClassConstructor {
+                span: logos::Span::default(),
+                params: Vec::new(),
+                type_params: Vec::new(),
+                body: HirBlock {
+                    span: logos::Span::default(),
+                    statements: Vec::new(),
+                },
+            };
+            return Ok(hir);
+        }
+        let destructor = destructor.unwrap();
+        let mut params: Vec<&'hir HirFunctionParameterSignature<'hir>> = Vec::new();
+        for param in destructor.args.iter() {
+            let ty = self.visit_ty(param.ty)?;
+            let name = self.arena.names().get(param.name.name);
+            params.push(self.arena.intern(HirFunctionParameterSignature {
+                span: param.span.clone(),
+                name,
+                name_span: param.name.span.clone(),
+                ty,
+                ty_span: param.ty.span(),
+            }));
+        }
+
+        let mut type_params: Vec<&'hir HirTypeParameterItemSignature<'hir>> = Vec::new();
+        for type_param in params.iter() {
+            type_params.push(self.arena.intern(HirTypeParameterItemSignature {
+                span: type_param.span.clone(),
+                name: type_param.name,
+                name_span: type_param.name_span.clone(),
+            }));
+        }
+        let hir = HirClassConstructor {
+            span: destructor.span.clone(),
+            params,
+            type_params,
+            body: self.visit_block(destructor.body)?,
+        };
+        Ok(hir)
     }
 
     //This needs to be generalized
@@ -206,7 +505,7 @@ where
                     self.arena,
                     allocated_ast,
                     self.ast_arena,
-                    IO_ATLAS.to_string(),
+                    FILE_ATLAS.to_string(),
                 ));
                 hir.lower()
             }
@@ -319,21 +618,29 @@ where
             }
             AstStatement::Const(c) => {
                 let name = self.arena.names().get(c.name.name);
-                let ty = c.ty.map(|ty| self.visit_ty(ty)).transpose()?;
+                if !name.is_snake_case() {
+                    eprintln!("Warning: {} is not snake case", name);
+                    eprintln!("Try using snake_case for variable names e.g. {}", name.to_snake_case());
+                }
+                let ty = self.visit_ty(c.ty)?;
 
                 let value = self.visit_expr(c.value)?;
                 let hir = HirStatement::Const(HirLetStmt {
                     span: node.span(),
                     name,
                     name_span: c.name.span.clone(),
-                    ty,
-                    ty_span: ty.map(|_| c.ty.unwrap().span()),
+                    ty: Some(ty),
+                    ty_span: Some(c.ty.span()),
                     value,
                 });
                 Ok(hir)
             }
             AstStatement::Let(l) => {
                 let name = self.arena.names().get(l.name.name);
+                if !name.is_snake_case() {
+                    eprintln!("Warning: {} is not snake case", name);
+                    eprintln!("Try using snake_case for variable names e.g. {}", name.to_snake_case());
+                }
                 let ty = l.ty.map(|ty| self.visit_ty(ty)).transpose()?;
 
                 let value = self.visit_expr(l.value)?;
@@ -435,8 +742,8 @@ where
                 let hir = HirExpr::Unary(UnaryOpExpr {
                     span: node.span(),
                     op: match u.op {
-                        Some(AstUnaryOp::Neg) => Some(UnaryOp::Neg),
-                        Some(AstUnaryOp::Not) => Some(UnaryOp::Not),
+                        Some(AstUnaryOp::Neg) => Some(HirUnaryOp::Neg),
+                        Some(AstUnaryOp::Not) => Some(HirUnaryOp::Not),
                         _ => None,
                     },
                     expr: Box::new(expr.clone()),
@@ -498,7 +805,26 @@ where
                 });
                 Ok(hir)
             }
-
+            AstExpr::Delete(d) => {
+                let hir = HirExpr::Delete(HirDeleteExpr {
+                    span: node.span(),
+                    expr: Box::new(self.visit_expr(d.target)?),
+                });
+                Ok(hir)
+            }
+            AstExpr::NewObj(obj) => {
+                let hir = HirExpr::NewObj(HirNewObjExpr {
+                    span: node.span(),
+                    ty: self.arena.types().get_named_ty(obj.ty.name, obj.ty.span.clone()),
+                    args: obj
+                        .args
+                        .iter()
+                        .map(|arg| self.visit_expr(arg))
+                        .collect::<HirResult<Vec<_>>>()?,
+                    args_ty: Vec::new(),
+                });
+                Ok(hir)
+            }
             AstExpr::Literal(l) => {
                 let hir = match l {
                     AstLiteral::Integer(i) => HirExpr::IntegerLiteral(HirIntegerLiteralExpr {
@@ -523,8 +849,24 @@ where
                             ty: self.arena.types().get_uint64_ty(),
                         })
                     }
+                    AstLiteral::SelfLiteral(_) => {
+                        HirExpr::SelfLiteral(HirSelfLiteral {
+                            span: l.span(),
+                            ty: self.arena.types().get_uninitialized_ty(),
+                        })
+                    }
+                    AstLiteral::Char(c) => {
+                        HirExpr::CharLiteral(HirCharLiteralExpr {
+                            span: l.span(),
+                            value: c.value,
+                            ty: self.arena.types().get_char_ty(),
+                        })
+                    }
                     AstLiteral::Unit(_) => {
-                        HirExpr::UnitLiteral(HirUnitLiteralExpr { span: l.span() })
+                        HirExpr::UnitLiteral(HirUnitLiteralExpr {
+                            span: l.span(),
+                            ty: self.arena.types().get_unit_ty(),
+                        })
                     }
                     AstLiteral::String(s) => {
                         HirExpr::StringLiteral(HirStringLiteralExpr {
@@ -548,15 +890,53 @@ where
                 };
                 Ok(hir)
             }
-            _ => Err(HirError::UnsupportedExpr(UnsupportedExpr {
-                span: SourceSpan::new(
-                    SourceOffset::from(node.span().start),
-                    node.span().end - node.span().start,
-                ),
-                expr: format!("{:?}", node),
-                src: self.src.clone(),
-            })),
+            AstExpr::StaticAccess(s) => {
+                let hir = HirExpr::StaticAccess(HirStaticAccessExpr {
+                    span: node.span(),
+                    target: Box::new(self.visit_identifier(s.target)?),
+                    field: Box::new(HirIdentExpr {
+                        name: self.arena.names().get(s.field.name),
+                        span: s.field.span.clone(),
+                        ty: self.arena.types().get_uninitialized_ty(),
+                    }),
+                    ty: self.arena.types().get_uninitialized_ty(),
+                });
+                Ok(hir)
+            }
+            AstExpr::FieldAccess(f) => {
+                let hir = HirExpr::FieldAccess(HirFieldAccessExpr {
+                    span: node.span(),
+                    target: Box::new(self.visit_expr(f.target)?),
+                    field: Box::new(HirIdentExpr {
+                        name: self.arena.names().get(f.field.name),
+                        span: f.field.span.clone(),
+                        ty: self.arena.types().get_uninitialized_ty(),
+                    }),
+                    ty: self.arena.types().get_uninitialized_ty(),
+                });
+                Ok(hir)
+            }
+
+            _ => {
+                //todo: if/else as an expression
+                Err(HirError::UnsupportedExpr(UnsupportedExpr {
+                    span: SourceSpan::new(
+                        SourceOffset::from(node.span().start),
+                        node.span().end - node.span().start,
+                    ),
+                    expr: format!("{:?}", node),
+                    src: self.src.clone(),
+                }))
+            }
         }
+    }
+
+    fn visit_identifier(&self, node: &'ast AstIdentifier<'ast>) -> HirResult<HirIdentExpr<'hir>> {
+        Ok(HirIdentExpr {
+            name: self.arena.names().get(node.name),
+            span: node.span.clone(),
+            ty: self.arena.types().get_uninitialized_ty(),
+        })
     }
 
     fn visit_bin_op(&self, bin_op: &'ast AstBinaryOp) -> HirResult<HirBinaryOp> {
@@ -594,7 +974,10 @@ where
         let body = self.visit_block(node.body)?;
         let signature = self.arena.intern(HirFunctionSignature {
             span: node.span.clone(),
+            vis: node.vis.into(),
             params: parameters?,
+            //Generics aren't supported yet for normal functions
+            generics: None,
             type_params: type_parameters?,
             return_ty: ret_type,
             return_ty_span: Some(ret_type_span),
@@ -646,14 +1029,28 @@ where
             AstType::Boolean(_) => self.arena.types().get_boolean_ty(),
             AstType::Integer(_) => self.arena.types().get_integer64_ty(),
             AstType::Float(_) => self.arena.types().get_float64_ty(),
+            AstType::Char(_) => self.arena.types().get_char_ty(),
             AstType::UnsignedInteger(_) => self.arena.types().get_uint64_ty(),
             AstType::Unit(_) => self.arena.types().get_unit_ty(),
             AstType::String(_) => self.arena.types().get_str_ty(),
+            AstType::Named(n) => {
+                let name = self.arena.names().get(n.name.name);
+                self.arena.types().get_named_ty(name, n.span.clone())
+            }
             AstType::List(l) => {
                 let ty = self.visit_ty(l.inner)?;
                 self.arena.types().get_list_ty(ty)
             }
-            _ => unimplemented!("visit_ty, {:?}", node),
+            //The self ty is replaced during the type checking phase
+            AstType::SelfTy(_) => self.arena.types().get_uninitialized_ty(),
+            _ => return Err(HirError::UnsupportedExpr(UnsupportedExpr {
+                span: SourceSpan::new(
+                    SourceOffset::from(node.span().start),
+                    node.span().end - node.span().start,
+                ),
+                expr: format!("{:?}", node),
+                src: self.src.clone(),
+            })),
         };
         Ok(ty)
     }

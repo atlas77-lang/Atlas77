@@ -1,12 +1,5 @@
-//[T] is a statically sized list of element of type T.
-//The list is 0-indexed.
-//The list is immutable.
-
-extern len(l: [int64]) -> int64
-extern len_double(l: [[int64]]) -> int64
-extern len_f(l: [float64]) -> int64
-extern len_double_f(l: [[float64]]) -> int64
-extern get(l: [int64], i: int64) -> int64
-extern set(l: [int64] index: uint64, v: int64) -> [int64]
-extern slice(l: [int64], start: uint64, end: uint64) -> [int64]
-
+public extern len<T>(l: [T]) -> int64
+public extern slice<T>(l: [T], start: int64, end: int64) -> [T]
+public extern pop<T>(l: [T]) -> T
+public extern push<T>(l: [T], val: T) -> [T]
+public extern remove<T>(l: [T], index: int64) -> [T]

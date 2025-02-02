@@ -1,31 +1,31 @@
-use crate::atlasc::atlas_frontend::lexer::token::{LexingError, Token, TokenKind};
+use crate::atlas_c::atlas_frontend::lexer::token::{LexingError, Token, TokenKind};
 use logos::{Logos, Span};
 
 pub mod token;
 
 #[derive(Debug)]
 pub struct AtlasLexer<'lex> {
-    path: &'lex str,
+    _path: &'lex str,
     pub source: String,
 }
 
 impl<'lex> AtlasLexer<'lex> {
-    pub fn new(path: &'lex str, source: String) -> Self {
+    pub fn new(_path: &'lex str, source: String) -> Self {
         AtlasLexer {
-            path,
+            _path,
             source,
         }
     }
-    pub fn tokenize(&mut self) -> Result<Vec<Token>, LexingError> {
+    pub fn tokenize(&mut self) -> Result<Vec<Token>, (LexingError, Span)> {
         let lex = TokenKind::lexer(&self.source);
-        let mut res: Vec<Result<Token, LexingError>> = lex.spanned().map(|(kind, span)| {
+        let mut res: Vec<Result<Token, (LexingError, Span)>> = lex.spanned().map(|(kind, span)| {
             match kind {
                 Ok(kind) => Ok(Token::new(span, kind)),
-                Err(e) => Err(e),
+                Err(e) => Err((e, span)),
             }
         }).collect::<Vec<_>>();
         res.push(Ok(Token::new(Span::default(), TokenKind::EoI)));
-        res.into_iter().collect::<Result<Vec<_>, LexingError>>()
+        res.into_iter().collect::<Result<_, _>>()
     }
 }
 

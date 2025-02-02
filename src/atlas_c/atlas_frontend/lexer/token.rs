@@ -67,6 +67,8 @@ pub enum TokenKind {
     //Need to also drop the quotes
     #[regex("\"[^\"]*\"", |lex| lex.slice()[1..lex.slice().len()-1].to_string())]
     StringLiteral(String),
+    #[regex("'.'", |lex| lex.slice().chars().nth(1).unwrap())]
+    Char(char),
     #[regex("[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
     Identifier(String),
     #[regex("[0-9]+", |lex| lex.slice().parse())]
@@ -74,11 +76,10 @@ pub enum TokenKind {
     #[regex("[0-9]+\\.[0-9]+", |lex| lex.slice().parse())]
     Float(f64),
     //#[regex("[0-9]+", |lex| lex.slice().parse())]
+    /// Unused for now, once trailing is implemented, this will be used
     UnsignedInteger(u64),
     #[regex("true|false", |lex| lex.slice().parse())]
     Bool(bool),
-    #[regex("'.'", |lex| lex.slice().chars().nth(1).unwrap())]
-    Char(char),
     #[regex(r"//.*", |lex| lex.slice().to_string())]
     Comments(String),
     #[token("(")]
@@ -96,27 +97,27 @@ pub enum TokenKind {
     #[token(",")]
     Comma,
     #[token("+")]
-    OpAdd,
+    Plus,
     #[token("+=")]
     OpAssignAdd,
     #[token("-")]
-    OpSub,
+    Minus,
     #[token("-=")]
     OpAssignSub,
     #[token("/")]
-    OpDiv,
+    Slash,
     #[token("/=")]
     OpAssignDiv,
     #[token("*")]
-    OpMul,
+    Star,
     #[token("*=")]
     OpAssignMul,
     #[token("%")]
-    OpMod,
-    #[token("=")]
-    OpAssign,
+    Percent,
     #[token("%=")]
     OpAssignMod,
+    #[token("=")]
+    OpAssign,
     #[token("\\")]
     BackSlash,
     #[token(";")]
@@ -125,12 +126,10 @@ pub enum TokenKind {
     Quote,
     #[token("?")]
     Interrogation,
-    #[token("@")]
-    Generic,
     #[token("==")]
-    OpEq,
+    EqEq,
     #[token("!=")]
-    OpNEq,
+    NEq,
     #[token("!")]
     Bang,
     #[token("..")]
@@ -146,13 +145,13 @@ pub enum TokenKind {
     #[token("<-")]
     LArrow,
     #[token("<=")]
-    OpLessThanEq,
+    LFatArrow,
     #[token("<")]
-    OpLessThan,
+    LAngle,
     #[token(">=")]
     OpGreaterThanEq,
     #[token(">")]
-    OpGreaterThan,
+    RAngle,
     #[token("&&")]
     OpAnd,
     #[token("&")]
@@ -162,9 +161,13 @@ pub enum TokenKind {
     #[token("|")]
     Pipe,
     #[token("=>")]
-    FatArrow,
+    RFatArrow,
     #[token("~")]
     Tilde,
+    #[token("self")]
+    KwSelf,
+    #[token("operator")]
+    KwOperator,
     #[token("class")]
     KwClass,
     #[token("new")]
@@ -174,7 +177,8 @@ pub enum TokenKind {
     #[token("func")]
     KwFunc,
     #[token("where")]
-    KwWhere, //Used for generics constraints and bounds (i.e. func foo(arg: @T) -> T where T: Add)
+    //Used for generics constraints and bounds (i.e. func foo(arg: @T) -> T where T: Add)
+    KwWhere,
     #[token("extern")]
     KwExtern,
     #[token("struct")]
@@ -231,7 +235,7 @@ pub enum TokenKind {
     CharTy,
     #[token("bool")]
     BoolTy,
-    #[token("self")]
+    #[token("Self")]
     SelfTy,
     #[token("str")]
     StrTy,

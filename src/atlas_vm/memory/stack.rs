@@ -36,6 +36,9 @@ impl Stack {
             top: 0,
         }
     }
+    pub fn clear(&mut self) {
+        self.top = 0;
+    }
 
     pub fn push(&mut self, val: VMData) -> Result<(), RuntimeError> {
         if self.top < STACK_SIZE {
@@ -43,7 +46,7 @@ impl Stack {
             self.top += 1;
             Ok(())
         } else {
-            Err(RuntimeError::StackOverflow)
+            Self::push_stack_overflow()
         }
     }
     pub fn push_with_rc(&mut self, val: VMData, mem: &mut Memory) -> Result<(), RuntimeError> {
@@ -58,7 +61,7 @@ impl Stack {
             self.top += 1;
             Ok(())
         } else {
-            Err(RuntimeError::StackOverflow)
+            Self::push_stack_overflow()
         }
     }
 
@@ -76,28 +79,48 @@ impl Stack {
         Ok(())
     }
 
+    #[inline(always)]
     pub fn pop(&mut self) -> Result<VMData, RuntimeError> {
-        if self.top != 0 {
-            self.top -= 1;
-            Ok(self.values[self.top])
-        } else {
-            Err(RuntimeError::StackUnderflow)
+        self.top = self.top.wrapping_sub(1); // Always decrement
+
+        // If underflow happens, restore `self.top` and return an error.
+        if self.top == usize::MAX {
+            self.top = 0; // Restore previous state
+            return Self::pop_stack_underflow();
         }
+        Ok(self.values[self.top])
     }
     pub fn pop_with_rc(&mut self, mem: &mut Memory) -> Result<VMData, RuntimeError> {
-        if self.top != 0 {
-            self.top -= 1;
-            let r = self.values[self.top];
-            match r.tag {
-                VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
-                    mem.rc_dec(r.as_object())?;
-                }
-                _ => {}
-            }
-            Ok(r)
-        } else {
-            Err(RuntimeError::StackUnderflow)
+        self.top = self.top.wrapping_sub(1); // Always decrement
+
+        if self.top == usize::MAX {
+            self.top = 0;
+            return Self::pop_stack_underflow();
         }
+
+        let r = self.values[self.top];
+        //This needs to become a comparison with r.tag & TAG_OBJECT == 0
+        //TAG_OBJECT needs to be smaller than TAG_LIST and TAG_STR
+        //This would allow for a single comparison instead of 3
+        match r.tag {
+            VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                mem.rc_dec(r.as_object())?;
+            }
+            _ => {}
+        }
+        Ok(r)
+    }
+
+    #[cold]
+    #[inline(never)]
+    fn pop_stack_underflow() -> Result<VMData, RuntimeError> {
+        Err(RuntimeError::StackUnderflow)
+    }
+
+    #[cold]
+    #[inline(never)]
+    fn push_stack_overflow() -> Result<(), RuntimeError> {
+        Err(RuntimeError::StackOverflow)
     }
 
     #[inline(always)]

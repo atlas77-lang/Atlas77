@@ -4,478 +4,582 @@
             name: "main",
             position: 0,
             body: [
-                PushUnsignedInt(2),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushUnsignedInt(3),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushInt(1),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(2),
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushInt(3),
-                ListStore,
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushUnsignedInt(3),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushInt(4),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(5),
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushInt(6),
-                ListStore,
-                ListStore,
-                Store(
-                    var_name: "a",
-                ),
-                PushUnsignedInt(3),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushUnsignedInt(2),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushInt(7),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(8),
-                ListStore,
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushUnsignedInt(2),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushInt(9),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(10),
-                ListStore,
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushUnsignedInt(2),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushInt(11),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushInt(12),
-                ListStore,
-                ListStore,
-                Store(
-                    var_name: "b",
-                ),
-                Load(
-                    var_name: "a",
-                ),
-                Load(
-                    var_name: "b",
-                ),
-                CallFunction(
-                    name: "mat_mul",
-                    args: 2,
-                ),
-                Store(
-                    var_name: "result",
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "result",
-                ),
-                ExternCall(
-                    name: "len_double",
-                    args: 1,
-                ),
-                Lt,
-                JmpZ(
-                    pos: 37,
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "j",
-                ),
-                Load(
-                    var_name: "j",
-                ),
-                Load(
-                    var_name: "result",
-                ),
-                PushInt(0),
-                ListLoad,
-                ExternCall(
-                    name: "len",
-                    args: 1,
-                ),
-                Lt,
-                JmpZ(
-                    pos: 18,
-                ),
                 PushStr(0),
                 ExternCall(
-                    name: "print",
-                    args: 1,
+                    function_name: "println",
+                    nb_args: 1,
                 ),
                 Pop,
-                Load(
-                    var_name: "result",
+                PushUnsignedInt(12),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                NewObj(
+                    class_name: "Char",
                 ),
-                Load(
-                    var_name: "i",
+                PushChar('H'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
                 ),
-                ListLoad,
-                Load(
-                    var_name: "j",
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                NewObj(
+                    class_name: "Char",
                 ),
-                ListLoad,
-                CastTo(String),
-                ExternCall(
-                    name: "print",
-                    args: 1,
+                PushChar('e'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
                 ),
-                Pop,
-                Load(
-                    var_name: "j",
+                ListStore,
+                Dup,
+                PushUnsignedInt(2),
+                Swap,
+                NewObj(
+                    class_name: "Char",
                 ),
-                PushInt(1),
-                IAdd,
+                PushChar('l'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(3),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('l'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(4),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('o'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(5),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar(' '),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(6),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('W'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(7),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('o'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(8),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('r'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(9),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('l'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(10),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('d'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(11),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('!'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
                 Store(
-                    var_name: "j",
+                    var_name: "chars",
+                ),
+                NewObj(
+                    class_name: "String",
+                ),
+                Load(
+                    var_name: "chars",
+                ),
+                MethodCall(
+                    method_name: "String.String",
+                    nb_args: 1,
+                ),
+                Store(
+                    var_name: "s",
+                ),
+                Load(
+                    var_name: "s",
+                ),
+                MethodCall(
+                    method_name: "String.to_str",
+                    nb_args: 0,
+                ),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
+                PushInt(0),
+                Load(
+                    var_name: "s",
+                ),
+                PushInt(0),
+                MethodCall(
+                    method_name: "String.get",
+                    nb_args: 1,
+                ),
+                PushChar('z'),
+                SetField(
+                    field_name: "value",
                 ),
                 PushUnit,
                 Pop,
-                Jmp(
-                    pos: -24,
+                Load(
+                    var_name: "s",
                 ),
+                MethodCall(
+                    method_name: "String.to_str",
+                    nb_args: 0,
+                ),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
+                StaticCall(
+                    method_name: "String::hello_world",
+                    nb_args: 0,
+                ),
+                Store(
+                    var_name: "s2",
+                ),
+                Load(
+                    var_name: "s2",
+                ),
+                MethodCall(
+                    method_name: "String.to_str",
+                    nb_args: 0,
+                ),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
                 PushStr(1),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Pop,
-                Load(
-                    var_name: "i",
-                ),
-                PushInt(1),
-                IAdd,
                 Store(
-                    var_name: "i",
+                    var_name: "s3",
                 ),
-                PushUnit,
-                Pop,
-                Jmp(
-                    pos: -41,
+                Load(
+                    var_name: "s3",
                 ),
-                PushStr(2),
-                PushStr(3),
-                Eq,
-                JmpZ(
-                    pos: 4,
-                ),
-                PushStr(4),
                 ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Pop,
-                Jmp(
-                    pos: 4,
-                ),
-                PushStr(5),
-                ExternCall(
-                    name: "println",
-                    args: 1,
-                ),
-                Pop,
-                PushStr(6),
-                ExternCall(
-                    name: "println",
-                    args: 1,
+                    function_name: "println",
+                    nb_args: 1,
                 ),
                 Pop,
                 Halt,
             ],
         ),
         (
-            name: "mat_mul",
-            position: 159,
+            name: "Char.to_str",
+            position: 122,
             body: [
                 Store(
-                    var_name: "b",
-                ),
-                Store(
-                    var_name: "a",
+                    var_name: "self",
                 ),
                 Load(
-                    var_name: "a",
+                    var_name: "self",
                 ),
-                ExternCall(
-                    name: "len_double",
-                    args: 1,
+                GetField(
+                    field_name: "value",
+                ),
+                CastTo(String),
+                Return,
+            ],
+        ),
+        (
+            name: "Char.Char",
+            position: 127,
+            body: [
+                Store(
+                    var_name: "val",
                 ),
                 Store(
-                    var_name: "a_rows",
+                    var_name: "self",
                 ),
                 Load(
-                    var_name: "a",
+                    var_name: "self",
                 ),
-                PushInt(0),
+                Load(
+                    var_name: "val",
+                ),
+                SetField(
+                    field_name: "value",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "self",
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "String::hello_world",
+            position: 136,
+            body: [
+                PushUnsignedInt(8),
+                NewList,
+                Dup,
+                PushUnsignedInt(0),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('W'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(1),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('e'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(2),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('l'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(3),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('c'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(4),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('o'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(5),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('m'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(6),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('e'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Dup,
+                PushUnsignedInt(7),
+                Swap,
+                NewObj(
+                    class_name: "Char",
+                ),
+                PushChar('!'),
+                MethodCall(
+                    method_name: "Char.Char",
+                    nb_args: 1,
+                ),
+                ListStore,
+                Store(
+                    var_name: "chars",
+                ),
+                NewObj(
+                    class_name: "String",
+                ),
+                Load(
+                    var_name: "chars",
+                ),
+                MethodCall(
+                    method_name: "String.String",
+                    nb_args: 1,
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "String.get",
+            position: 199,
+            body: [
+                Store(
+                    var_name: "i",
+                ),
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field_name: "s",
+                ),
+                Load(
+                    var_name: "i",
+                ),
                 ListLoad,
-                ExternCall(
-                    name: "len",
-                    args: 1,
+                Return,
+            ],
+        ),
+        (
+            name: "String.set",
+            position: 206,
+            body: [
+                Store(
+                    var_name: "c",
                 ),
                 Store(
-                    var_name: "a_cols",
+                    var_name: "i",
+                ),
+                Store(
+                    var_name: "self",
                 ),
                 Load(
-                    var_name: "b",
-                ),
-                ExternCall(
-                    name: "len_double",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "b_rows",
+                    var_name: "i",
                 ),
                 Load(
-                    var_name: "b",
+                    var_name: "self",
                 ),
-                PushInt(0),
-                ListLoad,
-                ExternCall(
-                    name: "len",
-                    args: 1,
-                ),
-                Store(
-                    var_name: "b_cols",
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "i_res",
+                GetField(
+                    field_name: "s",
                 ),
                 Load(
-                    var_name: "a_rows",
+                    var_name: "c",
+                ),
+                ListStore,
+                PushUnit,
+                Pop,
+            ],
+        ),
+        (
+            name: "String.to_str",
+            position: 216,
+            body: [
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field_name: "len",
                 ),
                 NewList,
                 Store(
-                    var_name: "result",
+                    var_name: "chars",
+                ),
+                PushInt(0),
+                CastTo(UnsignedInteger),
+                Store(
+                    var_name: "i",
                 ),
                 Load(
-                    var_name: "i_res",
+                    var_name: "i",
                 ),
                 Load(
-                    var_name: "a_rows",
+                    var_name: "self",
+                ),
+                GetField(
+                    field_name: "len",
                 ),
                 Lt,
                 JmpZ(
-                    pos: 14,
+                    pos: 18,
                 ),
                 Load(
-                    var_name: "i_res",
+                    var_name: "i",
                 ),
                 Load(
-                    var_name: "result",
+                    var_name: "chars",
                 ),
                 Load(
-                    var_name: "b_cols",
+                    var_name: "self",
                 ),
-                NewList,
+                GetField(
+                    field_name: "s",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                ListLoad,
+                GetField(
+                    field_name: "value",
+                ),
                 ListStore,
                 PushUnit,
                 Pop,
                 Load(
-                    var_name: "i_res",
-                ),
-                PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "i_res",
-                ),
-                PushUnit,
-                Pop,
-                Jmp(
-                    pos: -17,
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "a_rows",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 59,
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "j",
-                ),
-                Load(
-                    var_name: "j",
-                ),
-                Load(
-                    var_name: "b_cols",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 46,
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "k",
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "sum",
-                ),
-                Load(
-                    var_name: "k",
-                ),
-                Load(
-                    var_name: "a_cols",
-                ),
-                Lt,
-                JmpZ(
-                    pos: 23,
-                ),
-                Load(
-                    var_name: "sum",
-                ),
-                Load(
-                    var_name: "a",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                ListLoad,
-                Load(
-                    var_name: "k",
-                ),
-                ListLoad,
-                Load(
-                    var_name: "b",
-                ),
-                Load(
-                    var_name: "k",
-                ),
-                ListLoad,
-                Load(
-                    var_name: "j",
-                ),
-                ListLoad,
-                IMul,
-                IAdd,
-                Store(
-                    var_name: "sum",
-                ),
-                PushUnit,
-                Pop,
-                Load(
-                    var_name: "k",
-                ),
-                PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "k",
-                ),
-                PushUnit,
-                Pop,
-                Jmp(
-                    pos: -26,
-                ),
-                Load(
-                    var_name: "j",
-                ),
-                Load(
-                    var_name: "result",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                ListLoad,
-                Load(
-                    var_name: "sum",
-                ),
-                ListStore,
-                PushUnit,
-                Pop,
-                Load(
-                    var_name: "j",
-                ),
-                PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "j",
-                ),
-                PushUnit,
-                Pop,
-                Jmp(
-                    pos: -49,
-                ),
-                Load(
                     var_name: "i",
                 ),
                 PushInt(1),
-                IAdd,
+                CastTo(UnsignedInteger),
+                UIAdd,
                 Store(
                     var_name: "i",
                 ),
                 PushUnit,
                 Pop,
                 Jmp(
-                    pos: -62,
+                    pos: -22,
                 ),
                 Load(
-                    var_name: "result",
+                    var_name: "chars",
+                ),
+                ExternCall(
+                    function_name: "from_chars",
+                    nb_args: 1,
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "String.String",
+            position: 250,
+            body: [
+                Store(
+                    var_name: "s",
+                ),
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "s",
+                ),
+                SetField(
+                    field_name: "s",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "s",
+                ),
+                ExternCall(
+                    function_name: "len",
+                    nb_args: 1,
+                ),
+                CastTo(UnsignedInteger),
+                SetField(
+                    field_name: "len",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "self",
                 ),
                 Return,
             ],
@@ -483,6 +587,10 @@
     ],
     entry_point: "main",
     libraries: [
+        (
+            name: "std/string",
+            is_std: true,
+        ),
         (
             name: "std/io",
             is_std: true,
@@ -494,15 +602,31 @@
     ],
     global: (
         string_pool: [
-            " ",
-            "",
-            "Hello",
-            "Hello",
-            "Hello is equal to Hello",
-            "Hello is not equal to Hello for some reason",
-            "Done",
+            "Hello, world!",
+            "Welcome!",
         ],
         list_pool: [],
         function_pool: [],
+        class_pool: [
+            (
+                name: "Char",
+                fields: [
+                    "value",
+                ],
+                constructor_nb_args: 1,
+                constants: {},
+            ),
+            (
+                name: "String",
+                fields: [
+                    "s",
+                    "len",
+                ],
+                constructor_nb_args: 1,
+                constants: {
+                    "welcome": String("Welcome!"),
+                },
+            ),
+        ],
     ),
 )

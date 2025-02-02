@@ -1,20 +1,28 @@
 import "std/math"
 import "std/io"
 
+func main() {
+    println("🎮 Welcome to the Guessing Game!");
+    println("I'm thinking of a number between 1 and 100...");
 
-func main()  {
-    let secret: int64 = random(1, 100);
-    let guess = 0;
+    let secret = random(1, 100);
+    let guess = -1;
+    let attempts = 0;
+
     while guess != secret {
-        println("Your guess:");
+        println("Enter your guess: ");
         guess = input() as int64;
+        attempts = attempts + 1;
+
         if guess < secret {
-            println("Too low!");
+            print("Too low! 📉 Try again.");
         } else {
             if guess > secret {
-                println("Too high!");
+                print("Too high! 📈 Try again.");
             } else {
-                println("You win!");
+                print("🎉 Correct! You guessed it in ");
+                print(attempts as str);
+                println(" tries!");
             }
         }
     }

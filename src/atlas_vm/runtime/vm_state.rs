@@ -5,7 +5,7 @@ use crate::atlas_vm::memory::{object_map::Memory, stack::Stack, vm_data::VMData}
 
 pub struct VMState<'state, 'run> {
     pub stack: &'state mut Stack,
-    pub object_map: &'state mut Memory,
+    pub object_map: &'state mut Memory<'run>,
     pub consts: &'state HashMap<&'run str, VMData>,
     pub var_map: &'state mut VarMap<'run>,
 }
@@ -13,7 +13,7 @@ pub struct VMState<'state, 'run> {
 impl<'state, 'run> VMState<'state, 'run> {
     pub fn new(
         stack: &'state mut Stack,
-        object_map: &'state mut Memory,
+        object_map: &'state mut Memory<'run>,
         consts: &'state HashMap<&'run str, VMData>,
         var_map: &'state mut VarMap<'run>,
     ) -> Self {

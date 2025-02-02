@@ -22,8 +22,8 @@ pub fn read_dir(state: VMState) -> Result<VMData, RuntimeError> {
     for entry in entries {
         let entry = entry.unwrap();
         let path = entry.path();
-        let path_str = path.to_str().unwrap();
-        let obj_idx = state.object_map.put(ObjectKind::String(path_str.to_string()));
+        let path_str = path.to_str().unwrap().to_string();
+        let obj_idx = state.object_map.put(ObjectKind::String(path_str));
         match obj_idx {
             Ok(index) => list.push(VMData::new_string(index)),
             Err(_) => return Err(RuntimeError::OutOfMemory),

@@ -1,18 +1,83 @@
 import "std/string"
 import "std/io"
+import "std/list"
 
-func test() {
-    let s = "  Hello World!";
-    let len = str_len(s);
-    println(len as str);
-    let trimmed = trim(s);
-    println(trimmed);
-    let upper = to_upper(s);
-    println(upper);
-    let lower = to_lower(s);
-    println(lower);
+public class Char {
+    public:
+        value: char;
+    public:
+        Char(val: char) {
+            self.value = val;
+        }
+        ~Char() {}
+        func to_str(self) -> str {
+            return self.value as str;
+        }
+}
+
+public class String {
+    private:
+        //Because you can't index a `str` directly
+        // we need to store the string as a list of characters
+        //I'm using `Char` instead of `char` for demonstration purposes
+        s: [Char];
+        //static constant string
+        const welcome: str = "Welcome!";
+    public:
+        len: uint64;
+    public:
+        //Constructor
+        //Only 1 allowed per class
+        String(s: [Char]) {
+            self.s = s;
+            self.len = len(s) as uint64;
+        }
+        //Destructor still not supported yet
+        ~String() {
+            delete self.s;
+        }
+        //static method
+        func hello_world() -> String {
+            //"Welcome!"
+            let chars = [
+                new Char('W'), new Char('e'), new Char('l'), new Char('c'), 
+                new Char('o'), new Char('m'), new Char('e'), new Char('!')
+            ];
+            return new String(chars);
+        }
+        func get(self, i: int64) -> Char {
+            return self.s[i];
+        }
+        //I'll add operator overloading soon
+        func set(self, i: uint64, c: Char) {
+            self.s[i] = c;
+        }
+        //Overly complicated way, but I still lack some base functions
+        func to_str(self) -> str {
+            let chars: [char] = new [char; self.len];
+            let i = 0 as uint64;
+            while i < self.len {
+                chars[i] = self.s[i].value;
+                i = i + 1 as uint64;
+            }
+            return from_chars(chars);
+        }
 }
 
 func main() {
-    test();
+    println("Hello, world!");
+    let chars = [
+        new Char('H'), new Char('e'), new Char('l'), new Char('l'), new Char('o'), new Char(' '), 
+        new Char('W'), new Char('o'), new Char('r'), new Char('l'), new Char('d'), new Char('!')
+        ];
+    let s = new String(chars);
+    println(s.to_str());
+    s.get(0).value = 'z';
+    println(s.to_str());
+    
+    let s2 = String::hello_world();
+    println(s2.to_str());
+
+    let s3 = String::welcome;
+    println(s3);
 }

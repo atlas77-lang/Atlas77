@@ -1,7 +1,7 @@
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
-use crate::atlasc::atlas_frontend::lexer::token::Token;
+use crate::atlas_c::atlas_frontend::lexer::token::Token;
 use crate::declare_error_type;
 
 declare_error_type! {
@@ -9,10 +9,39 @@ declare_error_type! {
     pub enum ParseError {
         UnexpectedEndOfFile(UnexpectedEndOfFileError),
         UnexpectedToken(UnexpectedTokenError),
+        OnlyOneConstructorAllowed(OnlyOneConstructorAllowedError),
+        NoFieldInClass(NoFieldInClassError),
     }
 }
 
 pub type ParseResult<T> = Result<T, ParseError>;
+
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(
+    code(syntax::no_field_in_class),
+    help("Add fields to the class")
+)]
+#[error("No fields in class")]
+pub struct NoFieldInClassError {
+    #[label = "no fields in class"]
+    pub span: SourceSpan,
+    #[source_code]
+    pub src: String,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(
+    code(syntax::only_one_constructor_allowed),
+    help("Only one constructor or destructor is allowed for classes")
+)]
+#[error("Only one constructor or destructor is allowed for classes")]
+pub struct OnlyOneConstructorAllowedError {
+    #[label = "only one constructor or destructor is allowed for classes"]
+    pub span: SourceSpan,
+    #[source_code]
+    pub src: String,
+}
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(
@@ -32,7 +61,7 @@ pub struct UnexpectedEndOfFileError {
 #[error("Found unexpected token during parsing")]
 pub struct UnexpectedTokenError {
     pub token: Token,
-    pub expected: crate::atlasc::atlas_frontend::lexer::TokenVec,
+    pub expected: crate::atlas_c::atlas_frontend::lexer::TokenVec,
     #[label("was not expecting to find '{token}' in this position, expected one of: {expected}")]
     pub span: SourceSpan,
     #[source_code]

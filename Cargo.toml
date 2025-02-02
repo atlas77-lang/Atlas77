@@ -1,6 +1,6 @@
 [package]
 name = "atlas_77"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 description = "Functional programming language with strong interoperability with Rust"
 authors = ["Gipson62", "ElhamAryanpur"]
@@ -13,7 +13,7 @@ readme = "README.md"
 
 
 [profile.release]
-opt-level = 3
+#opt-level = 3
 panic = "abort"
 lto = true
 codegen-units = 1
@@ -23,6 +23,9 @@ strip = "debuginfo"
 [profile.release.package."*"]
 opt-level = 3
 codegen-units = 1
+
+[lib]
+doctest = false
 
 [[bin]]
 name = "atlas_77"
@@ -43,3 +46,4 @@ logos = "0.15.0"
 serde = { version = "1.0.217", features = ["derive"] }
 rand = "0.9.0"
 time = { version = "0.3.37", features = ["formatting"] }
+heck = "0.5.0"
