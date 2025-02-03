@@ -573,6 +573,7 @@ impl<'hir> TypeChecker<'hir> {
                         }));
                     }
                 }
+                l.ty = self.arena.types().get_list_ty(ty);
                 Ok(self.arena.types().get_list_ty(ty))
             }
             HirExpr::Unary(u) => {
@@ -590,9 +591,13 @@ impl<'hir> TypeChecker<'hir> {
                                 },
                             ));
                         }
+                        u.ty = ty;
                         Ok(ty)
                     }
-                    _ => Ok(ty),
+                    _ => {
+                        u.ty = ty;
+                        Ok(ty)
+                    }
                 }
             }
             HirExpr::Casting(c) => {
@@ -610,7 +615,7 @@ impl<'hir> TypeChecker<'hir> {
                             SourceOffset::from(c.expr.span().start),
                             c.expr.span().end - c.expr.span().start,
                         ),
-                        expected_type: "int64, float64, uint64, Bool or str".to_string(),
+                        expected_type: "int64, float64, uint64, bool, char or str".to_string(),
                         expected_loc: SourceSpan::new(
                             SourceOffset::from(c.expr.span().start),
                             c.expr.span().end - c.expr.span().start,
@@ -619,30 +624,38 @@ impl<'hir> TypeChecker<'hir> {
                     }));
                 }
 
-
                 Ok(c.ty)
             }
-            HirExpr::Indexing(i) => {
-                let target = self.check_expr(&mut i.target)?;
-                let index = self.check_expr(&mut i.index)?;
-                if HirTyId::from(index) != HirTyId::compute_uint64_ty_id() && HirTyId::from(index) != HirTyId::compute_integer64_ty_id() {
+            HirExpr::Indexing(indexing_expr) => {
+                let target = self.check_expr(&mut indexing_expr.target)?;
+                let index = self.check_expr(&mut indexing_expr.index)?;
+                if
+                HirTyId::from(index) != HirTyId::compute_uint64_ty_id() &&
+                    HirTyId::from(index) != HirTyId::compute_integer64_ty_id() {
                     return Err(HirError::TypeMismatch(TypeMismatchError {
                         actual_type: format!("{}", index),
                         actual_loc: SourceSpan::new(
-                            SourceOffset::from(i.index.span().start),
-                            i.index.span().end - i.index.span().start,
+                            SourceOffset::from(indexing_expr.index.span().start),
+                            indexing_expr.index.span().end - indexing_expr.index.span().start,
                         ),
                         expected_type: format!("{}", self.arena.types().get_uint64_ty()),
                         expected_loc: SourceSpan::new(
-                            SourceOffset::from(i.index.span().start),
-                            i.index.span().end - i.index.span().start,
+                            SourceOffset::from(indexing_expr.index.span().start),
+                            indexing_expr.index.span().end - indexing_expr.index.span().start,
                         ),
                         src: self.src.clone(),
                     }));
                 }
 
                 match target {
-                    HirTy::List(l) => Ok(l.inner),
+                    HirTy::List(l) => {
+                        indexing_expr.ty = l.inner;
+                        Ok(l.inner)
+                    }
+                    HirTy::String(_) => {
+                        indexing_expr.ty = self.arena.types().get_char_ty();
+                        Ok(self.arena.types().get_char_ty())
+                    }
                     _ => {
                         todo!("TypeChecker::check_expr: {:?}", target)
                     }
@@ -680,7 +693,6 @@ impl<'hir> TypeChecker<'hir> {
                     _ => Ok(lhs),
                 }
             }
-
             HirExpr::Call(func_expr) => {
                 let callee = func_expr.callee.as_mut();
                 match callee {
@@ -944,7 +956,7 @@ impl<'hir> TypeChecker<'hir> {
             HirExpr::Delete(d) => {
                 let to_delete = self.check_expr(&mut d.expr)?;
                 match to_delete {
-                    HirTy::Named(_) | HirTy::List(_) => {
+                    HirTy::Named(_) | HirTy::List(_) | HirTy::String(_) => {
                         Ok(self.arena.types().get_unit_ty())
                     }
                     _ => {
@@ -954,7 +966,7 @@ impl<'hir> TypeChecker<'hir> {
                                 SourceOffset::from(d.expr.span().start),
                                 d.expr.span().end - d.expr.span().start,
                             ),
-                            expected_type: String::from("Named"),
+                            expected_type: String::from("Named, [T] or str"),
                             expected_loc: SourceSpan::new(
                                 SourceOffset::from(d.expr.span().start),
                                 d.expr.span().end - d.expr.span().start,

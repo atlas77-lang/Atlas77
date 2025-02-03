@@ -195,7 +195,7 @@ impl Display for VMData {
                 Self::TAG_U64 => self.as_u64().to_string(),
                 Self::TAG_FLOAT => self.as_f64().to_string(),
                 Self::TAG_BOOL => self.as_bool().to_string(),
-                Self::TAG_CHAR => self.as_char().to_string(),
+                Self::TAG_CHAR => format!("'{}'", self.as_char()),
                 Self::TAG_STACK_PTR => self.as_stack_ptr().to_string(),
                 Self::TAG_FN_PTR => self.as_fn_ptr().to_string(),
                 _ if self.is_object() => self.as_object().to_string(),
@@ -223,18 +223,7 @@ impl std::fmt::Debug for VMData {
                 _ if self.is_object() => "obj",
                 _ => "res",
             },
-            match self.tag {
-                Self::TAG_UNIT => "()".to_string(),
-                Self::TAG_I64 => self.as_i64().to_string(),
-                Self::TAG_U64 => self.as_u64().to_string(),
-                Self::TAG_FLOAT => self.as_f64().to_string(),
-                Self::TAG_BOOL => self.as_bool().to_string(),
-                Self::TAG_CHAR => self.as_char().to_string(),
-                Self::TAG_STACK_PTR => self.as_stack_ptr().to_string(),
-                Self::TAG_FN_PTR => self.as_fn_ptr().to_string(),
-                _ if self.is_object() => self.as_object().to_string(),
-                _ => "reserved".to_string(),
-            }
+            format!("{}", self)
         )
     }
 }

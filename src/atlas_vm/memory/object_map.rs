@@ -61,17 +61,6 @@ impl<'mem> Memory<'mem> {
     }
 
     pub fn put(&mut self, object: ObjectKind<'mem>) -> Result<ObjectIndex, RuntimeError> {
-        if self.used_space == self.mem.len() {
-            for i in self.mem.len()..(self.mem.len() * 2) {
-                self.mem.push(Object {
-                    kind: ObjectKind::Free {
-                        next: self.free,
-                    },
-                    rc: 0,
-                });
-                self.free = ObjectIndex::new(i as u64);
-            }
-        }
         let idx = self.free;
         let v = self.mem.get_mut(usize::from(self.free)).unwrap();
         let repl = std::mem::replace(v, Object { kind: object, rc: 1 });
@@ -88,6 +77,7 @@ impl<'mem> Memory<'mem> {
     }
 
     pub fn free(&mut self, index: ObjectIndex) -> RuntimeResult<()> {
+        println!("Freeing {}", index);
         let next = self.free;
         let v = self.mem.get_mut(usize::from(index)).unwrap().kind.clone();
         if let ObjectKind::List(list) = v {
@@ -168,7 +158,7 @@ impl std::fmt::Display for Memory<'_> {
             if let Object { kind: ObjectKind::Free { .. }, .. } = obj {
                 continue;
             }
-            writeln!(f, "{}: {}", i, obj)?;
+            writeln!(f, "\t{}: {}", i, obj)?;
         }
         Ok(())
     }

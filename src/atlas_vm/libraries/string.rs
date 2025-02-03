@@ -104,7 +104,6 @@ pub fn split(state: VMState) -> Result<VMData, RuntimeError> {
     }
 }
 
-/// Get a `[char]` returns a `str`
 pub fn from_chars(state: VMState) -> RuntimeResult<VMData> {
     let list_ptr = state.stack.pop()?.as_object();
     let raw_list = state.object_map.get(list_ptr)?;

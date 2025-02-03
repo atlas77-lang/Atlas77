@@ -12,7 +12,11 @@ pub const IO_FUNCTIONS: [(&str, CallBack); 3] = [
 pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
     match val.tag {
-        VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT => {
+        VMData::TAG_BOOL
+        | VMData::TAG_U64
+        | VMData::TAG_I64
+        | VMData::TAG_FLOAT
+        | VMData::TAG_CHAR => {
             println!("{}", val)
         }
         VMData::TAG_STR => {
@@ -28,7 +32,11 @@ pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
 pub fn print(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
     match val.tag {
-        VMData::TAG_BOOL | VMData::TAG_U64 | VMData::TAG_I64 | VMData::TAG_FLOAT => {
+        VMData::TAG_BOOL
+        | VMData::TAG_U64
+        | VMData::TAG_I64
+        | VMData::TAG_FLOAT
+        | VMData::TAG_CHAR => {
             print!("{}", val)
         }
         VMData::TAG_STR => {
