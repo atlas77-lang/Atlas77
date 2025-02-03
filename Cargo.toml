@@ -2,7 +2,7 @@
 name = "atlas_77"
 version = "0.5.2"
 edition = "2021"
-description = "Functional programming language with strong interoperability with Rust"
+description = "Programming language with strong interoperability with Rust (WIP)"
 authors = ["Gipson62", "ElhamAryanpur"]
 license = "MIT"
 repository = "https://github.com/atlas77-lang/Atlas77"

@@ -251,19 +251,21 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     pos: start - bytecode.len() as isize,
                 });
             }
-            HirStatement::Const(c) => {
+            HirStatement::Const(let_stmt) => {
+                println!("const {}: {}", let_stmt.name, let_stmt.ty.unwrap());
                 let mut value = Vec::new();
-                self.generate_bytecode_expr(&c.value, &mut value, src)?;
-                bytecode.push(Instruction::Store {
-                    var_name: self.arena.alloc(c.name.to_string()),
+                self.generate_bytecode_expr(&let_stmt.value, &mut value, src)?;
+                value.push(Instruction::Store {
+                    var_name: self.arena.alloc(let_stmt.name.to_string()),
                 });
                 bytecode.append(&mut value);
             }
-            HirStatement::Let(l) => {
+            HirStatement::Let(let_stmt) => {
+                println!("let {}: {}", let_stmt.name, let_stmt.ty.unwrap());
                 let mut value = Vec::new();
-                self.generate_bytecode_expr(&l.value, &mut value, src)?;
+                self.generate_bytecode_expr(&let_stmt.value, &mut value, src)?;
                 value.push(Instruction::Store {
-                    var_name: self.arena.alloc(l.name.to_string()),
+                    var_name: self.arena.alloc(let_stmt.name.to_string()),
                 });
                 bytecode.append(&mut value);
             }
@@ -304,14 +306,41 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         });
                     }
                     HirExpr::Indexing(i) => {
-                        //Get the Index
-                        self.generate_bytecode_expr(&i.index, bytecode, src.clone())?;
-                        //Get the list pointer
-                        self.generate_bytecode_expr(&i.target, bytecode, src.clone())?;
-                        //Get the value
-                        self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
-                        //Store the value in the list
-                        bytecode.push(Instruction::ListStore);
+                        match i.target.ty() {
+                            HirTy::List(_) => {
+                                //Get the Index
+                                self.generate_bytecode_expr(&i.index, bytecode, src.clone())?;
+                                //Get the list pointer
+                                self.generate_bytecode_expr(&i.target, bytecode, src.clone())?;
+                                //Get the value
+                                self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
+                                //Store the value in the list
+                                bytecode.push(Instruction::ListStore);
+                            }
+                            HirTy::String(_) => {
+                                eprintln!("String store: {:?}", a);
+                                //Get the Index
+                                self.generate_bytecode_expr(&i.index, bytecode, src.clone())?;
+                                //Get the string pointer
+                                self.generate_bytecode_expr(&i.target, bytecode, src.clone())?;
+                                //Get the value
+                                self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
+                                //Store the value in the string
+                                bytecode.push(Instruction::StringStore);
+                            }
+                            _ => {
+                                return Err(HirError::UnsupportedExpr(
+                                    UnsupportedExpr {
+                                        span: SourceSpan::new(
+                                            SourceOffset::from(expr.span().start),
+                                            expr.span().end - expr.span().start,
+                                        ),
+                                        expr: format!("{:?}", expr),
+                                        src: src.clone(),
+                                    },
+                                ));
+                            }
+                        }
                     }
                     HirExpr::FieldAccess(field_access) => {
                         //Get the Class pointer
@@ -324,7 +353,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         })
                     }
                     _ => {
-                        return Err(atlas_hir::error::HirError::UnsupportedExpr(
+                        return Err(HirError::UnsupportedExpr(
                             UnsupportedExpr {
                                 span: SourceSpan::new(
                                     SourceOffset::from(expr.span().start),
@@ -521,11 +550,31 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 }
             }
             HirExpr::Indexing(i) => {
-                self.generate_bytecode_expr(&i.target, bytecode, src.clone())?;
-                self.generate_bytecode_expr(&i.index, bytecode, src)?;
-                bytecode.push(Instruction::ListLoad);
+                match i.target.ty() {
+                    HirTy::List(_) => {
+                        self.generate_bytecode_expr(&i.target, bytecode, src.clone())?;
+                        self.generate_bytecode_expr(&i.index, bytecode, src)?;
+                        bytecode.push(Instruction::ListLoad);
+                    }
+                    HirTy::String(_) => {
+                        self.generate_bytecode_expr(&i.target, bytecode, src.clone())?;
+                        self.generate_bytecode_expr(&i.index, bytecode, src)?;
+                        bytecode.push(Instruction::StringLoad);
+                    }
+                    _ => {
+                        return Err(HirError::UnsupportedExpr(
+                            UnsupportedExpr {
+                                span: SourceSpan::new(
+                                    SourceOffset::from(expr.span().start),
+                                    expr.span().end - expr.span().start,
+                                ),
+                                expr: format!("Can't index: {:?}", expr),
+                                src: src.clone(),
+                            },
+                        ))
+                    }
+                }
             }
-            //This need to be thoroughly tested
             HirExpr::Call(f) => {
                 for arg in &f.args {
                     self.generate_bytecode_expr(arg, bytecode, src.clone())?;
@@ -571,7 +620,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         };
                         bytecode.push(Instruction::MethodCall {
                             method_name: self.arena.alloc(format!("{}.{}", class_name.name, field_access.field.name)),
-                            nb_args: f.args.len() as u8,
+                            nb_args: f.args.len() as u8 + 1,
                         })
                     }
                     HirExpr::StaticAccess(static_access) => {
@@ -625,10 +674,6 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     //Store the value in the list
                     bytecode.push(Instruction::ListStore);
                 });
-            }
-            HirExpr::NewArray(a) => {
-                self.generate_bytecode_expr(&a.size, bytecode, src.clone())?;
-                bytecode.push(Instruction::NewList);
             }
             HirExpr::Delete(d) => {
                 self.generate_bytecode_expr(&d.expr, bytecode, src)?;
@@ -754,11 +799,13 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     }
                 }
             }
+            HirExpr::NewArray(a) => {
+                self.generate_bytecode_expr(&a.size, bytecode, src.clone())?;
+                bytecode.push(Instruction::NewList);
+            }
             HirExpr::NewObj(new_obj) => {
-                //Todo: No idea if this shit works tbh
                 let class_name = match new_obj.ty {
                     HirTy::Named(class_name) => class_name,
-                    //This should never happen :shrug:
                     _ => return Err(HirError::UnsupportedExpr(UnsupportedExpr {
                         span: SourceSpan::new(
                             SourceOffset::from(new_obj.span.start),
@@ -777,8 +824,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 }
                 bytecode.push(Instruction::MethodCall {
                     method_name: self.arena.alloc(format!("{}.{}", class_name.name, class_name.name)),
-                    //+1 for the self reference (it's implicit)
-                    nb_args: new_obj.args.len() as u8,
+                    nb_args: new_obj.args.len() as u8 + 1,
                 });
             }
         }

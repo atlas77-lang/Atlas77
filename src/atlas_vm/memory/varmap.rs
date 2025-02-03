@@ -11,7 +11,7 @@ pub struct VarMap<'run> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Key<'run> {
     pub scope: usize,
-    pub key: &'run str,
+    pub name: &'run str,
 }
 
 impl<'run> VarMap<'run> {
@@ -46,6 +46,7 @@ impl<'run> VarMap<'run> {
             if key.scope == scope {
                 match value.tag {
                     VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                        println!("{} {}", key.name, value);
                         to_remove.push(value.as_object());
                     }
                     _ => {}

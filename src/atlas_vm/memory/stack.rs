@@ -70,6 +70,7 @@ impl Stack {
         for i in new_top..=self.top {
             match self.values[i].tag {
                 VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                    println!("Decrementing reference count of object: {}", self.values[i]);
                     mem.rc_dec(self.values[i].as_object())?;
                 }
                 _ => {}
@@ -99,11 +100,9 @@ impl Stack {
         }
 
         let r = self.values[self.top];
-        //This needs to become a comparison with r.tag & TAG_OBJECT == 0
-        //TAG_OBJECT needs to be smaller than TAG_LIST and TAG_STR
-        //This would allow for a single comparison instead of 3
         match r.tag {
             VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                println!("Decrementing reference count of object: {}", r);
                 mem.rc_dec(r.as_object())?;
             }
             _ => {}
@@ -177,16 +176,15 @@ impl Display for Stack {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Stack: {{ values: {}, top: {}}}",
+            "Stack: {}",
             {
                 let mut s = "[".to_string();
-                for i in 0..=self.top {
+                for i in 0..self.top {
                     s.push_str(&format!("{}, ", self.values[i]))
                 }
                 s.push(']');
                 s
             },
-            self.top
         )
     }
 }

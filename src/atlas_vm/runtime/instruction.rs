@@ -52,7 +52,7 @@ pub enum Instruction<'run> {
 
     /// Stack state:
     ///
-    /// - **Bottom** `[Index, ListPointer]` **Top**
+    /// - **Bottom** `[ListPointer, Index,]` **Top**
     ///
     /// Load a value from a list to the top of the stack
     ListLoad,
@@ -65,6 +65,18 @@ pub enum Instruction<'run> {
     /// Create a new list, the size is the top of the stack
     NewList,
     ListIndex(usize),
+    /// Stack state:
+    ///
+    /// - **Bottom** `[StrPointer, Index,]` **Top**
+    ///
+    /// Load a value from a str to the top of the stack
+    StringLoad,
+    /// Stack state:
+    ///
+    /// - **Bottom** `[StrPointer, Index, Value,]` **Top**
+    ///
+    /// Store a value in a given str
+    StringStore,
 
     CastTo(Type),
     //Math

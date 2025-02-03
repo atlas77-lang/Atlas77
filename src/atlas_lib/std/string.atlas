@@ -15,14 +15,15 @@ public class String {
     public:
         len: uint64;
     public:
-        String(s: str) {
-            self.s = to_chars(s);
-            self.len = len(self.s);
+        String(s: [char]) {
+            self.s = s;
+            self.len = len(s);
         }
         ~String() {
-            //delete self.s;
+            //Ensure it is deleted from memory
+            delete self.s;
         }
-        func from_chars(s: [char]) -> String {
+        func from_str(s: str) -> String {
             return new String(from_chars(s));
         }
         func get(self, i: uint64) -> char {
@@ -31,7 +32,35 @@ public class String {
         func set(self, i: uint64, c: char) {
             self.s[i] = c;
         }
+        func len(self) -> uint64 {
+            return self.len;
+        }
         func to_str(self) -> str {
             return from_chars(self.s);
+        }
+        func to_upper(self) -> String {
+            return new String(to_upper(self.to_str()));
+        }
+        func to_lower(self) -> String {
+            return new String(to_lower(self.to_str()));
+        }
+        func trim(self) {
+            return new String(trim(self.to_str()));
+        }
+}
+
+public class Char {
+    public:
+        value: char;
+    public:
+        Char(val: char) {
+            self.value = val;
+        }
+        ~Char() {}
+        func to_str(self) -> str {
+            return self.value as str;
+        }
+        func from_str(s: str) -> Char {
+            return new Char(to_chars(s)[0]);
         }
 }
