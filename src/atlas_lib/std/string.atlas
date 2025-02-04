@@ -1,51 +1,140 @@
+import "std/list"
 // Miscellaneous functions for raw strings
-public extern str_len(s: str) -> uint64
-public extern trim(s: str) -> str
-public extern to_upper(s: str) -> str
-public extern to_lower(s: str) -> str
-public extern split(s: str, sep: str) -> [str]
-public extern str_cmp(s1: str, s2: str) -> int64
-public extern to_chars(s: str) -> [char]
-public extern from_chars(s: [char]) -> str
+extern str_len(s: str) -> uint64
+extern trim(s: str) -> str
+extern to_upper(s: str) -> str
+extern to_lower(s: str) -> str
+extern split(s: str, sep: str) -> [str]
+extern str_cmp(s1: str, s2: str) -> int64
+extern to_chars(s: str) -> [char]
+extern from_chars(s: [char]) -> str
 
 public class String {
     private:
-        //Because you can't index a `str` directly, we need to store the string as a list of characters
-        s: [char];
+        s: str;
     public:
         len: uint64;
     public:
-        String(s: [char]) {
+        String(s: str) {
             self.s = s;
             self.len = len(s);
         }
-        ~String() {
-            //Ensure it is deleted from memory
-            delete self.s;
-        }
-        func from_str(s: str) -> String {
+        ~String() {}
+        func from_chars(s: [char]) -> String {
             return new String(from_chars(s));
         }
-        func get(self, i: uint64) -> char {
-            return self.s[i];
+        /// Example: String::str_len("Hello") -> 5
+        func str_len(s: str) -> uint64 {
+            return str_len(s);
         }
-        func set(self, i: uint64, c: char) {
-            self.s[i] = c;
-        }
+
         func len(self) -> uint64 {
             return self.len;
         }
+        func is_empty(self) -> bool {
+            return self.len == 0 as uint64;
+        }
+        //todo: implement as_bytes
+        //func as_bytes(self) -> [uint8] {}
+        func concat(self, other: String) -> String {
+            //I should really implement the <- operator for copying objects
+            let self_chars = to_chars(self.s);
+            let other_chars = to_chars(other.s);
+            let res = new [char; len(self_chars) + len(other_chars)];
+            let i = 0;
+            while i < len(self_chars) {
+                res[i] = self_chars[i];
+                i = i + 1;
+            }
+        }
+        func push(self, c: char) -> unit {
+            //Same... I should implement the <- operator
+            let self_chars = to_chars(self.s);
+            let res = new [char; len(self_chars) + 1];
+            let i = 0;
+            while i < len(self_chars) {
+                res[i] = self_chars[i];
+                i = i + 1;
+            }
+            res[i] = c;
+            self.s = from_chars(res);
+            self.len = str_len(self.s);
+            return;
+        }
+        func push_str(self, s: String) -> unit {
+            let self_chars = to_chars(self.s);
+            let s_chars = to_chars(s.s);
+            let res = new [char; len(self_chars) + len(s_chars)];
+            let i = 0;
+            while i < len(self_chars) {
+                res[i] = self_chars[i];
+                i = i + 1;
+            }
+            let j = 0;
+            while j < len(s_chars) {
+                res[i] = s_chars[j];
+                i = i + 1;
+                j = j + 1;
+            }
+            self.s = from_chars(res);
+            self.len = str_len(self.s);
+            return;
+        }
+        func find(self, sub_string: String) -> int64 {
+            let res = -1;
+            let i = 0;
+            let j = 0;
+            let self_chars = to_chars(self.s);
+            let sub_chars = to_chars(sub_string.s);
+            while i < len(self_chars) {
+                if self_chars[i] == sub_chars[j] {
+                    const size_sub_chars: int64 = len(sub_chars) as int64 - 1;
+                    if j == size_sub_chars {
+                        res = i - j;
+                        //break is not implemented yet...
+                        break;
+                    }
+                    j = j + 1;
+                } else {
+                    j = 0;
+                }
+                i = i + 1;
+            }
+            return res;
+        }
+
+        func get(self, i: uint64) -> char {
+            return self.s[i];
+        }
+        func set(self, i: uint64, c: char) -> unit {
+            self.s[i] = c;
+            return;
+        }        
+        
         func to_str(self) -> str {
-            return from_chars(self.s);
+            return self.s;
+        }
+        func to_chars(self) -> [char] {
+            return to_chars(self.s);
         }
         func to_upper(self) -> String {
-            return new String(to_upper(self.to_str()));
+            return new String(to_upper(self.s));
         }
         func to_lower(self) -> String {
-            return new String(to_lower(self.to_str()));
+            return new String(to_lower(self.s));
         }
         func trim(self) {
-            return new String(trim(self.to_str()));
+            return new String(trim(self.s));
+        }
+        func split(self, sep: str) -> [String] {
+            let s: [str] = split(self.s, sep);
+            let i = 0;
+            let res = new [String; len(s)];
+            while i < len(s) {
+                res[i] = new String(s[i]);
+                i = i + 1;
+            }
+            return res;
         }
 }
 
@@ -61,6 +150,6 @@ public class Char {
             return self.value as str;
         }
         func from_str(s: str) -> Char {
-            return new Char(to_chars(s)[0]);
+            return new Char(s[0]);
         }
 }

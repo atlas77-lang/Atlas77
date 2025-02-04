@@ -60,8 +60,11 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         }
     }
 
-    /// Take the HIR and convert it to a VM representation
     pub fn compile(&mut self) -> CodegenResult<Program> {
+        for (class_name, class) in self.hir.body.classes.clone() {
+            self.generate_class_descriptor(class_name, &class);
+        }
+        self.program.global.class_pool = self.arena.alloc(self.class_pool.clone());
         let mut labels: Vec<Label> = Vec::new();
         for (func_name, function) in self.hir.body.functions.clone() {
             let mut bytecode = Vec::new();
@@ -83,8 +86,6 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
 
             self.current_pos += len;
         }
-        //Need to find something else than ".clone()"
-        //Todo: make a function for the class codegen
         for (class_name, class) in self.hir.body.classes.clone() {
             self.generate_bytecode_class(class_name, &class, &mut labels, self.src.clone())?
         }
@@ -137,6 +138,10 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             });
             self.current_pos += len;
         }
+        self.generate_bytecode_constructor(class_name, &class.constructor, labels, src.clone())?;
+        Ok(())
+    }
+    fn generate_class_descriptor(&mut self, class_name: &str, class: &HirClass<'hir>) {
         let mut fields: Vec<&'gen str> = Vec::new();
         let mut constants: BTreeMap<&'gen str, ConstantValue> = BTreeMap::new();
         for field in class.fields.iter() {
@@ -152,12 +157,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             constants,
         };
         self.class_pool.push(class_constant);
-
-
-        self.generate_bytecode_constructor(class_name, &class.constructor, labels, src.clone())?;
-        Ok(())
     }
-
     fn generate_bytecode_constructor(
         &mut self,
         class_name: &str,
@@ -252,7 +252,6 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 });
             }
             HirStatement::Const(let_stmt) => {
-                println!("const {}: {}", let_stmt.name, let_stmt.ty.unwrap());
                 let mut value = Vec::new();
                 self.generate_bytecode_expr(&let_stmt.value, &mut value, src)?;
                 value.push(Instruction::Store {
@@ -261,7 +260,6 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 bytecode.append(&mut value);
             }
             HirStatement::Let(let_stmt) => {
-                println!("let {}: {}", let_stmt.name, let_stmt.ty.unwrap());
                 let mut value = Vec::new();
                 self.generate_bytecode_expr(&let_stmt.value, &mut value, src)?;
                 value.push(Instruction::Store {
@@ -346,10 +344,31 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         //Get the Class pointer
                         self.generate_bytecode_expr(&field_access.target, bytecode, src.clone())?;
                         //Get the value
-                        self.generate_bytecode_expr(&a.rhs, bytecode, src)?;
+                        self.generate_bytecode_expr(&a.rhs, bytecode, src.clone())?;
+                        let class_name = match field_access.target.ty() {
+                            HirTy::Named(class_name) => class_name,
+                            _ => {
+                                return Err(HirError::UnsupportedExpr(UnsupportedExpr {
+                                    span: SourceSpan::new(
+                                        SourceOffset::from(expr.span().start),
+                                        expr.span().end - expr.span().start,
+                                    ),
+                                    expr: format!("No field access for {:?}", field_access.target.ty()),
+                                    src: src,
+                                }))
+                            }
+                        };
+                        let class = self.program.global.class_pool.iter().find(|c| {
+                            c.name == class_name.name
+                        }).unwrap_or_else(|| {
+                            //should never happen
+                            panic!("Class {} not found", class_name.name)
+                        });
+                        //get the position of the field
+                        let field = class.fields.iter().position(|f| *f == field_access.field.name).unwrap();
                         //Store the value in the field
                         bytecode.push(Instruction::SetField {
-                            field_name: self.arena.alloc(String::from(field_access.field.name))
+                            field
                         })
                     }
                     _ => {
@@ -683,8 +702,29 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             HirExpr::SelfLiteral(_) => bytecode.push(Instruction::Load { var_name: self.arena.alloc(String::from("self")) }),
             HirExpr::FieldAccess(field_access) => {
                 self.generate_bytecode_expr(field_access.target.as_ref(), bytecode, src.clone())?;
+                let class_name = match field_access.target.ty() {
+                    HirTy::Named(class_name) => class_name,
+                    _ => {
+                        return Err(HirError::UnsupportedExpr(UnsupportedExpr {
+                            span: SourceSpan::new(
+                                SourceOffset::from(expr.span().start),
+                                expr.span().end - expr.span().start,
+                            ),
+                            expr: format!("No field access for {:?}", field_access.target.ty()),
+                            src: src.clone(),
+                        }))
+                    }
+                };
+                let class = self.program.global.class_pool.iter().find(|c| {
+                    c.name == class_name.name
+                }).unwrap_or_else(|| {
+                    //should never happen
+                    panic!("Class {} not found", class_name.name)
+                });
+                //get the position of the field
+                let field = class.fields.iter().position(|f| *f == field_access.field.name).unwrap();
                 bytecode.push(Instruction::GetField {
-                    field_name: self.arena.alloc(String::from(field_access.field.name))
+                    field
                 })
             }
             HirExpr::StaticAccess(static_access) => {

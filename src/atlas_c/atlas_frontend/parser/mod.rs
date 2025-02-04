@@ -88,6 +88,41 @@ impl<'ast> Parser<'ast> {
         }
     }
 
+    fn eat_while<F, T>(&mut self, kind: TokenKind, f: F) -> ParseResult<Vec<T>>
+    where
+        F: Fn(&mut Parser<'ast>) -> ParseResult<T>,
+    {
+        let mut items = Vec::new();
+        while self.current().kind() == kind {
+            let _ = self.advance();
+            items.push(f(self)?);
+        }
+        Ok(items)
+    }
+
+    fn eat_until<F, T>(&mut self, kind: TokenKind, f: F) -> ParseResult<Vec<T>>
+    where
+        F: Fn(&mut Parser<'ast>) -> ParseResult<T>,
+    {
+        let mut items = Vec::new();
+        while self.current().kind() != kind {
+            items.push(f(self)?);
+        }
+        Ok(items)
+    }
+
+    fn eat_if<F, T>(&mut self, kind: TokenKind, f: F, or: T) -> ParseResult<T>
+    where
+        F: Fn(&mut Parser<'ast>) -> ParseResult<T>,
+    {
+        if self.current().kind() == kind {
+            let _ = self.advance();
+            f(self)
+        } else {
+            Ok(or)
+        }
+    }
+
     pub fn parse(&mut self) -> ParseResult<AstProgram<'ast>> {
         let mut items: Vec<AstItem> = Vec::new();
         while self.current().kind() != TokenKind::EoI {
@@ -136,13 +171,7 @@ impl<'ast> Parser<'ast> {
     fn parse_constructor(&mut self, class_name: String) -> ParseResult<AstConstructor<'ast>> {
         self.expect(TokenKind::Identifier(class_name))?;
         self.expect(TokenKind::LParen)?;
-        let mut params = vec![];
-        while self.current().kind() != TokenKind::RParen {
-            params.push(self.parse_obj_field()?);
-            if self.current().kind() == TokenKind::Comma {
-                let _ = self.advance();
-            }
-        }
+        let params = self.eat_until(TokenKind::RParen, |p| p.parse_obj_field())?;
         self.expect(TokenKind::RParen)?;
         let body = self.parse_block()?;
         let node = AstConstructor {
@@ -156,13 +185,10 @@ impl<'ast> Parser<'ast> {
         self.expect(TokenKind::Tilde)?;
         self.expect(TokenKind::Identifier(class_name))?;
         self.expect(TokenKind::LParen)?;
-        let mut params = vec![];
-        while self.current().kind() != TokenKind::RParen {
-            params.push(self.parse_obj_field()?);
-            if self.current().kind() == TokenKind::Comma {
-                let _ = self.advance();
-            }
-        }
+        let params = self.eat_until(TokenKind::RParen, |p| {
+            p.eat_if(TokenKind::Comma, |_| { Ok(()) }, ())?;
+            p.parse_obj_field()
+        })?;
         self.expect(TokenKind::RParen)?;
         let body = self.parse_block()?;
         let node = AstDestructor {
@@ -177,18 +203,14 @@ impl<'ast> Parser<'ast> {
         self.expect(TokenKind::KwClass)?;
         let class_name = self.parse_identifier()?;
 
-        let mut generics = vec![];
-        //generics
-        if self.current().kind() == TokenKind::LAngle {
-            let _ = self.advance();
-            while self.current().kind() != TokenKind::RAngle {
-                generics.push(self.parse_generic()?);
-                if self.current().kind() == TokenKind::Comma {
-                    let _ = self.advance();
-                }
-            }
-            self.expect(TokenKind::RAngle)?;
-        }
+        let generics = self.eat_if(TokenKind::LAngle, |p| {
+            let value = p.eat_until(TokenKind::RAngle, |parser| {
+                parser.eat_if(TokenKind::Comma, |_| { Ok(()) }, ())?;
+                parser.parse_generic()
+            });
+            p.expect(TokenKind::RAngle)?;
+            value
+        }, vec![])?;
 
         self.expect(TokenKind::LBrace)?;
         let mut fields = vec![];
@@ -287,7 +309,7 @@ impl<'ast> Parser<'ast> {
             //todo: Actually use/make the constructor and the destructor
             constructor,
             destructor,
-            generics: self.arena.alloc_vec(vec![]),
+            generics: self.arena.alloc_vec(generics),
             methods: self.arena.alloc_vec(methods),
             operators: self.arena.alloc_vec(operators),
             constants: self.arena.alloc_vec(constants),
@@ -1143,6 +1165,7 @@ impl<'ast> Parser<'ast> {
         }
     }
 
+    //todo: Redo this function
     fn parse_struct(&mut self) -> ParseResult<AstStruct<'ast>> {
         let _ = self.advance();
 
@@ -1398,7 +1421,7 @@ impl<'ast> Parser<'ast> {
             _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                 token: self.current().clone(),
                 expected: TokenVec(vec![
-                    TokenKind::Identifier(String::from("Type (e.g. i64, f64, str)")),
+                    TokenKind::Identifier(String::from("int64, float64, uint64, char, [T], str & (T) -> T")),
                     token.kind(),
                 ]),
                 span: SourceSpan::new(
@@ -1425,13 +1448,17 @@ mod tests {
         public class Foo {
             public:
                 bar: int64;
+                fn_ptr: (int64) -> int64;
             private:
                 func private_func() -> int64 {
                     return 0;
                 }
             public:
-                func public_func() -> int64 {
+                func public_func(self) -> int64 {
                     return 0;
+                }
+                func foo(self, fn: (int64) -> int64) -> int64 {
+                    return fn(self.bar);
                 }
         }"#
             .to_string();
@@ -1496,7 +1523,8 @@ mod tests {
                                     .collect::<String>(),
                                 c.methods
                                     .iter()
-                                    .map(|m| format!("{:?} func {}() -> {:?}", m.vis, m.name.name, m.ret))
+                                    .map(|m| format!("{:?} func {}({:?}) -> {:?}", m.vis, m.name.name, m.args.iter().map(|func|
+                                        format!("{:?}: {:?}", func.name.name, func.ty)).collect::<String>(), m.ret))
                                     .collect::<String>()
                             );
                         }

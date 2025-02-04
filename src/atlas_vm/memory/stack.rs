@@ -1,7 +1,8 @@
 use crate::atlas_vm::memory::object_map::Memory;
 use crate::atlas_vm::{errors::RuntimeError, memory::vm_data::VMData, RuntimeResult};
 use std::fmt::Display;
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
+use std::slice::SliceIndex;
 
 /// The size of the stack in bytes, 16384 is the maximum before it overflows "thread main"
 ///
@@ -21,6 +22,11 @@ const STACK_SIZE: usize = 16 * 16384 / size_of::<VMData>();
 pub struct Stack {
     values: [VMData; STACK_SIZE],
     pub top: usize,
+}
+#[derive(Debug)]
+pub struct StackFrame {
+    pub top: usize,
+    pub base: usize,
 }
 impl Default for Stack {
     fn default() -> Self {
@@ -70,7 +76,6 @@ impl Stack {
         for i in new_top..=self.top {
             match self.values[i].tag {
                 VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
-                    println!("Decrementing reference count of object: {}", self.values[i]);
                     mem.rc_dec(self.values[i].as_object())?;
                 }
                 _ => {}
@@ -171,6 +176,20 @@ impl Index<usize> for Stack {
         &self.values[index]
     }
 }
+
+impl IndexMut<usize> for Stack {
+    fn index_mut(&mut self, index: usize) -> &mut VMData {
+        &mut self.values[index]
+    }
+}
+
+impl Index<StackFrame> for Stack {
+    type Output = [VMData];
+    fn index(&self, index: StackFrame) -> &Self::Output {
+        &self.values[index.base..index.top]
+    }
+}
+
 
 impl Display for Stack {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

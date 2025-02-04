@@ -3,20 +3,30 @@ pub mod memory;
 pub mod runtime;
 pub mod libraries;
 
-use errors::RuntimeError;
-use libraries::{
-    fs::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
-    string::STRING_FUNCTIONS, time::TIME_FUNCTIONS,
-};
-use runtime::{arena::RuntimeArena, instruction::{Instruction, Label, Program, Type}};
 use std::collections::HashMap;
 
-use crate::atlas_vm::memory::object_map::{Class, ObjectKind};
-use crate::atlas_vm::memory::varmap::{Key, VarMap};
-use crate::atlas_vm::memory::{object_map::Memory, stack::Stack, vm_data::VMData};
+use crate::atlas_vm::{
+    errors::RuntimeError,
+    libraries::{
+        fs::FILE_FUNCTIONS, io::IO_FUNCTIONS, list::LIST_FUNCTIONS, math::MATH_FUNCTIONS,
+        string::STRING_FUNCTIONS, time::TIME_FUNCTIONS,
+    },
+    memory::{
+        object_map::Memory,
+        object_map::{Class, ObjectKind},
+        stack::Stack,
+        varmap::{Key, VarMap},
+        vm_data::VMData,
+    },
+    runtime::{
+        arena::RuntimeArena,
+        instruction::{Instruction, Label, Program, Type},
+        vm_state::VMState,
+    },
+};
 
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
-pub type CallBack = fn(runtime::vm_state::VMState) -> RuntimeResult<VMData>;
+pub type CallBack = fn(VMState) -> RuntimeResult<VMData>;
 
 pub struct Atlas77VM<'run> {
     pub program: Program<'run>,
@@ -139,26 +149,22 @@ impl<'run> Atlas77VM<'run> {
                     .class_pool
                     .iter()
                     .find(|c| c.name == class_name).unwrap();
-                let mut fields = HashMap::new();
-                for field in class.fields.iter() {
-                    fields.insert(*field, VMData::new_unit());
-                }
-                let class_ptr = self.object_map.put(ObjectKind::Class(Class {
-                    fields
-                }))?;
+                let nb_fields = class.fields.len();
+                let fields = self.runtime_arena.alloc(vec![VMData::new_unit(); nb_fields]);
+                let class_ptr = self.object_map.put(ObjectKind::Class(Class::new(nb_fields, fields)))?;
                 self.stack.push(VMData::new_object(class_ptr))?;
                 self.pc += 1;
             }
-            Instruction::GetField { field_name } => {
+            Instruction::GetField { field } => {
                 let obj = self.stack.pop()?;
                 let obj_ptr = obj.as_object();
                 let raw_obj = self.object_map.get(obj_ptr)?;
                 let class = raw_obj.class();
-                let field = class.fields.get(field_name).unwrap();
-                self.stack.push_with_rc(*field, &mut self.object_map)?;
+                let field = class[field];
+                self.stack.push_with_rc(field, &mut self.object_map)?;
                 self.pc += 1;
             }
-            Instruction::SetField { field_name } => {
+            Instruction::SetField { field } => {
                 let val = self.stack.pop()?;
                 match val.tag {
                     VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
@@ -170,8 +176,7 @@ impl<'run> Atlas77VM<'run> {
                 let obj_ptr = obj.as_object();
                 let raw_obj = self.object_map.get_mut(obj_ptr)?;
                 let class = raw_obj.class_mut();
-                class.fields.insert(field_name, val);
-                //println!("ObjectMap: {}", self.object_map);
+                class[field] = val;
                 self.pc += 1;
             }
             Instruction::PushInt(i) => {
@@ -530,13 +535,15 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push(VMData::new_list(ptr))?;
                 self.pc += 1;
             }
-            Instruction::ExternCall { function_name, .. } => {
+            Instruction::ExternCall { function_name, nb_args } => {
+                println!("Extern Calling: {} with {} args", function_name, nb_args);
                 let consts = HashMap::new();
-                let vm_state = runtime::vm_state::VMState::new(
+                let vm_state = VMState::new(
                     &mut self.stack,
                     &mut self.object_map,
                     &consts,
                     &mut self.var_map,
+                    &mut self.runtime_arena,
                 );
                 let extern_fn: &CallBack = self.extern_fn.get::<&str>(&function_name).unwrap();
                 let res = extern_fn(vm_state)?;
@@ -550,6 +557,7 @@ impl<'run> Atlas77VM<'run> {
                 self.pc = fn_ptr.as_fn_ptr();
             }
             Instruction::FunctionCall { function_name, nb_args } => {
+                println!("Calling: {} with {} args", function_name, nb_args);
                 let label: &Label<'_> = self
                     .program
                     .labels
@@ -572,7 +580,7 @@ impl<'run> Atlas77VM<'run> {
                 self.pc = label.position;
             }
             Instruction::MethodCall { method_name, nb_args } => {
-                println!("Calling: {} with {} args", method_name, nb_args);
+                println!("Method Calling: {} with {} args", method_name, nb_args);
                 let label: &Label<'_> = self
                     .program
                     .labels
@@ -608,7 +616,6 @@ impl<'run> Atlas77VM<'run> {
                 self.var_map.clean_scope(self.stack_frame.len() + 1, &mut self.object_map)?;
                 self.pc = pc + 1;
                 self.stack.push(ret)?;
-                println!("Stack: {}", self.stack);
             }
             Instruction::Halt => {
                 self.pc = self.program.len();

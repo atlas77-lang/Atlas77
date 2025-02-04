@@ -1,6 +1,7 @@
 pub mod atlas_vm;
 pub mod atlas_c;
 pub mod atlas_lib;
+pub mod atlas_asm;
 
 use atlas_c::{
     atlas_codegen::{

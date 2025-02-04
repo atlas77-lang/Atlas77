@@ -1,15 +1,19 @@
 (
     labels: [
         (
-            name: "main",
+            name: "iterative_fib",
             position: 0,
             body: [
-                FunctionCall(
-                    function_name: "test",
-                    nb_args: 0,
-                ),
                 Store(
-                    var_name: "test_chars",
+                    var_name: "blabla",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "a",
+                ),
+                PushInt(1),
+                Store(
+                    var_name: "b",
                 ),
                 PushInt(0),
                 Store(
@@ -18,40 +22,38 @@
                 Load(
                     var_name: "i",
                 ),
-                PushInt(10),
+                Load(
+                    var_name: "blabla",
+                ),
                 Lt,
                 JmpZ(
-                    pos: 32,
+                    pos: 19,
                 ),
-                NewObj(
-                    class_name: "TestChars",
+                Load(
+                    var_name: "a",
                 ),
-                PushUnsignedInt(4),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushChar('T'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushChar('e'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushChar('s'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(3),
-                Swap,
-                PushChar('t'),
-                ListStore,
-                MethodCall(
-                    method_name: "TestChars.TestChars",
-                    nb_args: 2,
+                Store(
+                    var_name: "temp",
                 ),
+                Load(
+                    var_name: "b",
+                ),
+                Store(
+                    var_name: "a",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "temp",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                IAdd,
+                Store(
+                    var_name: "b",
+                ),
+                PushUnit,
                 Pop,
                 Load(
                     var_name: "i",
@@ -64,97 +66,202 @@
                 PushUnit,
                 Pop,
                 Jmp(
-                    pos: -35,
+                    pos: -22,
                 ),
+                Load(
+                    var_name: "a",
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "main",
+            position: 32,
+            body: [
+                NewObj(
+                    class_name: "Fibonacci",
+                ),
+                PushInt(5),
+                MethodCall(
+                    method_name: "Fibonacci.Fibonacci",
+                    nb_args: 2,
+                ),
+                Store(
+                    var_name: "fibonacci",
+                ),
+                Load(
+                    var_name: "fibonacci",
+                ),
+                GetField(
+                    field: 0,
+                ),
+                Store(
+                    var_name: "n",
+                ),
+                Load(
+                    var_name: "fibonacci",
+                ),
+                MethodCall(
+                    method_name: "Fibonacci.iterative_fib",
+                    nb_args: 1,
+                ),
+                Store(
+                    var_name: "res_iterative",
+                ),
+                PushStr(0),
+                ExternCall(
+                    function_name: "print",
+                    nb_args: 1,
+                ),
+                Pop,
+                Load(
+                    var_name: "res_iterative",
+                ),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
+                Load(
+                    var_name: "fibonacci",
+                ),
+                GetField(
+                    field: 0,
+                ),
+                Load(
+                    var_name: "fibonacci",
+                ),
+                Load(
+                    var_name: "fibonacci",
+                ),
+                GetField(
+                    field: 0,
+                ),
+                MethodCall(
+                    method_name: "Fibonacci.recursive_fib",
+                    nb_args: 2,
+                ),
+                Store(
+                    var_name: "res_recursive",
+                ),
+                PushStr(1),
+                ExternCall(
+                    function_name: "print",
+                    nb_args: 1,
+                ),
+                Pop,
+                Load(
+                    var_name: "res_recursive",
+                ),
+                ExternCall(
+                    function_name: "println",
+                    nb_args: 1,
+                ),
+                Pop,
                 Halt,
             ],
         ),
         (
-            name: "test",
-            position: 41,
+            name: "recursive_fib",
+            position: 62,
             body: [
-                PushUnsignedInt(4),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushChar('T'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushChar('e'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushChar('s'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(3),
-                Swap,
-                PushChar('t'),
-                ListStore,
                 Store(
-                    var_name: "chars",
-                ),
-                NewObj(
-                    class_name: "TestChars",
+                    var_name: "n",
                 ),
                 Load(
-                    var_name: "chars",
+                    var_name: "n",
                 ),
-                MethodCall(
-                    method_name: "TestChars.TestChars",
-                    nb_args: 2,
-                ),
-                Store(
-                    var_name: "test_chars",
-                ),
-                PushInt(0),
-                PushChar('X'),
-                Load(
-                    var_name: "test_chars",
-                ),
-                PushInt(0),
-                PushChar('X'),
-                MethodCall(
-                    method_name: "TestChars.set",
-                    nb_args: 3,
-                ),
-                Pop,
-                PushInt(0),
-                Load(
-                    var_name: "test_chars",
-                ),
-                PushInt(0),
-                MethodCall(
-                    method_name: "TestChars.get",
-                    nb_args: 2,
-                ),
-                Pop,
-                PushInt(0),
-                Store(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                PushInt(1022),
-                Lt,
+                PushInt(1),
+                Lte,
                 JmpZ(
+                    pos: 3,
+                ),
+                Load(
+                    var_name: "n",
+                ),
+                Return,
+                Jmp(
                     pos: 11,
                 ),
-                NewObj(
-                    class_name: "TestChars",
+                Load(
+                    var_name: "n",
+                ),
+                PushInt(1),
+                ISub,
+                FunctionCall(
+                    function_name: "recursive_fib",
+                    nb_args: 1,
                 ),
                 Load(
-                    var_name: "chars",
+                    var_name: "n",
                 ),
-                MethodCall(
-                    method_name: "TestChars.TestChars",
-                    nb_args: 2,
+                PushInt(2),
+                ISub,
+                FunctionCall(
+                    function_name: "recursive_fib",
+                    nb_args: 1,
                 ),
+                IAdd,
+                Return,
+            ],
+        ),
+        (
+            name: "Fibonacci.iterative_fib",
+            position: 80,
+            body: [
+                Store(
+                    var_name: "self",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "a",
+                ),
+                PushInt(1),
+                Store(
+                    var_name: "b",
+                ),
+                PushInt(0),
+                Store(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "i",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field: 0,
+                ),
+                Lt,
+                JmpZ(
+                    pos: 19,
+                ),
+                Load(
+                    var_name: "a",
+                ),
+                Store(
+                    var_name: "temp",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                Store(
+                    var_name: "a",
+                ),
+                PushUnit,
+                Pop,
+                Load(
+                    var_name: "temp",
+                ),
+                Load(
+                    var_name: "b",
+                ),
+                IAdd,
+                Store(
+                    var_name: "b",
+                ),
+                PushUnit,
                 Pop,
                 Load(
                     var_name: "i",
@@ -167,75 +274,83 @@
                 PushUnit,
                 Pop,
                 Jmp(
-                    pos: -14,
+                    pos: -23,
                 ),
                 Load(
-                    var_name: "test_chars",
+                    var_name: "a",
                 ),
                 Return,
             ],
         ),
         (
-            name: "TestChars.get",
-            position: 99,
+            name: "Fibonacci.recursive_fib",
+            position: 113,
             body: [
                 Store(
-                    var_name: "i",
+                    var_name: "nth",
                 ),
                 Store(
                     var_name: "self",
                 ),
                 Load(
-                    var_name: "self",
+                    var_name: "nth",
                 ),
-                GetField(
-                    field_name: "chars",
+                PushInt(1),
+                Lte,
+                JmpZ(
+                    pos: 3,
                 ),
                 Load(
-                    var_name: "i",
+                    var_name: "nth",
                 ),
-                ListLoad,
+                Return,
+                Jmp(
+                    pos: 19,
+                ),
+                Load(
+                    var_name: "nth",
+                ),
+                PushInt(1),
+                ISub,
+                Load(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "nth",
+                ),
+                PushInt(1),
+                ISub,
+                MethodCall(
+                    method_name: "Fibonacci.recursive_fib",
+                    nb_args: 2,
+                ),
+                Load(
+                    var_name: "nth",
+                ),
+                PushInt(2),
+                ISub,
+                Load(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "nth",
+                ),
+                PushInt(2),
+                ISub,
+                MethodCall(
+                    method_name: "Fibonacci.recursive_fib",
+                    nb_args: 2,
+                ),
+                IAdd,
                 Return,
             ],
         ),
         (
-            name: "TestChars.set",
-            position: 106,
+            name: "Fibonacci.Fibonacci",
+            position: 140,
             body: [
                 Store(
-                    var_name: "c",
-                ),
-                Store(
-                    var_name: "i",
-                ),
-                Store(
-                    var_name: "self",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "self",
-                ),
-                GetField(
-                    field_name: "chars",
-                ),
-                Load(
-                    var_name: "c",
-                ),
-                ListStore,
-                PushUnit,
-                Pop,
-                PushUnit,
-                Return,
-            ],
-        ),
-        (
-            name: "TestChars.TestChars",
-            position: 118,
-            body: [
-                Store(
-                    var_name: "chars",
+                    var_name: "number",
                 ),
                 Store(
                     var_name: "self",
@@ -244,10 +359,10 @@
                     var_name: "self",
                 ),
                 Load(
-                    var_name: "chars",
+                    var_name: "number",
                 ),
                 SetField(
-                    field_name: "chars",
+                    field: 0,
                 ),
                 PushUnit,
                 Pop,
@@ -261,27 +376,22 @@
     entry_point: "main",
     libraries: [
         (
-            name: "std/string",
-            is_std: true,
-        ),
-        (
             name: "std/io",
-            is_std: true,
-        ),
-        (
-            name: "std/list",
             is_std: true,
         ),
     ],
     global: (
-        string_pool: [],
+        string_pool: [
+            "Iterative Fib: ",
+            "Recursive Fib: ",
+        ],
         list_pool: [],
         function_pool: [],
         class_pool: [
             (
-                name: "TestChars",
+                name: "Fibonacci",
                 fields: [
-                    "chars",
+                    "nth",
                 ],
                 constructor_nb_args: 1,
                 constants: {},

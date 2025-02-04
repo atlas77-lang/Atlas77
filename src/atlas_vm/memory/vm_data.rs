@@ -15,8 +15,9 @@ pub union RawVMData {
     as_char: char,
     /// Pointer to a value in the stack
     as_stack_ptr: usize,
-    /// Absolute pointer to a function in the stack
+    /// Pointer to a function
     as_fn_ptr: usize,
+    /// Pointer to an object in the object map
     as_object: ObjectIndex,
 }
 

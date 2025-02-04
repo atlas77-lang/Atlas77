@@ -1,7 +1,12 @@
 use crate::atlas_vm::errors::RuntimeError;
 use crate::atlas_vm::memory::vm_data::VMData;
 use crate::atlas_vm::RuntimeResult;
-use std::collections::HashMap;
+use std::borrow::Borrow;
+use std::ops::{Index, IndexMut};
+use std::{
+    fmt,
+    fmt::{Display, Formatter},
+};
 
 /// Probably should be renamed lmao
 ///
@@ -15,22 +20,22 @@ pub struct Memory<'mem> {
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct ObjectIndex {
-    pub idx: u64,
+    pub idx: usize,
 }
 
 impl From<ObjectIndex> for usize {
     fn from(value: ObjectIndex) -> Self {
-        value.idx as usize
+        value.idx
     }
 }
 
 impl ObjectIndex {
-    pub const fn new(i: u64) -> ObjectIndex {
+    pub const fn new(i: usize) -> ObjectIndex {
         ObjectIndex { idx: i }
     }
 }
-impl std::fmt::Display for ObjectIndex {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for ObjectIndex {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "[@{}]", self.idx)
     }
 }
@@ -42,7 +47,7 @@ impl<'mem> Memory<'mem> {
             mem: (0..space)
                 .map(|x| Object {
                     kind: ObjectKind::Free {
-                        next: ObjectIndex::new(((x + 1) % space) as u64),
+                        next: ObjectIndex::new(((x + 1) % space)),
                     },
                     rc: 0,
                 })
@@ -56,7 +61,7 @@ impl<'mem> Memory<'mem> {
                 next: self.free,
             };
             obj.rc = 0;
-            self.free = ObjectIndex::new(idx as u64);
+            self.free = ObjectIndex::new(idx);
         }
     }
 
@@ -77,19 +82,23 @@ impl<'mem> Memory<'mem> {
     }
 
     pub fn free(&mut self, index: ObjectIndex) -> RuntimeResult<()> {
-        println!("Freeing {}", index);
         let next = self.free;
-        let v = self.mem.get_mut(usize::from(index)).unwrap().kind.clone();
+        let v = &self.mem.get_mut(usize::from(index)).unwrap().kind;
+        let mut obj_to_dec = None;
+        //todo: Support classes
         if let ObjectKind::List(list) = v {
             for item in list {
                 match item.tag {
                     VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
-                        let obj_to_dec = item.as_object();
-                        self.rc_dec(obj_to_dec)?;
+                        obj_to_dec = Some(item.as_object());
                     }
                     _ => {}
                 }
             }
+        }
+        if obj_to_dec.is_some() {
+            println!("Decrementing reference count of object: {}", obj_to_dec.unwrap());
+            self.rc_dec(obj_to_dec.unwrap())?;
         }
         let v = self.mem.get_mut(usize::from(index)).unwrap();
         let repl = std::mem::replace(
@@ -113,14 +122,14 @@ impl<'mem> Memory<'mem> {
 
     #[inline(always)]
     pub fn get(&mut self, index: ObjectIndex) -> RuntimeResult<ObjectKind> {
-        let kind = self.mem[usize::from(index)].kind.clone();
+        let obj = self.mem[usize::from(index)].kind.clone();
         self.rc_dec(index)?;
-        Ok(kind)
+        Ok(obj)
     }
 
     #[inline(always)]
     pub fn get_mut(&mut self, index: ObjectIndex) -> RuntimeResult<&mut ObjectKind<'mem>> {
-        //You can decrement the rc here, because if it reaches 0 and still need to return a mutable reference, it's a bug
+        //You can decrement the rc here, because if it reaches 0 and still need to return a mutable reference...
         self.rc_dec(index)?;
         let kind = &mut self.mem[usize::from(index)].kind;
         Ok(kind)
@@ -152,8 +161,8 @@ impl<'mem> Memory<'mem> {
     }
 }
 
-impl std::fmt::Display for Memory<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for Memory<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for (i, obj) in self.mem.iter().enumerate() {
             if let Object { kind: ObjectKind::Free { .. }, .. } = obj {
                 continue;
@@ -179,20 +188,25 @@ impl Default for ObjectKind<'_> {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 pub struct Object<'mem> {
     pub kind: ObjectKind<'mem>,
     /// Reference count
     pub rc: usize,
 }
-impl std::fmt::Display for Object<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<'mem> Borrow<ObjectKind<'mem>> for Object<'mem> {
+    fn borrow(&self) -> &ObjectKind<'mem> {
+        &self.kind
+    }
+}
+impl Display for Object<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{} (rc: {})", self.kind, self.rc)
     }
 }
 
-impl std::fmt::Display for ObjectKind<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for ObjectKind<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             ObjectKind::String(s) => write!(f, "`String`: \"{}\"", s),
             ObjectKind::Class(s) => write!(f, "{:?}", s),
@@ -269,7 +283,62 @@ impl From<Vec<VMData>> for ObjectKind<'_> {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Class<'mem> {
-    pub fields: HashMap<&'mem str, VMData>,
+    pub nb_fields: usize,
+    pub fields: RawClass<'mem>,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct RawClass<'mem> {
+    pub ptr: &'mem mut [VMData],
+}
+
+impl<'mem> Clone for Class<'mem> {
+    fn clone(&self) -> Self {
+        let boxed = Box::leak(Box::new(self.fields.ptr.to_vec())).as_mut_slice();
+        let class = Self {
+            nb_fields: self.nb_fields,
+            fields: RawClass {
+                ptr: boxed,
+            },
+        };
+        class
+    }
+}
+impl<'mem> Class<'mem> {
+    pub fn new(nb_fields: usize, fields: &'mem mut [VMData]) -> Self {
+        Self {
+            nb_fields,
+            fields: RawClass { ptr: fields },
+        }
+    }
+}
+impl Index<usize> for Class<'_> {
+    type Output = VMData;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.fields[index]
+    }
+}
+
+impl IndexMut<usize> for Class<'_> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.fields[index]
+    }
+}
+
+impl<'mem> Index<usize> for RawClass<'mem> {
+    type Output = VMData;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.ptr[index]
+    }
+}
+
+impl<'mem> IndexMut<usize> for RawClass<'mem> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.ptr[index]
+    }
 }

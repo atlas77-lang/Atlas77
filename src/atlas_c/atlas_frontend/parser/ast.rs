@@ -633,6 +633,8 @@ pub struct AstListType<'ast> {
 
 #[derive(Debug, Clone, Serialize)]
 ///todo: Add support for generic types and constraints (i.e. `T: Display`)
+/// 
+/// A function type in atlas as the form of `fn(T) -> U`
 pub struct AstFunctionType<'ast> {
     pub span: Span,
     pub args: &'ast [&'ast AstType<'ast>],

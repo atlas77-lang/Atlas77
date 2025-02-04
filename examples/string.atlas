@@ -2,6 +2,11 @@ import "std/string"
 import "std/io"
 import "std/list"
 
+public class Vec<T> {
+    public:
+        data: [T];
+}
+
 public class TestChars {
     public:
         chars: [char];

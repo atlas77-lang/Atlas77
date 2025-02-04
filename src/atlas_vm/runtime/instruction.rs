@@ -141,12 +141,12 @@ pub enum Instruction<'run> {
     /// Stack:
     /// - **[ClassPtr,] -> [FieldValue,]**
     GetField {
-        field_name: &'run str,
+        field: usize,
     },
     /// Stack:
     /// - [ClassPtr, Value] -> []
     SetField {
-        field_name: &'run str,
+        field: usize,
     },
     /// Create a new object
     /// The information about the object is in the constant pool
@@ -237,6 +237,7 @@ pub struct ConstantPool<'run> {
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub struct ConstantClass<'run> {
     pub name: &'run str,
+    //Todo: Add types to the fields (need to follow RAII (Resource Acquisition Is Initialization))
     pub fields: Vec<&'run str>,
     pub constructor_nb_args: usize,
     pub constants: BTreeMap<&'run str, ConstantValue>,

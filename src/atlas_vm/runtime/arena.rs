@@ -5,7 +5,7 @@ pub struct RuntimeArena<'arena> {
 }
 
 impl<'arena> RuntimeArena<'arena> {
-    pub fn new(allocator: &'arena Bump) -> Self {
+    pub const fn new(allocator: &'arena Bump) -> Self {
         RuntimeArena {
             allocator,
         }

@@ -175,12 +175,16 @@ pub enum OpCode {
     ///
     /// The relative position is stored in the next 4 bytes
     JmpZ,
-    // [!Note] The following instructions might use more than 1 operand
     // Functions
     /// Call a function by taking the top of the stack value as the fn_ptr
     ///
     /// The number of arguments is stored in the next 1 byte
     Call,
+    /// Call a function
+    ///
+    /// The function pointer is stored in the next 4 bytes
+    /// The number of arguments is stored in the next 1 byte
+    DirectCall,
     /// Call an external function and return the result to the top of the stack
     ///
     /// The function name is a string stored in the constant pool. The function name index is stored in the next 4 bytes
