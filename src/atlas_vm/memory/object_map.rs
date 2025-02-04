@@ -282,10 +282,10 @@ impl From<Vec<VMData>> for ObjectKind<'_> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Class<'mem> {
-    pub nb_fields: usize,
     pub fields: RawClass<'mem>,
+    pub class_descriptor: usize,
 }
 
 #[repr(C)]
@@ -294,22 +294,20 @@ pub struct RawClass<'mem> {
     pub ptr: &'mem mut [VMData],
 }
 
-impl<'mem> Clone for Class<'mem> {
+impl<'mem> Clone for RawClass<'mem> {
     fn clone(&self) -> Self {
-        let boxed = Box::leak(Box::new(self.fields.ptr.to_vec())).as_mut_slice();
-        let class = Self {
-            nb_fields: self.nb_fields,
-            fields: RawClass {
-                ptr: boxed,
-            },
-        };
-        class
+        let ptr = Box::leak(Box::new(self.ptr.to_vec()))
+            .as_mut_slice();
+        RawClass {
+            ptr,
+        }
     }
 }
+
 impl<'mem> Class<'mem> {
-    pub fn new(nb_fields: usize, fields: &'mem mut [VMData]) -> Self {
+    pub fn new(class_descriptor: usize, fields: &'mem mut [VMData]) -> Self {
         Self {
-            nb_fields,
+            class_descriptor,
             fields: RawClass { ptr: fields },
         }
     }

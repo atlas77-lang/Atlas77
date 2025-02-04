@@ -27,7 +27,7 @@ pub struct VMData {
     data: RawVMData,
 }
 
-macro_rules! def_new_vmdata_func {
+macro_rules! def_new_vm_data_func {
     ($ident: ident, $field: ident, $ty: ty, $const: ident) => {
         #[inline(always)]
         pub fn $ident(val: $ty) -> Self {
@@ -79,13 +79,13 @@ impl VMData {
         }
     }
 
-    def_new_vmdata_func!(new_i64, as_i64, i64, TAG_I64);
-    def_new_vmdata_func!(new_u64, as_u64, u64, TAG_U64);
-    def_new_vmdata_func!(new_f64, as_f64, f64, TAG_FLOAT);
-    def_new_vmdata_func!(new_bool, as_bool, bool, TAG_BOOL);
-    def_new_vmdata_func!(new_char, as_char, char, TAG_CHAR);
-    def_new_vmdata_func!(new_stack_ptr, as_stack_ptr, usize, TAG_STACK_PTR);
-    def_new_vmdata_func!(new_fn_ptr, as_fn_ptr, usize, TAG_FN_PTR);
+    def_new_vm_data_func!(new_i64, as_i64, i64, TAG_I64);
+    def_new_vm_data_func!(new_u64, as_u64, u64, TAG_U64);
+    def_new_vm_data_func!(new_f64, as_f64, f64, TAG_FLOAT);
+    def_new_vm_data_func!(new_bool, as_bool, bool, TAG_BOOL);
+    def_new_vm_data_func!(new_char, as_char, char, TAG_CHAR);
+    def_new_vm_data_func!(new_stack_ptr, as_stack_ptr, usize, TAG_STACK_PTR);
+    def_new_vm_data_func!(new_fn_ptr, as_fn_ptr, usize, TAG_FN_PTR);
 }
 
 impl PartialEq for VMData {

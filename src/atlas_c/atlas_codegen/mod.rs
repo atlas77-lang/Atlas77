@@ -61,11 +61,13 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
     }
 
     pub fn compile(&mut self) -> CodegenResult<Program> {
-        for (class_name, class) in self.hir.body.classes.clone() {
-            self.generate_class_descriptor(class_name, &class);
-        }
-        self.program.global.class_pool = self.arena.alloc(self.class_pool.clone());
         let mut labels: Vec<Label> = Vec::new();
+
+        for (class_name, class) in self.hir.body.classes.clone() {
+            let class_descriptor = self.generate_class_descriptor(class_name, &class)?.clone();
+            self.class_pool.push(class_descriptor);
+        }
+
         for (func_name, function) in self.hir.body.functions.clone() {
             let mut bytecode = Vec::new();
 
@@ -87,8 +89,16 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             self.current_pos += len;
         }
         for (class_name, class) in self.hir.body.classes.clone() {
-            self.generate_bytecode_class(class_name, &class, &mut labels, self.src.clone())?
+            self.generate_bytecode_class(class_name, &class, &mut labels, self.src.clone())?;
+            let destructor_pos = self.generate_bytecode_constructor(class_name, &class.destructor, &mut labels, self.src.clone())?;
+            let constructor_pos = self.generate_bytecode_constructor(class_name, &class.constructor, &mut labels, self.src.clone())?;
+            let class_pos = self.class_pool.iter().position(|constant_class| {
+                constant_class.name == class_name
+            }).unwrap();
+            self.class_pool[class_pos].destructor_pos = destructor_pos;
+            self.class_pool[class_pos].constructor_pos = constructor_pos;
         }
+
         self.program.entry_point = String::from("main");
         self.program.labels = labels;
         self.program.global.string_pool = self.arena.alloc(self.string_pool.clone());
@@ -138,10 +148,14 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             });
             self.current_pos += len;
         }
-        self.generate_bytecode_constructor(class_name, &class.constructor, labels, src.clone())?;
         Ok(())
     }
-    fn generate_class_descriptor(&mut self, class_name: &str, class: &HirClass<'hir>) {
+    fn generate_class_descriptor(
+        &mut self,
+        class_name: &str,
+        class: &HirClass<'hir>,
+    ) -> CodegenResult<ConstantClass> {
+        println!("Generating class descriptor for {}", class_name);
         let mut fields: Vec<&'gen str> = Vec::new();
         let mut constants: BTreeMap<&'gen str, ConstantValue> = BTreeMap::new();
         for field in class.fields.iter() {
@@ -153,10 +167,15 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         let class_constant = ConstantClass {
             name: self.arena.alloc(class_name.to_string()),
             fields,
-            constructor_nb_args: class.constructor.params.len(),
+            //takes self as param
+            constructor_nb_args: class.constructor.params.len() + 1,
+            constructor_pos: usize::default(),
+            //takes self as param
+            destructor_nb_args: class.destructor.params.len() + 1,
+            destructor_pos: usize::default(),
             constants,
         };
-        self.class_pool.push(class_constant);
+        Ok(class_constant)
     }
     fn generate_bytecode_constructor(
         &mut self,
@@ -164,7 +183,8 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         constructor: &HirClassConstructor<'hir>,
         labels: &mut Vec<Label<'gen>>,
         src: String,
-    ) -> HirResult<()> {
+    ) -> CodegenResult<usize> {
+        println!("Doing constructor of {}", class_name);
         let mut bytecode = Vec::new();
         let params = constructor.params.clone();
 
@@ -182,15 +202,15 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         });
         bytecode.push(Instruction::Return);
 
-        let len = bytecode.len();
+        let bytecode_pos = bytecode.len();
         labels.push(Label {
             name: self.arena.alloc(format!("{}.{}", class_name, class_name)),
             position: self.current_pos,
             body: self.arena.alloc(bytecode),
         });
-        self.current_pos += len;
+        self.current_pos += bytecode_pos;
 
-        Ok(())
+        Ok(bytecode_pos)
     }
 
     fn generate_bytecode_block(
@@ -844,8 +864,10 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 bytecode.push(Instruction::NewList);
             }
             HirExpr::NewObj(new_obj) => {
-                let class_name = match new_obj.ty {
-                    HirTy::Named(class_name) => class_name,
+                let class_pos = match new_obj.ty {
+                    HirTy::Named(class_name) => {
+                        self.class_pool.iter().position(|class| class.name == class_name.name).unwrap()
+                    },
                     _ => return Err(HirError::UnsupportedExpr(UnsupportedExpr {
                         span: SourceSpan::new(
                             SourceOffset::from(new_obj.span.start),
@@ -857,13 +879,13 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 };
                 //Need to create a NewObj & call its constructor (constructor name = ClassName.ClassName)
                 bytecode.push(Instruction::NewObj {
-                    class_name: self.arena.alloc(class_name.name.to_string()),
+                    class_descriptor: class_pos
                 });
                 for arg in new_obj.args.iter() {
                     self.generate_bytecode_expr(arg, bytecode, src.clone())?;
                 }
                 bytecode.push(Instruction::MethodCall {
-                    method_name: self.arena.alloc(format!("{}.{}", class_name.name, class_name.name)),
+                    method_name: self.arena.alloc(format!("{}.{}", self.class_pool[class_pos].name, self.class_pool[class_pos].name)),
                     nb_args: new_obj.args.len() as u8 + 1,
                 });
             }

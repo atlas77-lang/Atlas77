@@ -151,7 +151,7 @@ pub enum Instruction<'run> {
     /// Create a new object
     /// The information about the object is in the constant pool
     NewObj {
-        class_name: &'run str,
+        class_descriptor: usize,
     },
     /// This jumps to the correct position in the program to execute the method
     ///
@@ -237,9 +237,11 @@ pub struct ConstantPool<'run> {
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub struct ConstantClass<'run> {
     pub name: &'run str,
-    //Todo: Add types to the fields (need to follow RAII (Resource Acquisition Is Initialization))
     pub fields: Vec<&'run str>,
     pub constructor_nb_args: usize,
+    pub constructor_pos: usize,
+    pub destructor_nb_args: usize,
+    pub destructor_pos: usize,
     pub constants: BTreeMap<&'run str, ConstantValue>,
 }
 

@@ -142,16 +142,11 @@ impl<'run> Atlas77VM<'run> {
                 self.object_map.free(obj.as_object())?;
                 self.pc += 1;
             }
-            Instruction::NewObj { class_name } => {
-                let class = self.
-                    program
-                    .global
-                    .class_pool
-                    .iter()
-                    .find(|c| c.name == class_name).unwrap();
+            Instruction::NewObj { class_descriptor } => {
+                let class = &self.program.global.class_pool[class_descriptor];
                 let nb_fields = class.fields.len();
                 let fields = self.runtime_arena.alloc(vec![VMData::new_unit(); nb_fields]);
-                let class_ptr = self.object_map.put(ObjectKind::Class(Class::new(nb_fields, fields)))?;
+                let class_ptr = self.object_map.put(ObjectKind::Class(Class::new(class_descriptor, fields)))?;
                 self.stack.push(VMData::new_object(class_ptr))?;
                 self.pc += 1;
             }
@@ -550,7 +545,7 @@ impl<'run> Atlas77VM<'run> {
                 self.pc += 1;
             }
             Instruction::DirectCall { pos, args } => {
-                let fn_ptr: VMData = self.stack[pos];
+                let fn_ptr = self.stack[pos];
                 let (pc, sp) = (self.pc, self.stack.top - args as usize);
                 self.stack_frame.push((pc, sp));
                 self.pc = fn_ptr.as_fn_ptr();
