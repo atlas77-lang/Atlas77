@@ -46,7 +46,6 @@ impl<'run> VarMap<'run> {
             if key.scope == scope {
                 match value.tag {
                     VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
-                        println!("{} {}", key.name, value);
                         to_remove.push(value.as_object());
                     }
                     _ => {}

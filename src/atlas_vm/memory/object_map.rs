@@ -97,7 +97,6 @@ impl<'mem> Memory<'mem> {
             }
         }
         if obj_to_dec.is_some() {
-            println!("Decrementing reference count of object: {}", obj_to_dec.unwrap());
             self.rc_dec(obj_to_dec.unwrap())?;
         }
         let v = self.mem.get_mut(usize::from(index)).unwrap();

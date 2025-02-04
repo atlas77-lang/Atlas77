@@ -122,12 +122,12 @@ impl<'run> Atlas77VM<'run> {
             ));
         }
         while self.pc < self.program.len() {
-            //println!("Instruction: {:?}", self.program[self.pc]);
+            //dbg!("Instruction: {:?}", self.program[self.pc]);
             let instr = self.program[self.pc].clone();
             self.execute_instruction(instr.clone())?;
-            //println!("Stack: {}", self.stack);
-            //println!("VarMap: {{ {} }}", self.var_map.var_map.iter().map(|(k, v)| format!("{}: {}", k.key, v)).collect::<Vec<_>>().join(", "));
-            //println!("ObjectMap: {{\n{}}}", self.object_map);
+            //dbg!("Stack: {}", self.stack);
+            //dbg!("VarMap: {{ {} }}", self.var_map.var_map.iter().map(|(k, v)| format!("{}: {}", k.key, v)).collect::<Vec<_>>().join(", "));
+            //dbg!("ObjectMap: {{\n{}}}", self.object_map);
         }
         self.stack.top += 1;
         self.stack.last().cloned()
@@ -536,7 +536,6 @@ impl<'run> Atlas77VM<'run> {
                 self.pc += 1;
             }
             Instruction::ExternCall { function_name, nb_args } => {
-                println!("Extern Calling: {} with {} args", function_name, nb_args);
                 let consts = HashMap::new();
                 let vm_state = VMState::new(
                     &mut self.stack,
@@ -557,7 +556,6 @@ impl<'run> Atlas77VM<'run> {
                 self.pc = fn_ptr.as_fn_ptr();
             }
             Instruction::FunctionCall { function_name, nb_args } => {
-                println!("Calling: {} with {} args", function_name, nb_args);
                 let label: &Label<'_> = self
                     .program
                     .labels
@@ -580,7 +578,6 @@ impl<'run> Atlas77VM<'run> {
                 self.pc = label.position;
             }
             Instruction::MethodCall { method_name, nb_args } => {
-                println!("Method Calling: {} with {} args", method_name, nb_args);
                 let label: &Label<'_> = self
                     .program
                     .labels

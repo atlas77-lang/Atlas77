@@ -107,7 +107,6 @@ impl Stack {
         let r = self.values[self.top];
         match r.tag {
             VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
-                println!("Decrementing reference count of object: {}", r);
                 mem.rc_dec(r.as_object())?;
             }
             _ => {}
