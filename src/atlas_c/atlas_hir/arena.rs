@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use super::ty::{HirBooleanTy, HirCharTy, HirFloatTy, HirIntegerTy, HirListTy, HirNamedTy, HirStringTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirUnsignedIntTy};
+use super::ty::{HirBooleanTy, HirCharTy, HirFloatTy, HirIntegerTy, HirListTy, HirNamedTy, HirNone, HirNullableTy, HirStringTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirUnsignedIntTy};
 use bumpalo::Bump;
 use logos::Span;
 
@@ -87,6 +87,14 @@ impl<'arena> TypeArena<'arena> {
         self.intern.borrow().get(&id).copied()
     }
 
+    pub fn get_none_ty(&'arena self) -> &'arena HirTy<'arena> {
+        let id = HirTyId::compute_none_ty_id();
+        self.intern
+            .borrow_mut()
+            .entry(id)
+            .or_insert_with(|| self.allocator.alloc(HirTy::None(HirNone {})))
+    }
+
     pub fn get_integer64_ty(&'arena self) -> &'arena HirTy<'arena> {
         let id = HirTyId::compute_integer64_ty_id();
         self.intern
@@ -133,6 +141,14 @@ impl<'arena> TypeArena<'arena> {
             .borrow_mut()
             .entry(id)
             .or_insert_with(|| self.allocator.alloc(HirTy::String(HirStringTy {})))
+    }
+
+    pub fn get_nullable_ty(&'arena self, inner: &'arena HirTy<'arena>) -> &'arena HirTy<'arena> {
+        let id = HirTyId::compute_nullable_ty_id(&HirTyId::from(inner));
+        self.intern
+            .borrow_mut()
+            .entry(id)
+            .or_insert_with(|| self.allocator.alloc(HirTy::Nullable(HirNullableTy { inner })))
     }
 
     pub fn get_unit_ty(&'arena self) -> &'arena HirTy<'arena> {

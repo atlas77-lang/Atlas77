@@ -153,17 +153,6 @@ pub enum Instruction<'run> {
     NewObj {
         class_descriptor: usize,
     },
-    /// This jumps to the correct position in the program to execute the method
-    ///
-    /// And creates a `self` variable in the var_map
-    MethodCall {
-        method_name: &'run str,
-        nb_args: u8,
-    },
-    StaticCall {
-        method_name: &'run str,
-        nb_args: u8,
-    },
     Halt,
 }
 

@@ -530,7 +530,7 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push(VMData::new_list(ptr))?;
                 self.pc += 1;
             }
-            Instruction::ExternCall { function_name, nb_args } => {
+            Instruction::ExternCall { function_name, .. } => {
                 let consts = HashMap::new();
                 let vm_state = VMState::new(
                     &mut self.stack,
@@ -558,28 +558,6 @@ impl<'run> Atlas77VM<'run> {
                     .find(|label| label.name == function_name)
                     .unwrap();
                 let (pc, sp) = (self.pc, self.stack.top - nb_args as usize);
-                self.stack_frame.push((pc, sp));
-                self.pc = label.position;
-            }
-            Instruction::StaticCall { method_name, nb_args } => {
-                let label: &Label<'_> = self
-                    .program
-                    .labels
-                    .iter()
-                    .find(|label: &&Label<'_>| label.name == method_name)
-                    .unwrap();
-                let (pc, sp) = (self.pc, self.stack.top - nb_args as usize);
-                self.stack_frame.push((pc, sp));
-                self.pc = label.position;
-            }
-            Instruction::MethodCall { method_name, nb_args } => {
-                let label: &Label<'_> = self
-                    .program
-                    .labels
-                    .iter()
-                    .find(|label| label.name == method_name)
-                    .unwrap();
-                let (pc, sp) = (self.pc, self.stack.top - (nb_args) as usize);
                 self.stack_frame.push((pc, sp));
                 self.pc = label.position;
             }

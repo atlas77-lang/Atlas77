@@ -658,8 +658,8 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                                 ))
                             }
                         };
-                        bytecode.push(Instruction::MethodCall {
-                            method_name: self.arena.alloc(format!("{}.{}", class_name.name, field_access.field.name)),
+                        bytecode.push(Instruction::FunctionCall {
+                            function_name: self.arena.alloc(format!("{}.{}", class_name.name, field_access.field.name)),
                             nb_args: f.args.len() as u8 + 1,
                         })
                     }
@@ -667,8 +667,8 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         for arg in f.args.iter() {
                             self.generate_bytecode_expr(arg, bytecode, src.clone())?;
                         }
-                        bytecode.push(Instruction::StaticCall {
-                            method_name: self.arena.alloc(format!("{}::{}", static_access.target.name, static_access.field.name)),
+                        bytecode.push(Instruction::FunctionCall {
+                            function_name: self.arena.alloc(format!("{}::{}", static_access.target.name, static_access.field.name)),
                             nb_args: f.args.len() as u8,
                         })
                     }
@@ -885,10 +885,13 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 for arg in new_obj.args.iter() {
                     self.generate_bytecode_expr(arg, bytecode, src.clone())?;
                 }
-                bytecode.push(Instruction::MethodCall {
-                    method_name: self.arena.alloc(format!("{}.new", self.class_pool[class_pos].name)),
+                bytecode.push(Instruction::FunctionCall {
+                    function_name: self.arena.alloc(format!("{}.new", self.class_pool[class_pos].name)),
                     nb_args: new_obj.args.len() as u8 + 1,
                 });
+            }
+            HirExpr::NoneLiteral(_) => {
+                bytecode.push(Instruction::PushUnit);
             }
         }
         Ok(())

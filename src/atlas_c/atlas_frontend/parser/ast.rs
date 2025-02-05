@@ -496,10 +496,11 @@ pub enum AstLiteral<'ast> {
     Float(AstFloatLiteral),
     Char(AstCharLiteral),
     Unit(AstUnitLiteral),
-    SelfLiteral(AstSelf),
+    SelfLiteral(AstSelfLiteral),
     String(AstStringLiteral<'ast>),
     Boolean(AstBooleanLiteral),
     List(AstListLiteral<'ast>),
+    None(AstNoneLiteral),
 }
 
 impl AstLiteral<'_> {
@@ -514,12 +515,18 @@ impl AstLiteral<'_> {
             AstLiteral::String(l) => l.span.clone(),
             AstLiteral::Boolean(l) => l.span.clone(),
             AstLiteral::List(l) => l.span.clone(),
+            AstLiteral::None(l) => l.span.clone(),
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct AstSelf {
+pub struct AstNoneLiteral {
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstSelfLiteral {
     pub span: Span,
 }
 
@@ -583,6 +590,7 @@ pub enum AstType<'ast> {
     Named(AstNamedType<'ast>),
     Pointer(AstPointerType<'ast>),
     Function(AstFunctionType<'ast>),
+    Nullable(AstNullableType<'ast>),
     List(AstListType<'ast>),
     Generic(AstGenericType<'ast>),
 }
@@ -601,10 +609,18 @@ impl AstType<'_> {
             AstType::Named(t) => t.span.clone(),
             AstType::Pointer(t) => t.span.clone(),
             AstType::Function(t) => t.span.clone(),
+            AstType::Nullable(t) => t.span.clone(),
             AstType::List(t) => t.span.clone(),
             AstType::Generic(t) => t.span.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+/// A nullable type in atlas as the form of `T?`
+pub struct AstNullableType<'ast> {
+    pub span: Span,
+    pub inner: &'ast AstType<'ast>,
 }
 
 #[derive(Debug, Clone, Serialize)]

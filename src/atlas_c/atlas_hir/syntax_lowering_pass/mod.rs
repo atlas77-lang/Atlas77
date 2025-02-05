@@ -23,7 +23,7 @@ const MATH_ATLAS: &str = include_str!("../../../atlas_lib/std/math.atlas");
 const STRING_ATLAS: &str = include_str!("../../../atlas_lib/std/string.atlas");
 
 use crate::atlas_c::atlas_hir::error::NonConstantValueError;
-use crate::atlas_c::atlas_hir::expr::{HirCastExpr, HirCharLiteralExpr, HirDeleteExpr, HirFieldAccessExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirNewObjExpr, HirSelfLiteral, HirStaticAccessExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
+use crate::atlas_c::atlas_hir::expr::{HirCastExpr, HirCharLiteralExpr, HirDeleteExpr, HirFieldAccessExpr, HirIndexingExpr, HirListLiteralExpr, HirNewArrayExpr, HirNewObjExpr, HirNoneLiteral, HirSelfLiteral, HirStaticAccessExpr, HirStringLiteralExpr, HirUnitLiteralExpr};
 use crate::atlas_c::atlas_hir::item::{HirClass, HirClassConstructor, HirClassMethod};
 use crate::atlas_c::atlas_hir::signature::{ConstantValue, HirClassConstSignature, HirClassConstructorSignature, HirClassFieldSignature, HirClassMethodModifier, HirClassMethodSignature, HirClassSignature};
 use crate::atlas_c::atlas_hir::syntax_lowering_pass::case::Case;
@@ -855,6 +855,12 @@ where
                             ty: self.arena.types().get_uninitialized_ty(),
                         })
                     }
+                    AstLiteral::None(_) => {
+                        HirExpr::NoneLiteral(HirNoneLiteral {
+                            span: l.span(),
+                            ty: self.arena.types().get_none_ty(),
+                        })
+                    }
                     AstLiteral::Char(c) => {
                         HirExpr::CharLiteral(HirCharLiteralExpr {
                             span: l.span(),
@@ -1040,6 +1046,10 @@ where
             AstType::List(l) => {
                 let ty = self.visit_ty(l.inner)?;
                 self.arena.types().get_list_ty(ty)
+            }
+            AstType::Nullable(n) => {
+                let ty = self.visit_ty(n.inner)?;
+                self.arena.types().get_nullable_ty(ty)
             }
             //The self ty is replaced during the type checking phase
             AstType::SelfTy(_) => self.arena.types().get_uninitialized_ty(),

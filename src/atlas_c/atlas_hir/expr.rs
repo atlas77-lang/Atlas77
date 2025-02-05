@@ -19,6 +19,7 @@ pub enum HirExpr<'hir> {
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
     UnsignedIntegerLiteral(HirUnsignedIntegerLiteralExpr<'hir>),
     SelfLiteral(HirSelfLiteral<'hir>),
+    NoneLiteral(HirNoneLiteral<'hir>),
     StringLiteral(HirStringLiteralExpr<'hir>),
     ListLiteral(HirListLiteralExpr<'hir>),
     NewArray(HirNewArrayExpr<'hir>),
@@ -43,6 +44,7 @@ impl HirExpr<'_> {
             HirExpr::CharLiteral(expr) => expr.span.clone(),
             HirExpr::UnitLiteral(expr) => expr.span.clone(),
             HirExpr::SelfLiteral(expr) => expr.span.clone(),
+            HirExpr::NoneLiteral(expr) => expr.span.clone(),
             HirExpr::Unary(expr) => expr.span.clone(),
             HirExpr::Casting(expr) => expr.span.clone(),
             HirExpr::Indexing(expr) => expr.span.clone(),
@@ -71,6 +73,7 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::CharLiteral(expr) => expr.ty,
             HirExpr::UnitLiteral(expr) => expr.ty,
             HirExpr::SelfLiteral(expr) => expr.ty,
+            HirExpr::NoneLiteral(expr) => expr.ty,
             HirExpr::Unary(expr) => expr.ty,
             HirExpr::Casting(expr) => expr.ty,
             HirExpr::Indexing(expr) => expr.ty,
@@ -86,6 +89,12 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::StaticAccess(expr) => expr.ty,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirNoneLiteral<'hir> {
+    pub span: Span,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug, Clone, Serialize)]

@@ -19,7 +19,7 @@ use ast::{
 };
 
 use crate::atlas_c::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
-use crate::atlas_c::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstConstructor, AstDeleteObjExpr, AstDestructor, AstGeneric, AstGenericConstraint, AstListLiteral, AstListType, AstMethod, AstMethodModifier, AstNewArrayExpr, AstNewObjExpr, AstOperatorOverload, AstSelf, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
+use crate::atlas_c::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstConstructor, AstDeleteObjExpr, AstDestructor, AstGeneric, AstGenericConstraint, AstListLiteral, AstListType, AstMethod, AstMethodModifier, AstNewArrayExpr, AstNewObjExpr, AstNoneLiteral, AstNullableType, AstOperatorOverload, AstSelfLiteral, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
 use arena::AstArena;
 use logos::Span;
 
@@ -870,6 +870,13 @@ impl<'ast> Parser<'ast> {
             TokenKind::KwDelete => {
                 self.parse_delete_obj()?
             }
+            TokenKind::KwNone => {
+                let node = AstExpr::Literal(AstLiteral::None(AstNoneLiteral {
+                    span: tok.span(),
+                }));
+                let _ = self.advance();
+                node
+            }
             TokenKind::LBracket => {
                 let start = self.advance();
                 let mut elements = vec![];
@@ -888,7 +895,7 @@ impl<'ast> Parser<'ast> {
             }
             TokenKind::Identifier(_) | TokenKind::KwSelf => {
                 let mut node = if let TokenKind::KwSelf = self.current().kind() {
-                    let node = AstExpr::Literal(AstLiteral::SelfLiteral(AstSelf {
+                    let node = AstExpr::Literal(AstLiteral::SelfLiteral(AstSelfLiteral {
                         span: tok.span(),
                     }));
                     let _ = self.advance();
@@ -1307,67 +1314,65 @@ impl<'ast> Parser<'ast> {
         };
         Ok(node)
     }
-
-    //Todo: add List<T>/Map<K, V>/() & function types
     fn parse_type(&mut self) -> ParseResult<AstType<'ast>> {
         let token = self.current();
         let start = self.current().span();
-        match token.kind() {
+        let ty = match token.kind() {
             TokenKind::Int64Ty => {
                 let _ = self.advance();
                 let node = AstType::Integer(AstIntegerType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
-                Ok(node)
+                node
             }
             TokenKind::Float64Ty => {
                 let _ = self.advance();
                 let node = AstType::Float(AstFloatType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
-                Ok(node)
+                node
             }
             TokenKind::UInt64Ty => {
                 let _ = self.advance();
                 let node = AstType::UnsignedInteger(AstUnsignedIntegerType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
-                Ok(node)
+                node
             }
             TokenKind::CharTy => {
                 let _ = self.advance();
                 let node = AstType::Char(AstCharType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
-                Ok(node)
+                node
             }
             TokenKind::BoolTy => {
                 let _ = self.advance();
                 let node = AstType::Boolean(AstBooleanType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
-                Ok(node)
+                node
             }
             TokenKind::StrTy => {
                 let _ = self.advance();
                 let node = AstType::String(AstStringType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
-                Ok(node)
+                node
             }
             TokenKind::UnitTy => {
                 let _ = self.advance();
                 let node = AstType::Unit(AstUnitType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
-                Ok(node)
+                node
             }
             TokenKind::SelfTy => {
                 let _ = self.advance();
                 let node = AstType::SelfTy(AstSelfType {
                     span: Span::union_span(&start, &self.current().span()),
                 });
-                Ok(node)
+                node
             }
             TokenKind::Ampersand => {
                 let _ = self.advance();
@@ -1376,7 +1381,7 @@ impl<'ast> Parser<'ast> {
                     span: Span::union_span(&start, &ty.span()),
                     inner: self.arena.alloc(ty),
                 });
-                Ok(node)
+                node
             }
             TokenKind::Identifier(_) => {
                 let name = self.parse_identifier()?;
@@ -1384,7 +1389,7 @@ impl<'ast> Parser<'ast> {
                     span: Span::union_span(&start, &self.current().span()),
                     name: self.arena.alloc(name),
                 });
-                Ok(node)
+                node
             }
             TokenKind::LBracket => {
                 let _ = self.advance();
@@ -1394,7 +1399,7 @@ impl<'ast> Parser<'ast> {
                     span: Span::union_span(&start, &self.current().span()),
                     inner: self.arena.alloc(ty),
                 });
-                Ok(node)
+                node
             }
             TokenKind::LParen => {
                 let _ = self.advance();
@@ -1416,21 +1421,47 @@ impl<'ast> Parser<'ast> {
                     args: self.arena.alloc_vec(types),
                     ret: self.arena.alloc(ret),
                 });
-                Ok(node)
+                node
             }
-            _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
-                token: self.current().clone(),
-                expected: TokenVec(vec![
-                    TokenKind::Identifier(String::from("int64, float64, uint64, char, [T], str & (T) -> T")),
-                    token.kind(),
-                ]),
-                span: SourceSpan::new(
-                    SourceOffset::from(start.start),
-                    self.current().end() - start.start,
-                ),
-                src: self.src.clone(),
-            })),
-        }
+            _ => {
+                return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
+                    token: self.current().clone(),
+                    expected: TokenVec(vec![
+                        TokenKind::Identifier(String::from("int64, float64, uint64, char, [T], str & (T) -> T")),
+                        token.kind(),
+                    ]),
+                    span: SourceSpan::new(
+                        SourceOffset::from(start.start),
+                        self.current().end() - start.start,
+                    ),
+                    src: self.src.clone(),
+                }))
+            }
+        };
+        let node = if self.current().kind == TokenKind::Interrogation {
+            if let AstType::Function(_) = ty {
+                return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
+                    token: self.current().clone(),
+                    expected: TokenVec(vec![TokenKind::Identifier(
+                        "Function type cannot be nullable".to_string(),
+                    )]),
+                    span: SourceSpan::new(
+                        SourceOffset::from(self.current().start()),
+                        self.current().end() - self.current().start(),
+                    ),
+                    src: self.src.clone(),
+                }));
+            }
+            let _ = self.advance();
+
+            AstType::Nullable(AstNullableType {
+                span: Span::union_span(&start, &self.current().span()),
+                inner: self.arena.alloc(ty),
+            })
+        } else {
+            ty
+        };
+        Ok(node)
     }
 }
 

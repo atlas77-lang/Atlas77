@@ -47,6 +47,10 @@ pub enum OpCode {
     PushList,
     /// Push a unit to the stack
     PushUnit,
+    /// Push a null to the stack
+    ///
+    /// Equivalent to pushing a unit
+    PushNull,
 
     // Stack operations
 

@@ -7,73 +7,96 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Copy)]
 pub struct HirTyId(u64);
 
-// All the "magic" numbers should be replaced with constants.
-// e.g. 0x00 -> const INTEGER64_MAGIC: u8 = 0x00;
+const NULL_TY_ID: u8 = 0x00;
+const INTEGER64_TY_ID: u8 = 0x01;
+const FLOAT64_TY_ID: u8 = 0x02;
+const UNSIGNED_INTEGER_TY_ID: u8 = 0x03;
+const BOOLEAN_TY_ID: u8 = 0x04;
+const UNIT_TY_ID: u8 = 0x05;
+const CHAR_TY_ID: u8 = 0x06;
+const STR_TY_ID: u8 = 0x10;
+const FUNCTION_TY_ID: u8 = 0x28;
+const LIST_TY_ID: u8 = 0x39;
+const NULLABLE_TY_ID: u8 = 0x40;
+const UNINITIALIZED_TY_ID: u8 = 0x50;
+const NAMED_TY_ID: u8 = 0x60;
+
 impl HirTyId {
+    pub fn compute_none_ty_id() -> Self {
+        let mut hasher = DefaultHasher::new();
+        NULL_TY_ID.hash(&mut hasher);
+        Self(hasher.finish())
+    }
     pub fn compute_integer64_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
-        0x00.hash(&mut hasher);
+        INTEGER64_TY_ID.hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_float64_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
-        0x01.hash(&mut hasher);
+        FLOAT64_TY_ID.hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_uint64_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
-        0x02.hash(&mut hasher);
+        UNSIGNED_INTEGER_TY_ID.hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_boolean_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
-        0x03.hash(&mut hasher);
+        BOOLEAN_TY_ID.hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_unit_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
-        0x04.hash(&mut hasher);
+        UNIT_TY_ID.hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_char_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
-        0x05.hash(&mut hasher);
+        CHAR_TY_ID.hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_str_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
-        0x10.hash(&mut hasher);
+        STR_TY_ID.hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_function_ty_id(ret_ty: &HirTyId, params: &[HirTyId]) -> Self {
         let mut hasher = DefaultHasher::new();
 
-        (0x20, ret_ty, params).hash(&mut hasher);
+        (FUNCTION_TY_ID, ret_ty, params).hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_list_ty_id(ty: &HirTyId) -> Self {
         let mut hasher = DefaultHasher::new();
-        (0x30, ty).hash(&mut hasher);
+        (LIST_TY_ID, ty).hash(&mut hasher);
+        Self(hasher.finish())
+    }
+
+    pub fn compute_nullable_ty_id(inner: &HirTyId) -> Self {
+        let mut hasher = DefaultHasher::new();
+        (NULLABLE_TY_ID, inner).hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_uninitialized_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
-        0x50.hash(&mut hasher);
+        UNINITIALIZED_TY_ID.hash(&mut hasher);
         Self(hasher.finish())
     }
 
     pub fn compute_name_ty_id(name: &str) -> Self {
         let mut hasher = DefaultHasher::new();
-        (0x10, name).hash(&mut hasher);
+        (NAMED_TY_ID, name).hash(&mut hasher);
         Self(hasher.finish())
     }
 }
@@ -81,6 +104,7 @@ impl HirTyId {
 impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
     fn from(value: &'hir HirTy<'hir>) -> Self {
         match value {
+            HirTy::None(_) => Self::compute_none_ty_id(),
             HirTy::Int64(_) => Self::compute_integer64_ty_id(),
             HirTy::Float64(_) => Self::compute_float64_ty_id(),
             HirTy::UInt64(_) => Self::compute_uint64_ty_id(),
@@ -91,6 +115,7 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
             HirTy::List(ty) => HirTyId::compute_list_ty_id(&HirTyId::from(ty.inner)),
             HirTy::Named(ty) => HirTyId::compute_name_ty_id(ty.name),
             HirTy::Uninitialized(_) => Self::compute_uninitialized_ty_id(),
+            HirTy::Nullable(ty) => HirTyId::compute_nullable_ty_id(&HirTyId::from(ty.inner)),
             HirTy::_Function(f) => {
                 let parameters = f.params.iter().map(HirTyId::from).collect::<Vec<_>>();
                 let ret_ty = HirTyId::from(f.ret_ty);
@@ -102,6 +127,7 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
 
 #[derive(Debug, Clone, Serialize, Eq, Hash, PartialEq)]
 pub enum HirTy<'hir> {
+    None(HirNone),
     Int64(HirIntegerTy),
     Float64(HirFloatTy),
     UInt64(HirUnsignedIntTy),
@@ -112,6 +138,7 @@ pub enum HirTy<'hir> {
     List(HirListTy<'hir>),
     Named(HirNamedTy<'hir>),
     Uninitialized(HirUninitializedTy),
+    Nullable(HirNullableTy<'hir>),
 
     _Function(HirFunctionTy<'hir>),
 }
@@ -119,6 +146,7 @@ pub enum HirTy<'hir> {
 impl fmt::Display for HirTy<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            HirTy::None(_) => write!(f, "null"),
             HirTy::Int64(_) => write!(f, "int64"),
             HirTy::Float64(_) => write!(f, "float64"),
             HirTy::UInt64(_) => write!(f, "uint64"),
@@ -129,6 +157,7 @@ impl fmt::Display for HirTy<'_> {
             HirTy::List(ty) => write!(f, "[{}]", ty),
             HirTy::Named(ty) => write!(f, "{}", ty.name),
             HirTy::Uninitialized(_) => write!(f, "uninitialized"),
+            HirTy::Nullable(ty) => write!(f, "{}?", ty.inner),
             HirTy::_Function(func) => {
                 let params = func
                     .params
@@ -140,6 +169,14 @@ impl fmt::Display for HirTy<'_> {
             }
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Eq, Hash, PartialEq)]
+pub struct HirNone {}
+
+#[derive(Debug, Clone, Serialize, Eq, Hash, PartialEq)]
+pub struct HirNullableTy<'hir> {
+    pub inner: &'hir HirTy<'hir>,
 }
 
 /// The char type is a 32-bit Unicode code point.
