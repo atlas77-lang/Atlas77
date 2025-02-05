@@ -1,186 +1,117 @@
 (
     labels: [
         (
-            name: "main",
+            name: "File::read",
             position: 0,
             body: [
-                FunctionCall(
-                    function_name: "test",
-                    nb_args: 0,
-                ),
                 Store(
-                    var_name: "test_chars",
-                ),
-                PushInt(0),
-                Store(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                PushInt(10),
-                Lt,
-                JmpZ(
-                    pos: 32,
+                    var_name: "path",
                 ),
                 NewObj(
-                    class_name: "TestChars",
+                    class_descriptor: 0,
                 ),
-                PushUnsignedInt(4),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushChar('T'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushChar('e'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushChar('s'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(3),
-                Swap,
-                PushChar('t'),
-                ListStore,
                 MethodCall(
-                    method_name: "TestChars.TestChars",
-                    nb_args: 2,
+                    method_name: "File.new",
+                    nb_args: 1,
                 ),
-                Pop,
-                Load(
-                    var_name: "i",
-                ),
-                PushInt(1),
-                IAdd,
                 Store(
-                    var_name: "i",
+                    var_name: "file",
+                ),
+                Load(
+                    var_name: "file",
+                ),
+                Load(
+                    var_name: "path",
+                ),
+                SetField(
+                    field: 1,
                 ),
                 PushUnit,
                 Pop,
-                Jmp(
-                    pos: -35,
-                ),
-                Halt,
-            ],
-        ),
-        (
-            name: "test",
-            position: 41,
-            body: [
-                PushUnsignedInt(4),
-                NewList,
-                Dup,
-                PushUnsignedInt(0),
-                Swap,
-                PushChar('T'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(1),
-                Swap,
-                PushChar('e'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(2),
-                Swap,
-                PushChar('s'),
-                ListStore,
-                Dup,
-                PushUnsignedInt(3),
-                Swap,
-                PushChar('t'),
-                ListStore,
-                Store(
-                    var_name: "chars",
-                ),
-                NewObj(
-                    class_name: "TestChars",
+                Load(
+                    var_name: "file",
                 ),
                 Load(
-                    var_name: "chars",
+                    var_name: "path",
                 ),
-                MethodCall(
-                    method_name: "TestChars.TestChars",
-                    nb_args: 2,
+                ExternCall(
+                    function_name: "read_file",
+                    nb_args: 1,
                 ),
-                Store(
-                    var_name: "test_chars",
-                ),
-                PushInt(0),
-                PushChar('X'),
-                Load(
-                    var_name: "test_chars",
-                ),
-                PushInt(0),
-                PushChar('X'),
-                MethodCall(
-                    method_name: "TestChars.set",
-                    nb_args: 3,
-                ),
-                Pop,
-                PushInt(0),
-                Load(
-                    var_name: "test_chars",
-                ),
-                PushInt(0),
-                MethodCall(
-                    method_name: "TestChars.get",
-                    nb_args: 2,
-                ),
-                Pop,
-                PushInt(0),
-                Store(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                PushInt(1022),
-                Lt,
-                JmpZ(
-                    pos: 11,
-                ),
-                NewObj(
-                    class_name: "TestChars",
-                ),
-                Load(
-                    var_name: "chars",
-                ),
-                MethodCall(
-                    method_name: "TestChars.TestChars",
-                    nb_args: 2,
-                ),
-                Pop,
-                Load(
-                    var_name: "i",
-                ),
-                PushInt(1),
-                IAdd,
-                Store(
-                    var_name: "i",
+                SetField(
+                    field: 0,
                 ),
                 PushUnit,
                 Pop,
-                Jmp(
-                    pos: -14,
-                ),
                 Load(
-                    var_name: "test_chars",
+                    var_name: "file",
                 ),
                 Return,
             ],
         ),
         (
-            name: "TestChars.get",
-            position: 99,
+            name: "File.open",
+            position: 17,
             body: [
                 Store(
-                    var_name: "i",
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field: 1,
+                ),
+                ExternCall(
+                    function_name: "read_file",
+                    nb_args: 1,
+                ),
+                SetField(
+                    field: 0,
+                ),
+                PushUnit,
+                Pop,
+                PushUnit,
+                Return,
+            ],
+        ),
+        (
+            name: "File.close",
+            position: 27,
+            body: [
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field: 1,
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field: 0,
+                ),
+                ExternCall(
+                    function_name: "write_file",
+                    nb_args: 2,
+                ),
+                Pop,
+                PushUnit,
+                Return,
+            ],
+        ),
+        (
+            name: "File.write",
+            position: 36,
+            body: [
+                Store(
+                    var_name: "content",
                 ),
                 Store(
                     var_name: "self",
@@ -189,53 +120,115 @@
                     var_name: "self",
                 ),
                 GetField(
-                    field: 0,
+                    field: 1,
                 ),
                 Load(
-                    var_name: "i",
+                    var_name: "content",
                 ),
-                ListLoad,
-                Return,
-            ],
-        ),
-        (
-            name: "TestChars.set",
-            position: 106,
-            body: [
-                Store(
-                    var_name: "c",
+                ExternCall(
+                    function_name: "write_file",
+                    nb_args: 2,
                 ),
-                Store(
-                    var_name: "i",
-                ),
-                Store(
-                    var_name: "self",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "self",
-                ),
-                GetField(
-                    field: 0,
-                ),
-                Load(
-                    var_name: "c",
-                ),
-                ListStore,
-                PushUnit,
                 Pop,
                 PushUnit,
                 Return,
             ],
         ),
         (
-            name: "TestChars.TestChars",
-            position: 118,
+            name: "File.remove",
+            position: 45,
             body: [
                 Store(
-                    var_name: "chars",
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field: 1,
+                ),
+                ExternCall(
+                    function_name: "remove_file",
+                    nb_args: 1,
+                ),
+                Pop,
+                PushUnit,
+                Return,
+            ],
+        ),
+        (
+            name: "File.exists",
+            position: 52,
+            body: [
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                GetField(
+                    field: 1,
+                ),
+                ExternCall(
+                    function_name: "file_exists",
+                    nb_args: 1,
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "File::read_dir",
+            position: 57,
+            body: [
+                Store(
+                    var_name: "path",
+                ),
+                Load(
+                    var_name: "path",
+                ),
+                ExternCall(
+                    function_name: "read_dir",
+                    nb_args: 1,
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "File::read_file",
+            position: 61,
+            body: [
+                Store(
+                    var_name: "path",
+                ),
+                Load(
+                    var_name: "path",
+                ),
+                ExternCall(
+                    function_name: "read_file",
+                    nb_args: 1,
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "File.delete",
+            position: 65,
+            body: [
+                Store(
+                    var_name: "self",
+                ),
+                Load(
+                    var_name: "self",
+                ),
+                Return,
+            ],
+        ),
+        (
+            name: "File.new",
+            position: 68,
+            body: [
+                Store(
+                    var_name: "path",
                 ),
                 Store(
                     var_name: "self",
@@ -243,9 +236,7 @@
                 Load(
                     var_name: "self",
                 ),
-                Load(
-                    var_name: "chars",
-                ),
+                PushStr(0),
                 SetField(
                     field: 0,
                 ),
@@ -254,19 +245,14 @@
                 Load(
                     var_name: "self",
                 ),
-                Return,
-            ],
-        ),
-        (
-            name: "Vec.Vec",
-            position: 127,
-            body: [
-                Store(
-                    var_name: "data",
+                Load(
+                    var_name: "path",
                 ),
-                Store(
-                    var_name: "self",
+                SetField(
+                    field: 1,
                 ),
+                PushUnit,
+                Pop,
                 Load(
                     var_name: "self",
                 ),
@@ -275,43 +261,24 @@
         ),
     ],
     entry_point: "main",
-    libraries: [
-        (
-            name: "std/list",
-            is_std: true,
-        ),
-        (
-            name: "std/string",
-            is_std: true,
-        ),
-        (
-            name: "std/io",
-            is_std: true,
-        ),
-        (
-            name: "std/list",
-            is_std: true,
-        ),
-    ],
+    libraries: [],
     global: (
-        string_pool: [],
+        string_pool: [
+            "",
+        ],
         list_pool: [],
         function_pool: [],
         class_pool: [
             (
-                name: "TestChars",
+                name: "File",
                 fields: [
-                    "chars",
+                    "content",
+                    "path",
                 ],
-                constructor_nb_args: 1,
-                constants: {},
-            ),
-            (
-                name: "Vec",
-                fields: [
-                    "data",
-                ],
-                constructor_nb_args: 1,
+                constructor_nb_args: 2,
+                constructor_pos: 14,
+                destructor_nb_args: 1,
+                destructor_pos: 3,
                 constants: {},
             ),
         ],

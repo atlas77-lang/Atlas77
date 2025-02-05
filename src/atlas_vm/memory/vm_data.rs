@@ -13,6 +13,8 @@ pub union RawVMData {
     as_f64: f64,
     as_bool: bool,
     as_char: char,
+    /// Null value
+    as_null: (),
     /// Pointer to a value in the stack
     as_stack_ptr: usize,
     /// Pointer to a function
@@ -38,6 +40,7 @@ macro_rules! def_new_vm_data_func {
 
 impl VMData {
     pub const TAG_UNIT: u8 = 0;
+    pub const TAG_NULL: u8 = 1;
     pub const TAG_U64: u8 = 4;
     pub const TAG_I64: u8 = 8;
     pub const TAG_FLOAT: u8 = 9;
@@ -61,7 +64,6 @@ impl VMData {
     }
 
     pub fn new_object(val: ObjectIndex) -> Self {
-        //assert!(tag > 256, "object type_id is within the reserved area");
         Self {
             tag: Self::TAG_OBJECT,
             data: RawVMData { as_object: val },
@@ -69,7 +71,10 @@ impl VMData {
     }
 
     pub fn new_string(val: ObjectIndex) -> Self {
-        Self::new(Self::TAG_STR, RawVMData { as_object: val })
+        Self {
+            tag: Self::TAG_STR,
+            data: RawVMData { as_object: val },
+        }
     }
 
     pub fn new_list(val: ObjectIndex) -> Self {
@@ -100,7 +105,8 @@ impl PartialEq for VMData {
             Self::TAG_U64 => self.as_u64() == other.as_u64(),
             Self::TAG_CHAR => self.as_char() == other.as_char(),
             Self::TAG_UNIT => true,
-            Self::TAG_STR | Self::TAG_OBJECT | Self::TAG_LIST => self.as_object() == other.as_object(),
+            // comparison based on pointer and not inner data
+            _ if self.is_object() => self.as_object() == other.as_object(),
             _ => panic!("Illegal comparison between {:?} and {:?}", self, other),
         }
     }
@@ -267,6 +273,18 @@ impl VMData {
     }
 
     #[inline(always)]
+    pub fn as_null(self) {
+        unsafe {
+            self.data.as_null
+        }
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn is_null(self) -> bool {
+        self.tag == Self::TAG_NULL
+    }
+
+    #[inline(always)]
     #[must_use]
     pub fn is_object(self) -> bool {
         self.tag == Self::TAG_OBJECT || self.tag == Self::TAG_LIST || self.tag == Self::TAG_STR
@@ -276,7 +294,7 @@ impl VMData {
     #[must_use]
     pub fn as_object(self) -> ObjectIndex {
         if !self.is_object() {
-            unreachable!()
+            unreachable!("Attempted to get an object from a non-object VMData {:?}", self);
         }
 
         unsafe { self.data.as_object }

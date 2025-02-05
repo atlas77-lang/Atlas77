@@ -122,7 +122,7 @@ impl<'run> Atlas77VM<'run> {
             ));
         }
         while self.pc < self.program.len() {
-            //dbg!("Instruction: {:?}", self.program[self.pc]);
+            //dbg!("Instruction: {:?}", &self.program[self.pc]);
             let instr = self.program[self.pc].clone();
             self.execute_instruction(instr.clone())?;
             //dbg!("Stack: {}", self.stack);

@@ -64,8 +64,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         let mut labels: Vec<Label> = Vec::new();
 
         for (class_name, class) in self.hir.body.classes.clone() {
-            let class_descriptor = self.generate_class_descriptor(class_name, &class)?.clone();
-            self.class_pool.push(class_descriptor);
+            self.generate_class_descriptor(class_name, &class);
         }
 
         for (func_name, function) in self.hir.body.functions.clone() {
@@ -90,8 +89,8 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         }
         for (class_name, class) in self.hir.body.classes.clone() {
             self.generate_bytecode_class(class_name, &class, &mut labels, self.src.clone())?;
-            let destructor_pos = self.generate_bytecode_constructor(class_name, &class.destructor, &mut labels, self.src.clone())?;
-            let constructor_pos = self.generate_bytecode_constructor(class_name, &class.constructor, &mut labels, self.src.clone())?;
+            let destructor_pos = self.generate_bytecode_constructor(class_name, &class.destructor, &mut labels, self.src.clone(), false)?;
+            let constructor_pos = self.generate_bytecode_constructor(class_name, &class.constructor, &mut labels, self.src.clone(), true)?;
             let class_pos = self.class_pool.iter().position(|constant_class| {
                 constant_class.name == class_name
             }).unwrap();
@@ -154,7 +153,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         &mut self,
         class_name: &str,
         class: &HirClass<'hir>,
-    ) -> CodegenResult<ConstantClass> {
+    ) {
         println!("Generating class descriptor for {}", class_name);
         let mut fields: Vec<&'gen str> = Vec::new();
         let mut constants: BTreeMap<&'gen str, ConstantValue> = BTreeMap::new();
@@ -175,7 +174,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             destructor_pos: usize::default(),
             constants,
         };
-        Ok(class_constant)
+        self.class_pool.push(class_constant);
     }
     fn generate_bytecode_constructor(
         &mut self,
@@ -183,6 +182,8 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         constructor: &HirClassConstructor<'hir>,
         labels: &mut Vec<Label<'gen>>,
         src: String,
+        // If the HirClassConstructor is a constructor or a destructor
+        is_constructor: bool,
     ) -> CodegenResult<usize> {
         println!("Doing constructor of {}", class_name);
         let mut bytecode = Vec::new();
@@ -204,7 +205,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
 
         let bytecode_pos = bytecode.len();
         labels.push(Label {
-            name: self.arena.alloc(format!("{}.{}", class_name, class_name)),
+            name: self.arena.alloc(if is_constructor { format!("{}.new", class_name) } else { format!("{}.delete", class_name) }),
             position: self.current_pos,
             body: self.arena.alloc(bytecode),
         });
@@ -292,7 +293,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 bytecode.push(Instruction::Pop);
             }
             _ => {
-                return Err(atlas_hir::error::HirError::UnsupportedStatement(
+                return Err(HirError::UnsupportedStatement(
                     UnsupportedStatement {
                         span: SourceSpan::new(
                             SourceOffset::from(stmt.span().start),
@@ -374,11 +375,11 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                                         expr.span().end - expr.span().start,
                                     ),
                                     expr: format!("No field access for {:?}", field_access.target.ty()),
-                                    src: src,
+                                    src,
                                 }))
                             }
                         };
-                        let class = self.program.global.class_pool.iter().find(|c| {
+                        let class = self.class_pool.iter().find(|c| {
                             c.name == class_name.name
                         }).unwrap_or_else(|| {
                             //should never happen
@@ -399,7 +400,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                                     expr.span().end - expr.span().start,
                                 ),
                                 expr: format!("{:?}", expr),
-                                src: src.clone(),
+                                src,
                             },
                         ));
                     }
@@ -735,7 +736,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         }))
                     }
                 };
-                let class = self.program.global.class_pool.iter().find(|c| {
+                let class = self.class_pool.iter().find(|c| {
                     c.name == class_name.name
                 }).unwrap_or_else(|| {
                     //should never happen
@@ -867,7 +868,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 let class_pos = match new_obj.ty {
                     HirTy::Named(class_name) => {
                         self.class_pool.iter().position(|class| class.name == class_name.name).unwrap()
-                    },
+                    }
                     _ => return Err(HirError::UnsupportedExpr(UnsupportedExpr {
                         span: SourceSpan::new(
                             SourceOffset::from(new_obj.span.start),
@@ -885,7 +886,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     self.generate_bytecode_expr(arg, bytecode, src.clone())?;
                 }
                 bytecode.push(Instruction::MethodCall {
-                    method_name: self.arena.alloc(format!("{}.{}", self.class_pool[class_pos].name, self.class_pool[class_pos].name)),
+                    method_name: self.arena.alloc(format!("{}.new", self.class_pool[class_pos].name)),
                     nb_args: new_obj.args.len() as u8 + 1,
                 });
             }
