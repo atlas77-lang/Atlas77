@@ -1039,6 +1039,7 @@ where
             AstType::UnsignedInteger(_) => self.arena.types().get_uint64_ty(),
             AstType::Unit(_) => self.arena.types().get_unit_ty(),
             AstType::String(_) => self.arena.types().get_str_ty(),
+            AstType::Null(_) => self.arena.types().get_none_ty(),
             AstType::Named(n) => {
                 let name = self.arena.names().get(n.name.name);
                 self.arena.types().get_named_ty(name, n.span.clone())

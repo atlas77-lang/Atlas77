@@ -1,33 +1,15 @@
-import "std/list"
+import "std/io"
 
-public class String {
-    private:
-        s: [char];
-        len: uint64;
+public class Test {
     public:
-        const HELLO_WORLD: [char] = ['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'];
+        data: int64;
     public:
-        String(s: [char]) {
-            self.len = len(s) as uint64;
-            self.s = s;
-        }
-        ~String() {
-            delete self;
-        }
-        func hello_world() -> String {
-            return new String(String::HELLO_WORLD);
-        }
-        func len(self) -> uint64 {
-            return self.len + 5 as uint64;
+        Test(data: int64) {
+            self.data = data;
         }
 }
 
 func main() {
-    let array = ['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'];
-    let s = new String(array);
-    s.len();
-    s.len;
-    String::hello_world().len();
-    new String(String::HELLO_WORLD);
-    delete s;
+    let test = new Test(42);
+    println(test.data);
 }

@@ -29,7 +29,7 @@ public class Fibonacci {
 }
 
 func main()  {
-    let fibonacci = new Fibonacci(none);
+    let fibonacci = new Fibonacci(5);
     let n = fibonacci.nth;
     let res_iterative = fibonacci.iterative_fib();
     print("Iterative Fib: ");

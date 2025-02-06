@@ -22,7 +22,7 @@ const UNINITIALIZED_TY_ID: u8 = 0x50;
 const NAMED_TY_ID: u8 = 0x60;
 
 impl HirTyId {
-    pub fn compute_none_ty_id() -> Self {
+    pub fn compute_null_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
         NULL_TY_ID.hash(&mut hasher);
         Self(hasher.finish())
@@ -104,7 +104,7 @@ impl HirTyId {
 impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
     fn from(value: &'hir HirTy<'hir>) -> Self {
         match value {
-            HirTy::None(_) => Self::compute_none_ty_id(),
+            HirTy::Null(_) => Self::compute_null_ty_id(),
             HirTy::Int64(_) => Self::compute_integer64_ty_id(),
             HirTy::Float64(_) => Self::compute_float64_ty_id(),
             HirTy::UInt64(_) => Self::compute_uint64_ty_id(),
@@ -127,7 +127,7 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
 
 #[derive(Debug, Clone, Serialize, Eq, Hash, PartialEq)]
 pub enum HirTy<'hir> {
-    None(HirNone),
+    Null(HirNone),
     Int64(HirIntegerTy),
     Float64(HirFloatTy),
     UInt64(HirUnsignedIntTy),
@@ -146,7 +146,7 @@ pub enum HirTy<'hir> {
 impl fmt::Display for HirTy<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            HirTy::None(_) => write!(f, "null"),
+            HirTy::Null(_) => write!(f, "null"),
             HirTy::Int64(_) => write!(f, "int64"),
             HirTy::Float64(_) => write!(f, "float64"),
             HirTy::UInt64(_) => write!(f, "uint64"),

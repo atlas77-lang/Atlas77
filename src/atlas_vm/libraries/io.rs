@@ -4,19 +4,22 @@ use crate::atlas_vm::memory::vm_data::VMData;
 use crate::atlas_vm::runtime::vm_state::VMState;
 use crate::atlas_vm::CallBack;
 
-pub const IO_FUNCTIONS: [(&str, CallBack); 3] = [
+pub const IO_FUNCTIONS: [(&str, CallBack); 4] = [
     ("println", println),
     ("print", print),
     ("input", input),
+    ("panic", panic),
 ];
 pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
     match val.tag {
-        VMData::TAG_BOOL
+        VMData::TAG_UNIT
+        | VMData::TAG_BOOL
         | VMData::TAG_U64
         | VMData::TAG_I64
         | VMData::TAG_FLOAT
-        | VMData::TAG_CHAR => {
+        | VMData::TAG_CHAR
+        | VMData::TAG_NONE => {
             println!("{}", val)
         }
         VMData::TAG_STR => {
@@ -32,11 +35,13 @@ pub fn println(state: VMState) -> Result<VMData, RuntimeError> {
 pub fn print(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
     match val.tag {
-        VMData::TAG_BOOL
+        VMData::TAG_UNIT
+        | VMData::TAG_BOOL
         | VMData::TAG_U64
         | VMData::TAG_I64
         | VMData::TAG_FLOAT
-        | VMData::TAG_CHAR => {
+        | VMData::TAG_CHAR
+        | VMData::TAG_NONE => {
             print!("{}", val)
         }
         VMData::TAG_STR => {
@@ -60,5 +65,29 @@ pub fn input(state: VMState) -> Result<VMData, RuntimeError> {
             Ok(VMData::new_string(index))
         }
         Err(_) => Err(RuntimeError::OutOfMemory),
+    }
+}
+
+pub fn panic(state: VMState) -> Result<VMData, RuntimeError> {
+    let val = state.stack.pop()?;
+    match val.tag {
+        VMData::TAG_UNIT
+        | VMData::TAG_BOOL
+        | VMData::TAG_U64
+        | VMData::TAG_I64
+        | VMData::TAG_FLOAT
+        | VMData::TAG_CHAR
+        | VMData::TAG_NONE => {
+            println!("{}", val);
+            std::process::exit(1);
+        }
+        VMData::TAG_STR => {
+            println!("{}", state.object_map.get(val.as_object())?.string());
+            std::process::exit(1);
+        }
+        _ => {
+            println!("{}", state.object_map.get(val.as_object())?);
+            std::process::exit(1);
+        }
     }
 }

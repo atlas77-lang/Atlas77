@@ -19,7 +19,7 @@ use ast::{
 };
 
 use crate::atlas_c::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
-use crate::atlas_c::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstConstructor, AstDeleteObjExpr, AstDestructor, AstGeneric, AstGenericConstraint, AstListLiteral, AstListType, AstMethod, AstMethodModifier, AstNewArrayExpr, AstNewObjExpr, AstNoneLiteral, AstNullableType, AstOperatorOverload, AstSelfLiteral, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
+use crate::atlas_c::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstConstructor, AstDeleteObjExpr, AstDestructor, AstGeneric, AstGenericConstraint, AstListLiteral, AstListType, AstMethod, AstMethodModifier, AstNewArrayExpr, AstNewObjExpr, AstNoneLiteral, AstNullType, AstNullableType, AstOperatorOverload, AstSelfLiteral, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
 use arena::AstArena;
 use logos::Span;
 
@@ -814,6 +814,8 @@ impl<'ast> Parser<'ast> {
     fn parse_primary(&mut self) -> ParseResult<AstExpr<'ast>> {
         let tok = self.current();
 
+        let none = String::from("none");
+
         let node = match tok.kind() {
             TokenKind::Bool(b) => {
                 let node = AstExpr::Literal(AstLiteral::Boolean(AstBooleanLiteral {
@@ -870,13 +872,6 @@ impl<'ast> Parser<'ast> {
             TokenKind::KwDelete => {
                 self.parse_delete_obj()?
             }
-            TokenKind::KwNone => {
-                let node = AstExpr::Literal(AstLiteral::None(AstNoneLiteral {
-                    span: tok.span(),
-                }));
-                let _ = self.advance();
-                node
-            }
             TokenKind::LBracket => {
                 let start = self.advance();
                 let mut elements = vec![];
@@ -893,42 +888,24 @@ impl<'ast> Parser<'ast> {
                 }));
                 node
             }
-            TokenKind::Identifier(_) | TokenKind::KwSelf => {
-                let mut node = if let TokenKind::KwSelf = self.current().kind() {
-                    let node = AstExpr::Literal(AstLiteral::SelfLiteral(AstSelfLiteral {
-                        span: tok.span(),
-                    }));
-                    let _ = self.advance();
-                    node
-                } else {
-                    AstExpr::Identifier(self.parse_identifier()?)
-                };
-
-                while self.peek().is_some() {
-                    match self.current().kind() {
-                        TokenKind::LParen => {
-                            node = AstExpr::Call(self.parse_fn_call(node)?);
-                        }
-                        TokenKind::LBracket => {
-                            node = AstExpr::Indexing(self.parse_indexing(node)?);
-                        }
-                        TokenKind::Dot => {
-                            node = AstExpr::FieldAccess(self.parse_field_access(node)?);
-                        }
-                        TokenKind::OpAssign => {
-                            node = AstExpr::Assign(self.parse_assign(node)?);
-                            return Ok(node);
-                        }
-                        TokenKind::DoubleColon => {
-                            node = AstExpr::StaticAccess(self.parse_static_access(node)?);
-                        }
-                        _ => {
-                            break;
-                        }
-                    }
-                }
-
+            TokenKind::KwSelf => {
+                let node = AstExpr::Literal(AstLiteral::SelfLiteral(AstSelfLiteral {
+                    span: tok.span(),
+                }));
+                let _ = self.expect(TokenKind::KwSelf)?;
+                self.parse_ident_access(node)?
+            }
+            TokenKind::KwNull => {
+                let node = AstExpr::Literal(AstLiteral::None(AstNoneLiteral {
+                    span: tok.span(),
+                }));
+                let _ = self.advance();
                 node
+            }
+            TokenKind::Identifier(i) => {
+                let node = AstExpr::Identifier(self.parse_identifier()?);
+
+                self.parse_ident_access(node)?
             }
             TokenKind::KwIf => AstExpr::IfElse(self.parse_if_expr()?),
             _ => {
@@ -942,6 +919,34 @@ impl<'ast> Parser<'ast> {
                 }))
             }
         };
+        Ok(node)
+    }
+
+    fn parse_ident_access(&mut self, origin: AstExpr<'ast>) -> ParseResult<AstExpr<'ast>> {
+        let mut node = origin;
+        while self.peek().is_some() {
+            match self.current().kind() {
+                TokenKind::LParen => {
+                    node = AstExpr::Call(self.parse_fn_call(node)?);
+                }
+                TokenKind::LBracket => {
+                    node = AstExpr::Indexing(self.parse_indexing(node)?);
+                }
+                TokenKind::Dot => {
+                    node = AstExpr::FieldAccess(self.parse_field_access(node)?);
+                }
+                TokenKind::OpAssign => {
+                    node = AstExpr::Assign(self.parse_assign(node)?);
+                    return Ok(node);
+                }
+                TokenKind::DoubleColon => {
+                    node = AstExpr::StaticAccess(self.parse_static_access(node)?);
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
         Ok(node)
     }
 
@@ -1320,59 +1325,57 @@ impl<'ast> Parser<'ast> {
         let ty = match token.kind() {
             TokenKind::Int64Ty => {
                 let _ = self.advance();
-                let node = AstType::Integer(AstIntegerType {
+                AstType::Integer(AstIntegerType {
                     span: Span::union_span(&start, &self.current().span()),
-                });
-                node
+                })
             }
             TokenKind::Float64Ty => {
                 let _ = self.advance();
-                let node = AstType::Float(AstFloatType {
+                AstType::Float(AstFloatType {
                     span: Span::union_span(&start, &self.current().span()),
-                });
-                node
+                })
             }
             TokenKind::UInt64Ty => {
                 let _ = self.advance();
-                let node = AstType::UnsignedInteger(AstUnsignedIntegerType {
+                AstType::UnsignedInteger(AstUnsignedIntegerType {
                     span: Span::union_span(&start, &self.current().span()),
-                });
-                node
+                })
             }
             TokenKind::CharTy => {
                 let _ = self.advance();
-                let node = AstType::Char(AstCharType {
+                AstType::Char(AstCharType {
                     span: Span::union_span(&start, &self.current().span()),
-                });
-                node
+                })
             }
             TokenKind::BoolTy => {
                 let _ = self.advance();
-                let node = AstType::Boolean(AstBooleanType {
+                AstType::Boolean(AstBooleanType {
                     span: Span::union_span(&start, &self.current().span()),
-                });
-                node
+                })
             }
             TokenKind::StrTy => {
                 let _ = self.advance();
-                let node = AstType::String(AstStringType {
+                AstType::String(AstStringType {
                     span: Span::union_span(&start, &self.current().span()),
-                });
-                node
+                })
             }
             TokenKind::UnitTy => {
                 let _ = self.advance();
-                let node = AstType::Unit(AstUnitType {
+                AstType::Unit(AstUnitType {
                     span: Span::union_span(&start, &self.current().span()),
-                });
-                node
+                })
             }
             TokenKind::SelfTy => {
                 let _ = self.advance();
-                let node = AstType::SelfTy(AstSelfType {
+                AstType::SelfTy(AstSelfType {
                     span: Span::union_span(&start, &self.current().span()),
-                });
-                node
+                })
+            }
+            TokenKind::KwNull => {
+                let _ = self.advance();
+                AstType::Null(AstNullType {
+                    span: self.current().span(),
+                })
             }
             TokenKind::Ampersand => {
                 let _ = self.advance();
@@ -1427,7 +1430,7 @@ impl<'ast> Parser<'ast> {
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                     token: self.current().clone(),
                     expected: TokenVec(vec![
-                        TokenKind::Identifier(String::from("int64, float64, uint64, char, [T], str & (T) -> T")),
+                        TokenKind::Identifier(String::from("int64, float64, uint64, char, [T], T?, str & (T) -> T")),
                         token.kind(),
                     ]),
                     span: SourceSpan::new(
@@ -1439,19 +1442,6 @@ impl<'ast> Parser<'ast> {
             }
         };
         let node = if self.current().kind == TokenKind::Interrogation {
-            if let AstType::Function(_) = ty {
-                return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
-                    token: self.current().clone(),
-                    expected: TokenVec(vec![TokenKind::Identifier(
-                        "Function type cannot be nullable".to_string(),
-                    )]),
-                    span: SourceSpan::new(
-                        SourceOffset::from(self.current().start()),
-                        self.current().end() - self.current().start(),
-                    ),
-                    src: self.src.clone(),
-                }));
-            }
             let _ = self.advance();
 
             AstType::Nullable(AstNullableType {

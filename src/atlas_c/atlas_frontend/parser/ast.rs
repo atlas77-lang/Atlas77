@@ -591,6 +591,7 @@ pub enum AstType<'ast> {
     Pointer(AstPointerType<'ast>),
     Function(AstFunctionType<'ast>),
     Nullable(AstNullableType<'ast>),
+    Null(AstNullType),
     List(AstListType<'ast>),
     Generic(AstGenericType<'ast>),
 }
@@ -610,10 +611,16 @@ impl AstType<'_> {
             AstType::Pointer(t) => t.span.clone(),
             AstType::Function(t) => t.span.clone(),
             AstType::Nullable(t) => t.span.clone(),
+            AstType::Null(t) => t.span.clone(),
             AstType::List(t) => t.span.clone(),
             AstType::Generic(t) => t.span.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AstNullType {
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize)]

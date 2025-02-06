@@ -84,20 +84,38 @@ impl<'mem> Memory<'mem> {
     pub fn free(&mut self, index: ObjectIndex) -> RuntimeResult<()> {
         let next = self.free;
         let v = &self.mem.get_mut(usize::from(index)).unwrap().kind;
-        let mut obj_to_dec = None;
+        println!("Freeing: {}", v);
+        let mut obj_to_dec = vec![];
         //todo: Support classes
-        if let ObjectKind::List(list) = v {
-            for item in list {
-                match item.tag {
-                    VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
-                        obj_to_dec = Some(item.as_object());
+        match v {
+            ObjectKind::Class(Class { fields, .. }) => {
+                for field in fields.ptr.iter() {
+                    match field.tag {
+                        VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                            obj_to_dec.push(field.as_object());
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
             }
+            ObjectKind::List(list) => {
+                for item in list {
+                    match item.tag {
+                        VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                            obj_to_dec.push(item.as_object());
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            ObjectKind::Free { .. } => {
+                // Already freed
+                return Ok(())
+            }
+            _ => {}
         }
-        if obj_to_dec.is_some() {
-            self.rc_dec(obj_to_dec.unwrap())?;
+        for obj in obj_to_dec {
+            self.rc_dec(obj)?;
         }
         let v = self.mem.get_mut(usize::from(index)).unwrap();
         let repl = std::mem::replace(

@@ -5,6 +5,7 @@ pub mod libraries;
 
 use std::collections::HashMap;
 
+use crate::atlas_vm::memory::stack::StackFrameInfo;
 use crate::atlas_vm::{
     errors::RuntimeError,
     libraries::{
@@ -14,13 +15,13 @@ use crate::atlas_vm::{
     memory::{
         object_map::Memory,
         object_map::{Class, ObjectKind},
-        stack::Stack,
-        varmap::{Key, VarMap},
+        stack::Stack
+        ,
         vm_data::VMData,
     },
     runtime::{
         arena::RuntimeArena,
-        instruction::{Instruction, Label, Program, Type},
+        instruction::{Instruction, ProgramDescriptor, Type},
         vm_state::VMState,
     },
 };
@@ -29,18 +30,19 @@ pub type RuntimeResult<T> = Result<T, RuntimeError>;
 pub type CallBack = fn(VMState) -> RuntimeResult<VMData>;
 
 pub struct Atlas77VM<'run> {
-    pub program: Program<'run>,
+    pub program: ProgramDescriptor<'run>,
     pub stack: Stack,
-    stack_frame: Vec<(usize, usize)>, //previous pc and previous stack top
+    stack_frame: Vec<StackFrameInfo>, //previous pc and previous stack top
     pub object_map: Memory<'run>,
     pub runtime_arena: RuntimeArena<'run>,
-    pub var_map: VarMap<'run>,
+    //pub var_map: VarMap<'run>,
     pub extern_fn: HashMap<&'run str, CallBack>,
     pub pc: usize,
+    pub base_ptr: usize,
 }
 
 impl<'run> Atlas77VM<'run> {
-    pub fn new(program: Program<'run>, runtime_arena: RuntimeArena<'run>) -> Self {
+    pub fn new(program: ProgramDescriptor<'run>, runtime_arena: RuntimeArena<'run>) -> Self {
         let mut extern_fn: HashMap<&str, CallBack> = HashMap::new();
         program.libraries.iter().for_each(|lib| {
             if lib.is_std {
@@ -85,18 +87,20 @@ impl<'run> Atlas77VM<'run> {
             stack: Stack::new(),
             stack_frame: Vec::new(),
             object_map: Memory::new(256),
-            var_map: VarMap::new(),
+            //var_map: VarMap::new(),
             runtime_arena,
             extern_fn,
             pc: 0,
+            base_ptr: 0,
         }
     }
     pub fn reset(&mut self) {
         self.stack.clear();
         self.stack_frame.clear();
         self.object_map.clear();
-        self.var_map.var_map.clear();
+        //self.var_map.var_map.clear();
         self.pc = 0;
+        self.base_ptr = 0;
     }
     pub fn run(&mut self) -> RuntimeResult<VMData> {
         let label = self
@@ -122,10 +126,10 @@ impl<'run> Atlas77VM<'run> {
             ));
         }
         while self.pc < self.program.len() {
-            //dbg!("Instruction: {:?}", &self.program[self.pc]);
+            //eprintln!("Instruction: {:?}", &self.program[self.pc]);
             let instr = self.program[self.pc].clone();
             self.execute_instruction(instr.clone())?;
-            //dbg!("Stack: {}", self.stack);
+            //eprintln!("Stack: {}", self.stack);
             //dbg!("VarMap: {{ {} }}", self.var_map.var_map.iter().map(|(k, v)| format!("{}: {}", k.key, v)).collect::<Vec<_>>().join(", "));
             //dbg!("ObjectMap: {{\n{}}}", self.object_map);
         }
@@ -143,7 +147,7 @@ impl<'run> Atlas77VM<'run> {
                 self.pc += 1;
             }
             Instruction::NewObj { class_descriptor } => {
-                let class = &self.program.global.class_pool[class_descriptor];
+                let class = &self.program.classes[class_descriptor];
                 let nb_fields = class.fields.len();
                 let fields = self.runtime_arena.alloc(vec![VMData::new_unit(); nb_fields]);
                 let class_ptr = self.object_map.put(ObjectKind::Class(Class::new(class_descriptor, fields)))?;
@@ -196,6 +200,11 @@ impl<'run> Atlas77VM<'run> {
             }
             Instruction::PushUnit => {
                 let val = VMData::new_unit();
+                self.stack.push(val)?;
+                self.pc += 1;
+            }
+            Instruction::PushNull => {
+                let val = VMData::new_none();
                 self.stack.push(val)?;
                 self.pc += 1;
             }
@@ -353,22 +362,14 @@ impl<'run> Atlas77VM<'run> {
             Instruction::Jmp { pos } => {
                 self.pc = (self.pc as isize + pos) as usize;
             }
-            Instruction::Store { var_name } => {
+            Instruction::StoreVar(pos) => {
                 let val = self.stack.pop()?;
-
-                self.var_map.insert(Key {
-                    scope: self.stack_frame.len(),
-                    name: var_name,
-                }, val, &mut self.object_map)?;
+                self.stack[self.base_ptr + pos] = val;
                 self.pc += 1;
             }
-            Instruction::Load { var_name } => {
-                let key = Key {
-                    scope: self.stack_frame.len(),
-                    name: var_name,
-                };
-                let val = self.var_map.get(&key).unwrap();
-                self.stack.push_with_rc(*val, &mut self.object_map)?;
+            Instruction::LoadVar(pos) => {
+                let val = self.stack[self.base_ptr + pos];
+                self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
             }
             Instruction::Pop => {
@@ -536,33 +537,44 @@ impl<'run> Atlas77VM<'run> {
                     &mut self.stack,
                     &mut self.object_map,
                     &consts,
-                    &mut self.var_map,
                     &mut self.runtime_arena,
                 );
-                let extern_fn: &CallBack = self.extern_fn.get::<&str>(&function_name).unwrap();
+                let extern_fn = self.extern_fn.get::<&str>(&function_name).unwrap();
                 let res = extern_fn(vm_state)?;
                 self.stack.push_with_rc(res, &mut self.object_map)?;
                 self.pc += 1;
             }
-            Instruction::DirectCall { pos, args } => {
-                let fn_ptr = self.stack[pos];
-                let (pc, sp) = (self.pc, self.stack.top - args as usize);
-                self.stack_frame.push((pc, sp));
-                self.pc = fn_ptr.as_fn_ptr();
+            Instruction::LocalSpace { nb_vars } => {
+                self.stack.top += nb_vars as usize;
+                self.pc += 1;
             }
             Instruction::FunctionCall { function_name, nb_args } => {
-                let label: &Label<'_> = self
-                    .program
-                    .labels
-                    .iter()
-                    .find(|label| label.name == function_name)
-                    .unwrap();
-                let (pc, sp) = (self.pc, self.stack.top - nb_args as usize);
-                self.stack_frame.push((pc, sp));
-                self.pc = label.position;
+                println!("FunctionCall: {} {}", function_name, nb_args);
+                println!("Stack: {}", self.stack);
+                let position = *self.program.functions.get(function_name).unwrap();
+                let base_ptr = self.stack.top - nb_args as usize;
+                let stack_frame = StackFrameInfo {
+                    pc: self.pc,
+                    base_ptr,
+                };
+                self.stack_frame.push(stack_frame);
+                self.pc = position;
+                self.base_ptr = base_ptr;
+            }
+            Instruction::Call { nb_args } => {
+                let fn_ptr = self.stack.pop()?;
+                let fn_ptr = fn_ptr.as_fn_ptr();
+                let base_ptr = self.stack.top - nb_args as usize;
+                let stack_frame = StackFrameInfo {
+                    pc: self.pc,
+                    base_ptr,
+                };
+                self.stack_frame.push(stack_frame);
+                self.base_ptr = base_ptr;
+                self.pc = fn_ptr;
             }
             Instruction::Return => {
-                let (pc, sp) = self.stack_frame.pop().unwrap_or_else(|| {
+                let stack_frame = self.stack_frame.pop().unwrap_or_else(|| {
                     eprintln!(
                         "No stack frame to return from {:?} @ {}",
                         self.stack.last(),
@@ -571,6 +583,7 @@ impl<'run> Atlas77VM<'run> {
                     std::process::exit(1);
                 });
                 let ret = *self.stack.last()?;
+                println!("Return {}", ret);
                 //This is weird asf but it works
                 match ret.tag {
                     VMData::TAG_LIST | VMData::TAG_STR => {
@@ -582,10 +595,11 @@ impl<'run> Atlas77VM<'run> {
                     }
                     _ => {}
                 }
-                self.stack.truncate(sp, &mut self.object_map)?;
-                self.var_map.clean_scope(self.stack_frame.len() + 1, &mut self.object_map)?;
-                self.pc = pc + 1;
+                self.stack.truncate(stack_frame.base_ptr, &mut self.object_map)?;
+                self.pc = stack_frame.pc + 1;
+                self.base_ptr = stack_frame.base_ptr;
                 self.stack.push(ret)?;
+                println!("Stack: {}", self.stack);
             }
             Instruction::Halt => {
                 self.pc = self.program.len();

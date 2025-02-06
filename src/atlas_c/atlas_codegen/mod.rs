@@ -10,10 +10,10 @@ use crate::atlas_c::atlas_hir::{
     ty::HirTy,
     HirModule,
 };
-use crate::atlas_vm::runtime::instruction::{ConstantClass, ImportedLibrary, Instruction, Label, Program, Type};
-use std::collections::BTreeMap;
+use crate::atlas_vm::runtime::instruction::{ClassDescriptor, ImportedLibrary, Instruction, Label, ProgramDescriptor, Type};
+use std::collections::{BTreeMap, HashMap};
 
-use crate::atlas_c::atlas_codegen::table::_Table;
+use crate::atlas_c::atlas_codegen::table::Table;
 use crate::atlas_c::atlas_hir;
 use crate::atlas_c::atlas_hir::error::HirError;
 use crate::atlas_c::atlas_hir::expr::HirUnaryOp;
@@ -31,15 +31,14 @@ where
     'gen: 'hir,
 {
     hir: HirModule<'hir>,
-    program: Program<'gen>,
+    program: ProgramDescriptor<'gen>,
     arena: CodeGenArena<'gen>,
     //simulate a var_map so the codegen can translate it into stack operations
-    _variables: _Table<&'hir str>,
+    local_variables: Table<&'hir str>,
     //store the function position
-    _global: _Table<&'hir str>,
     current_pos: usize,
     string_pool: Vec<&'gen str>,
-    class_pool: Vec<ConstantClass<'gen>>,
+    class_pool: Vec<ClassDescriptor<'gen>>,
     //todo: Replace this with the path of the current module to be codegen
     src: String,
 }
@@ -49,10 +48,9 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
     pub fn new(hir: HirModule<'hir>, arena: CodeGenArena<'gen>, src: String) -> Self {
         Self {
             hir,
-            program: Program::new(),
+            program: ProgramDescriptor::new(),
             arena,
-            _variables: _Table::new(),
-            _global: _Table::new(),
+            local_variables: Table::new(),
             current_pos: 0,
             string_pool: Vec::new(),
             class_pool: Vec::new(),
@@ -60,24 +58,34 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         }
     }
 
-    pub fn compile(&mut self) -> CodegenResult<Program> {
+    pub fn compile(&mut self) -> CodegenResult<ProgramDescriptor> {
         let mut labels: Vec<Label> = Vec::new();
-
         for (class_name, class) in self.hir.body.classes.clone() {
             self.generate_class_descriptor(class_name, &class);
         }
 
+        let mut functions: HashMap<&'gen str, usize> = HashMap::new();
         for (func_name, function) in self.hir.body.functions.clone() {
             let mut bytecode = Vec::new();
 
             let params = function.signature.params.clone();
             self.generate_bytecode_args(params, &mut bytecode)?;
             self.generate_bytecode_block(&function.body, &mut bytecode, self.src.clone())?;
+            bytecode.insert(0, Instruction::LocalSpace {
+                nb_vars: (self.local_variables.len() - function.signature.params.len()) as u8
+            });
 
             if func_name == "main" {
                 bytecode.push(Instruction::Halt);
             }
+
             let len = bytecode.len();
+            let func_name = self.arena.alloc(func_name.to_string());
+
+            functions.insert(func_name, self.current_pos);
+            for arg in function.signature.params.iter() {
+                self.local_variables.insert(arg.name);
+            }
 
             labels.push(Label {
                 name: self.arena.alloc(func_name.to_string()),
@@ -86,11 +94,16 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
             });
 
             self.current_pos += len;
+            self.local_variables.clear();
         }
         for (class_name, class) in self.hir.body.classes.clone() {
-            self.generate_bytecode_class(class_name, &class, &mut labels, self.src.clone())?;
+            self.generate_bytecode_class(class_name, &class, &mut labels, self.src.clone(), &mut functions)?;
             let destructor_pos = self.generate_bytecode_constructor(class_name, &class.destructor, &mut labels, self.src.clone(), false)?;
+            self.local_variables.clear();
+            functions.insert(self.arena.alloc(format!("{}.delete", class_name)), destructor_pos);
             let constructor_pos = self.generate_bytecode_constructor(class_name, &class.constructor, &mut labels, self.src.clone(), true)?;
+            self.local_variables.clear();
+            functions.insert(self.arena.alloc(format!("{}.new", class_name)), constructor_pos);
             let class_pos = self.class_pool.iter().position(|constant_class| {
                 constant_class.name == class_name
             }).unwrap();
@@ -101,7 +114,8 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         self.program.entry_point = String::from("main");
         self.program.labels = labels;
         self.program.global.string_pool = self.arena.alloc(self.string_pool.clone());
-        self.program.global.class_pool = self.arena.alloc(self.class_pool.clone());
+        self.program.classes = self.arena.alloc(self.class_pool.clone());
+        self.program.functions = functions;
         let libraries = self
             .hir
             .body
@@ -122,30 +136,35 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         class: &HirClass<'hir>,
         labels: &mut Vec<Label<'gen>>,
         src: String,
+        functions: &mut HashMap<&'gen str, usize>,
     ) -> HirResult<()> {
         for method in class.methods.iter() {
             let mut bytecode = Vec::new();
             let params = method.signature.params.clone();
             self.generate_bytecode_args(params, &mut bytecode)?;
             if method.signature.modifier != HirClassMethodModifier::Static {
-                bytecode.push(Instruction::Store {
-                    var_name: self.arena.alloc(String::from("self")),
-                });
+                bytecode.push(Instruction::StoreVar(self.local_variables.insert("self")));
             }
             self.generate_bytecode_block(&method.body, &mut bytecode, src.clone())?;
             let len = bytecode.len();
+            let method_name = self.arena.alloc(
+                if method.signature.modifier == HirClassMethodModifier::Static {
+                    format!("{}::{}", class_name, method.name)
+                } else {
+                    format!("{}.{}", class_name, method.name)
+                }
+            );
+            functions.insert(method_name, self.current_pos);
+            bytecode.insert(0, Instruction::LocalSpace {
+                nb_vars: (self.local_variables.len() - method.signature.params.len()) as u8
+            });
             labels.push(Label {
-                name: self.arena.alloc(
-                    if method.signature.modifier == HirClassMethodModifier::Static {
-                        format!("{}::{}", class_name, method.name)
-                    } else {
-                        format!("{}.{}", class_name, method.name)
-                    }
-                ),
+                name: method_name,
                 position: self.current_pos,
                 body: self.arena.alloc(bytecode),
             });
             self.current_pos += len;
+            self.local_variables.clear();
         }
         Ok(())
     }
@@ -163,7 +182,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         for (constant_name, constant) in class.signature.constants.iter() {
             constants.insert(self.arena.alloc(constant_name.to_string()), constant.value.clone());
         }
-        let class_constant = ConstantClass {
+        let class_constant = ClassDescriptor {
             name: self.arena.alloc(class_name.to_string()),
             fields,
             //takes self as param
@@ -185,33 +204,32 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
         // If the HirClassConstructor is a constructor or a destructor
         is_constructor: bool,
     ) -> CodegenResult<usize> {
-        println!("Doing constructor of {}", class_name);
+        println!("Doing {} of {}", if is_constructor { "constructor" } else { "destructor" }, class_name);
         let mut bytecode = Vec::new();
         let params = constructor.params.clone();
 
+        self.local_variables.insert("self");
         self.generate_bytecode_args(params, &mut bytecode)?;
         //self reference of the object
-        bytecode.push(Instruction::Store {
-            var_name: self.arena.alloc(String::from("self")),
-        });
 
         self.generate_bytecode_block(&constructor.body, &mut bytecode, src.clone())?;
 
         //Return the self reference
-        bytecode.push(Instruction::Load {
-            var_name: self.arena.alloc(String::from("self")),
-        });
+        bytecode.push(Instruction::LoadVar(self.local_variables.get_index("self").unwrap()));
         bytecode.push(Instruction::Return);
-
-        let bytecode_pos = bytecode.len();
+        println!("nbParams: {}", constructor.params.len());
+        bytecode.insert(0, Instruction::LocalSpace {
+            nb_vars: (self.local_variables.len() - constructor.params.len() + 1) as u8 //+1 for self
+        });
+        let len = bytecode.len();
         labels.push(Label {
             name: self.arena.alloc(if is_constructor { format!("{}.new", class_name) } else { format!("{}.delete", class_name) }),
             position: self.current_pos,
             body: self.arena.alloc(bytecode),
         });
-        self.current_pos += bytecode_pos;
+        self.current_pos += len;
 
-        Ok(bytecode_pos)
+        Ok(self.current_pos - len)
     }
 
     fn generate_bytecode_block(
@@ -272,20 +290,16 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                     pos: start - bytecode.len() as isize,
                 });
             }
-            HirStatement::Const(let_stmt) => {
+            HirStatement::Const(const_stmt) => {
                 let mut value = Vec::new();
-                self.generate_bytecode_expr(&let_stmt.value, &mut value, src)?;
-                value.push(Instruction::Store {
-                    var_name: self.arena.alloc(let_stmt.name.to_string()),
-                });
+                self.generate_bytecode_expr(&const_stmt.value, &mut value, src)?;
+                value.push(Instruction::StoreVar(self.local_variables.insert(const_stmt.name)));
                 bytecode.append(&mut value);
             }
             HirStatement::Let(let_stmt) => {
                 let mut value = Vec::new();
                 self.generate_bytecode_expr(&let_stmt.value, &mut value, src)?;
-                value.push(Instruction::Store {
-                    var_name: self.arena.alloc(let_stmt.name.to_string()),
-                });
+                value.push(Instruction::StoreVar(self.local_variables.insert(let_stmt.name)));
                 bytecode.append(&mut value);
             }
             HirStatement::Expr(e) => {
@@ -320,9 +334,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 match lhs {
                     HirExpr::Ident(i) => {
                         self.generate_bytecode_expr(&a.rhs, bytecode, src.clone())?;
-                        bytecode.push(Instruction::Store {
-                            var_name: self.arena.alloc(i.name.to_string()),
-                        });
+                        bytecode.push(Instruction::StoreVar(self.local_variables.get_index(i.name).unwrap()));
                     }
                     HirExpr::Indexing(i) => {
                         match i.target.ty() {
@@ -716,11 +728,12 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 });
             }
             HirExpr::Delete(d) => {
+                println!("Doing delete for {:?}", d);
                 self.generate_bytecode_expr(&d.expr, bytecode, src)?;
                 bytecode.push(Instruction::DeleteObj);
             }
-            HirExpr::Ident(i) => bytecode.push(Instruction::Load { var_name: self.arena.alloc(i.name.to_string()) }),
-            HirExpr::SelfLiteral(_) => bytecode.push(Instruction::Load { var_name: self.arena.alloc(String::from("self")) }),
+            HirExpr::Ident(i) => bytecode.push(Instruction::LoadVar(self.local_variables.get_index(i.name).unwrap())),
+            HirExpr::SelfLiteral(_) => bytecode.push(Instruction::LoadVar(self.local_variables.get_index("self").unwrap())),
             HirExpr::FieldAccess(field_access) => {
                 self.generate_bytecode_expr(field_access.target.as_ref(), bytecode, src.clone())?;
                 let class_name = match field_access.target.ty() {
@@ -891,22 +904,21 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 });
             }
             HirExpr::NoneLiteral(_) => {
-                bytecode.push(Instruction::PushUnit);
+                bytecode.push(Instruction::PushNull);
             }
         }
         Ok(())
     }
 
     fn generate_bytecode_args(
-        &self,
+        &mut self,
         args: Vec<&HirFunctionParameterSignature<'hir>>,
         bytecode: &mut Vec<Instruction<'gen>>,
     ) -> HirResult<()> {
         let args = args.iter().rev().cloned().collect::<Vec<_>>();
         for arg in args {
-            bytecode.push(Instruction::Store {
-                var_name: self.arena.alloc(arg.name.to_string()),
-            });
+            // You don't need to push the args, they're already on the stack
+            self.local_variables.insert(arg.name);
         }
         Ok(())
     }

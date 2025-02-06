@@ -14,7 +14,7 @@ pub union RawVMData {
     as_bool: bool,
     as_char: char,
     /// Null value
-    as_null: (),
+    as_none: (),
     /// Pointer to a value in the stack
     as_stack_ptr: usize,
     /// Pointer to a function
@@ -40,7 +40,7 @@ macro_rules! def_new_vm_data_func {
 
 impl VMData {
     pub const TAG_UNIT: u8 = 0;
-    pub const TAG_NULL: u8 = 1;
+    pub const TAG_NONE: u8 = 1;
     pub const TAG_U64: u8 = 4;
     pub const TAG_I64: u8 = 8;
     pub const TAG_FLOAT: u8 = 9;
@@ -60,6 +60,12 @@ impl VMData {
         Self {
             tag: Self::TAG_UNIT,
             data: RawVMData { as_unit: () },
+        }
+    }
+    pub fn new_none() -> Self {
+        Self {
+            tag: Self::TAG_NONE,
+            data: RawVMData { as_none: () },
         }
     }
 
@@ -104,7 +110,7 @@ impl PartialEq for VMData {
             Self::TAG_I64 => self.as_i64() == other.as_i64(),
             Self::TAG_U64 => self.as_u64() == other.as_u64(),
             Self::TAG_CHAR => self.as_char() == other.as_char(),
-            Self::TAG_UNIT => true,
+            Self::TAG_UNIT | Self::TAG_NONE => true,
             // comparison based on pointer and not inner data
             _ if self.is_object() => self.as_object() == other.as_object(),
             _ => panic!("Illegal comparison between {:?} and {:?}", self, other),
@@ -273,15 +279,15 @@ impl VMData {
     }
 
     #[inline(always)]
-    pub fn as_null(self) {
+    pub fn as_none(self) {
         unsafe {
-            self.data.as_null
+            self.data.as_none
         }
     }
     #[inline(always)]
     #[must_use]
-    pub fn is_null(self) -> bool {
-        self.tag == Self::TAG_NULL
+    pub fn is_none(self) -> bool {
+        self.tag == Self::TAG_NONE
     }
 
     #[inline(always)]

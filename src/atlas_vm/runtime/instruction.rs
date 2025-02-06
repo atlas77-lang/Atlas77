@@ -1,10 +1,11 @@
 //NB: This is a dumb down version of the instruction set.
 //A more powerful version will be done for the v0.5.2 & v0.5.3
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::ops::Index;
 
 use crate::atlas_c::atlas_hir::signature::ConstantValue;
+use crate::atlas_vm::memory;
 use serde::{Deserialize, Serialize};
 
 #[repr(u8)]
@@ -18,6 +19,7 @@ pub enum Type {
     Char,
 }
 
+/// The instruction set for the VM
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Instruction<'run> {
     PushInt(i64),
@@ -31,22 +33,27 @@ pub enum Instruction<'run> {
     /// Push a list from the constant pool
     /// The list is directly put in the memory and its pointer is pushed to the stack
     PushList(usize),
+    PushNull,
     PushUnit,
 
-    ///Store will replace StoreInteger, StoreFloat, StoreUnsignedInteger, StoreBool and will stop using the var_map and favor the stack instead
-    //Store(usize),
-    ///Load will replace LoadInteger, LoadFloat, LoadUnsignedInteger, LoadBool and will stop using the var_map and favor the stack instead
-    Get(usize),
+    /// Store the value at the top of the stack to its corresponding slot in the stack variable
+    ///
+    /// cf. [memory::stack::Stack] for more information on variable slots
+    StoreVar(usize),
+    /// Load the value from the stack variable to the top of the stack
+    ///
+    /// cf. [memory::stack::Stack] for more information on variable slots
+    LoadVar(usize),
 
     Pop,
     Swap,
     Dup,
 
-    Store {
+    StoreVarMap {
         var_name: &'run str,
     },
 
-    Load {
+    LoadVarMap {
         var_name: &'run str,
     },
 
@@ -115,21 +122,19 @@ pub enum Instruction<'run> {
     JmpZ {
         pos: isize,
     },
-
-    /// Call a function by taking the value at `pos` in the stack as the fn_ptr
-    DirectCall {
-        pos: usize,
-        args: u8,
+    /// Make space for the local variables of a function
+    /// todo: Rename the instruction
+    LocalSpace {
+        nb_vars: u8,
     },
-    /// Call a function by taking the top of the stack value as the fn_ptr
     Call {
         nb_args: u8,
     },
-
     FunctionCall {
         function_name: &'run str,
         nb_args: u8,
     },
+
     ExternCall {
         function_name: &'run str,
         nb_args: u8,
@@ -165,17 +170,21 @@ pub struct ImportedLibrary {
 
 ///todo: Make the program serializable and deserializable
 /// This will allow the program to be saved and loaded from a file
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
-pub struct Program<'run> {
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ProgramDescriptor<'run> {
     pub labels: Vec<Label<'run>>,
     pub entry_point: String,
     pub libraries: Vec<ImportedLibrary>,
     pub global: ConstantPool<'run>,
+    pub classes: &'run [ClassDescriptor<'run>],
+    //todo: Change `usize` to a `FunctionDescriptor`
+    pub functions: HashMap<&'run str, usize>,
 }
 
-impl<'run> Index<usize> for Program<'run> {
+impl<'run> Index<usize> for ProgramDescriptor<'run> {
     type Output = Instruction<'run>;
 
+    /// Inefficient implementation
     fn index(&self, index: usize) -> &Self::Output {
         let mut current_index = 0;
         for label in &self.labels {
@@ -187,12 +196,12 @@ impl<'run> Index<usize> for Program<'run> {
         panic!("Index out of bounds");
     }
 }
-impl Default for Program<'_> {
+impl Default for ProgramDescriptor<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
-impl Program<'_> {
+impl ProgramDescriptor<'_> {
     pub fn len(&self) -> usize {
         self.labels.iter().map(|label| label.body.len()).sum()
     }
@@ -203,11 +212,12 @@ impl Program<'_> {
         Self {
             labels: vec![],
             entry_point: String::new(),
+            classes: &[],
+            functions: HashMap::new(),
             global: ConstantPool {
                 string_pool: &[],
                 list_pool: &[],
                 function_pool: &[],
-                class_pool: &[],
             },
             libraries: vec![],
         }
@@ -220,11 +230,10 @@ pub struct ConstantPool<'run> {
     pub string_pool: &'run [&'run str],
     pub list_pool: &'run [ConstantValue],
     pub function_pool: &'run [usize],
-    pub class_pool: &'run [ConstantClass<'run>],
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
-pub struct ConstantClass<'run> {
+pub struct ClassDescriptor<'run> {
     pub name: &'run str,
     pub fields: Vec<&'run str>,
     pub constructor_nb_args: usize,
@@ -236,6 +245,7 @@ pub struct ConstantClass<'run> {
 
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
+//todo: This should be dropped cuz it's slow
 pub struct Label<'run> {
     pub name: &'run str,
     pub position: usize,

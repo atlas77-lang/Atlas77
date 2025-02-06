@@ -166,6 +166,8 @@ pub enum TokenKind {
     Tilde,
     #[token("self")]
     KwSelf,
+    #[token("null")]
+    KwNull,
     #[token("operator")]
     KwOperator,
     #[token("class")]
@@ -179,8 +181,6 @@ pub enum TokenKind {
     #[token("where")]
     //Used for generics constraints and bounds (i.e. func foo(arg: @T) -> T where T: Add)
     KwWhere,
-    #[token("none")]
-    KwNone,
     #[token("extern")]
     KwExtern,
     #[token("struct")]

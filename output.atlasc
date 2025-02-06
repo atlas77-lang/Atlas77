@@ -4,73 +4,43 @@
             name: "iterative_fib",
             position: 0,
             body: [
-                Store(
-                    var_name: "blabla",
+                LocalSpace(
+                    nb_vars: 4,
                 ),
                 PushInt(0),
-                Store(
-                    var_name: "a",
-                ),
+                StoreVar(1),
                 PushInt(1),
-                Store(
-                    var_name: "b",
-                ),
+                StoreVar(2),
                 PushInt(0),
-                Store(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "blabla",
-                ),
+                StoreVar(3),
+                LoadVar(3),
+                LoadVar(0),
                 Lt,
                 JmpZ(
                     pos: 19,
                 ),
-                Load(
-                    var_name: "a",
-                ),
-                Store(
-                    var_name: "temp",
-                ),
-                Load(
-                    var_name: "b",
-                ),
-                Store(
-                    var_name: "a",
-                ),
+                LoadVar(1),
+                StoreVar(4),
+                LoadVar(2),
+                StoreVar(1),
                 PushUnit,
                 Pop,
-                Load(
-                    var_name: "temp",
-                ),
-                Load(
-                    var_name: "b",
-                ),
+                LoadVar(4),
+                LoadVar(2),
                 IAdd,
-                Store(
-                    var_name: "b",
-                ),
+                StoreVar(2),
                 PushUnit,
                 Pop,
-                Load(
-                    var_name: "i",
-                ),
+                LoadVar(3),
                 PushInt(1),
                 IAdd,
-                Store(
-                    var_name: "i",
-                ),
+                StoreVar(3),
                 PushUnit,
                 Pop,
                 Jmp(
                     pos: -22,
                 ),
-                Load(
-                    var_name: "a",
-                ),
+                LoadVar(1),
                 Return,
             ],
         ),
@@ -78,62 +48,47 @@
             name: "main",
             position: 32,
             body: [
+                LocalSpace(
+                    nb_vars: 4,
+                ),
                 NewObj(
                     class_descriptor: 0,
                 ),
-                PushUnit,
+                PushInt(5),
                 FunctionCall(
                     function_name: "Fibonacci.new",
                     nb_args: 2,
                 ),
-                Store(
-                    var_name: "fibonacci",
-                ),
-                Load(
-                    var_name: "fibonacci",
-                ),
+                StoreVar(0),
+                LoadVar(0),
                 GetField(
                     field: 0,
                 ),
-                Store(
-                    var_name: "n",
-                ),
-                Load(
-                    var_name: "fibonacci",
-                ),
+                StoreVar(1),
+                LoadVar(0),
                 FunctionCall(
                     function_name: "Fibonacci.iterative_fib",
                     nb_args: 1,
                 ),
-                Store(
-                    var_name: "res_iterative",
-                ),
+                StoreVar(2),
                 PushStr(0),
                 ExternCall(
                     function_name: "print",
                     nb_args: 1,
                 ),
                 Pop,
-                Load(
-                    var_name: "res_iterative",
-                ),
+                LoadVar(2),
                 ExternCall(
                     function_name: "println",
                     nb_args: 1,
                 ),
                 Pop,
-                Load(
-                    var_name: "fibonacci",
-                ),
+                LoadVar(0),
                 GetField(
                     field: 0,
                 ),
-                Load(
-                    var_name: "fibonacci",
-                ),
-                Load(
-                    var_name: "fibonacci",
-                ),
+                LoadVar(0),
+                LoadVar(0),
                 GetField(
                     field: 0,
                 ),
@@ -141,18 +96,14 @@
                     function_name: "Fibonacci.recursive_fib",
                     nb_args: 2,
                 ),
-                Store(
-                    var_name: "res_recursive",
-                ),
+                StoreVar(3),
                 PushStr(1),
                 ExternCall(
                     function_name: "print",
                     nb_args: 1,
                 ),
                 Pop,
-                Load(
-                    var_name: "res_recursive",
-                ),
+                LoadVar(3),
                 ExternCall(
                     function_name: "println",
                     nb_args: 1,
@@ -163,38 +114,30 @@
         ),
         (
             name: "recursive_fib",
-            position: 62,
+            position: 63,
             body: [
-                Store(
-                    var_name: "n",
+                LocalSpace(
+                    nb_vars: 0,
                 ),
-                Load(
-                    var_name: "n",
-                ),
+                LoadVar(0),
                 PushInt(1),
                 Lte,
                 JmpZ(
                     pos: 3,
                 ),
-                Load(
-                    var_name: "n",
-                ),
+                LoadVar(0),
                 Return,
                 Jmp(
                     pos: 11,
                 ),
-                Load(
-                    var_name: "n",
-                ),
+                LoadVar(0),
                 PushInt(1),
                 ISub,
                 FunctionCall(
                     function_name: "recursive_fib",
                     nb_args: 1,
                 ),
-                Load(
-                    var_name: "n",
-                ),
+                LoadVar(0),
                 PushInt(2),
                 ISub,
                 FunctionCall(
@@ -207,29 +150,20 @@
         ),
         (
             name: "Fibonacci.iterative_fib",
-            position: 80,
+            position: 81,
             body: [
-                Store(
-                    var_name: "self",
+                LocalSpace(
+                    nb_vars: 5,
                 ),
+                StoreVar(0),
                 PushInt(0),
-                Store(
-                    var_name: "a",
-                ),
+                StoreVar(1),
                 PushInt(1),
-                Store(
-                    var_name: "b",
-                ),
+                StoreVar(2),
                 PushInt(0),
-                Store(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "i",
-                ),
-                Load(
-                    var_name: "self",
-                ),
+                StoreVar(3),
+                LoadVar(3),
+                LoadVar(0),
                 GetField(
                     field: 0,
                 ),
@@ -237,104 +171,66 @@
                 JmpZ(
                     pos: 19,
                 ),
-                Load(
-                    var_name: "a",
-                ),
-                Store(
-                    var_name: "temp",
-                ),
-                Load(
-                    var_name: "b",
-                ),
-                Store(
-                    var_name: "a",
-                ),
+                LoadVar(1),
+                StoreVar(4),
+                LoadVar(2),
+                StoreVar(1),
                 PushUnit,
                 Pop,
-                Load(
-                    var_name: "temp",
-                ),
-                Load(
-                    var_name: "b",
-                ),
+                LoadVar(4),
+                LoadVar(2),
                 IAdd,
-                Store(
-                    var_name: "b",
-                ),
+                StoreVar(2),
                 PushUnit,
                 Pop,
-                Load(
-                    var_name: "i",
-                ),
+                LoadVar(3),
                 PushInt(1),
                 IAdd,
-                Store(
-                    var_name: "i",
-                ),
+                StoreVar(3),
                 PushUnit,
                 Pop,
                 Jmp(
                     pos: -23,
                 ),
-                Load(
-                    var_name: "a",
-                ),
+                LoadVar(1),
                 Return,
             ],
         ),
         (
             name: "Fibonacci.recursive_fib",
-            position: 113,
+            position: 114,
             body: [
-                Store(
-                    var_name: "nth",
+                LocalSpace(
+                    nb_vars: 1,
                 ),
-                Store(
-                    var_name: "self",
-                ),
-                Load(
-                    var_name: "nth",
-                ),
+                StoreVar(1),
+                LoadVar(0),
                 PushInt(1),
                 Lte,
                 JmpZ(
                     pos: 3,
                 ),
-                Load(
-                    var_name: "nth",
-                ),
+                LoadVar(0),
                 Return,
                 Jmp(
                     pos: 19,
                 ),
-                Load(
-                    var_name: "nth",
-                ),
+                LoadVar(0),
                 PushInt(1),
                 ISub,
-                Load(
-                    var_name: "self",
-                ),
-                Load(
-                    var_name: "nth",
-                ),
+                LoadVar(1),
+                LoadVar(0),
                 PushInt(1),
                 ISub,
                 FunctionCall(
                     function_name: "Fibonacci.recursive_fib",
                     nb_args: 2,
                 ),
-                Load(
-                    var_name: "nth",
-                ),
+                LoadVar(0),
                 PushInt(2),
                 ISub,
-                Load(
-                    var_name: "self",
-                ),
-                Load(
-                    var_name: "nth",
-                ),
+                LoadVar(1),
+                LoadVar(0),
                 PushInt(2),
                 ISub,
                 FunctionCall(
@@ -349,12 +245,10 @@
             name: "Fibonacci.delete",
             position: 140,
             body: [
-                Store(
-                    var_name: "self",
+                LocalSpace(
+                    nb_vars: 2,
                 ),
-                Load(
-                    var_name: "self",
-                ),
+                LoadVar(0),
                 Return,
             ],
         ),
@@ -362,26 +256,17 @@
             name: "Fibonacci.new",
             position: 143,
             body: [
-                Store(
-                    var_name: "number",
+                LocalSpace(
+                    nb_vars: 2,
                 ),
-                Store(
-                    var_name: "self",
-                ),
-                Load(
-                    var_name: "self",
-                ),
-                Load(
-                    var_name: "number",
-                ),
+                LoadVar(0),
+                LoadVar(1),
                 SetField(
                     field: 0,
                 ),
                 PushUnit,
                 Pop,
-                Load(
-                    var_name: "self",
-                ),
+                LoadVar(0),
                 Return,
             ],
         ),
@@ -400,18 +285,27 @@
         ],
         list_pool: [],
         function_pool: [],
-        class_pool: [
-            (
-                name: "Fibonacci",
-                fields: [
-                    "nth",
-                ],
-                constructor_nb_args: 2,
-                constructor_pos: 9,
-                destructor_nb_args: 1,
-                destructor_pos: 3,
-                constants: {},
-            ),
-        ],
     ),
+    classes: [
+        (
+            name: "Fibonacci",
+            fields: [
+                "nth",
+            ],
+            constructor_nb_args: 2,
+            constructor_pos: 143,
+            destructor_nb_args: 1,
+            destructor_pos: 140,
+            constants: {},
+        ),
+    ],
+    functions: {
+        "Fibonacci.new": 143,
+        "Fibonacci.recursive_fib": 114,
+        "main": 32,
+        "iterative_fib": 0,
+        "Fibonacci.delete": 140,
+        "recursive_fib": 63,
+        "Fibonacci.iterative_fib": 81,
+    },
 )

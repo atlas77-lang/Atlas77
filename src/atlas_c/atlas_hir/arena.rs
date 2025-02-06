@@ -88,11 +88,11 @@ impl<'arena> TypeArena<'arena> {
     }
 
     pub fn get_none_ty(&'arena self) -> &'arena HirTy<'arena> {
-        let id = HirTyId::compute_none_ty_id();
+        let id = HirTyId::compute_null_ty_id();
         self.intern
             .borrow_mut()
             .entry(id)
-            .or_insert_with(|| self.allocator.alloc(HirTy::None(HirNone {})))
+            .or_insert_with(|| self.allocator.alloc(HirTy::Null(HirNone {})))
     }
 
     pub fn get_integer64_ty(&'arena self) -> &'arena HirTy<'arena> {

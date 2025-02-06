@@ -3,3 +3,4 @@
 public extern println<T>(s: T) -> unit
 public extern print<T>(s: T) -> unit
 public extern input() -> str
+public extern panic<T>(s: T) -> unit

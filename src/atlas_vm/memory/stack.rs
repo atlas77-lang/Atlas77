@@ -4,29 +4,33 @@ use std::fmt::Display;
 use std::ops::{Index, IndexMut};
 use std::slice::SliceIndex;
 
-/// The size of the stack in bytes, 16384 is the maximum before it overflows "thread main"
+/// The size of the stack in bytes
 ///
 /// I'll try allocating the stack into the heap later on so
-const STACK_SIZE: usize = 16 * 16384 / size_of::<VMData>();
-/// The stack should be more used overall.
+const STACK_SIZE: usize = 16 * 8192 / size_of::<VMData>();
+
+/// The stack for the VM
 ///
-/// And allow features such as holding objects themselves e.g.
-/// ```rs
-/// fn push_object(&mut self, obj: &[VMData]) {}
-/// fn access(&mut self, offset: usize) -> VMData {}
-/// ```
+/// The stack is a fixed-size array of [VMData] with a maximum size of [STACK_SIZE]
 ///
-/// The stack should also be able to create new stack frames with special rules
-/// to access data in other stack frames
+/// The stack is used to store values and objects during the execution of the program
+///
+/// Each time a function is called, a new stack frame is created.
+/// A stack frame contains the values of the function's arguments and local variables
+/// as well as the temporary values used during the execution of the function.
+///
+/// A stack frame takes this form:
+/// - `[[arguments], [local variables], [temporary values]]`
+/// ``arguments`` & ``local variables`` are fixed-size arrays
 #[derive(Debug)]
 pub struct Stack {
     values: [VMData; STACK_SIZE],
     pub top: usize,
 }
 #[derive(Debug)]
-pub struct StackFrame {
-    pub top: usize,
-    pub base: usize,
+pub struct StackFrameInfo {
+    pub pc: usize,
+    pub base_ptr: usize,
 }
 impl Default for Stack {
     fn default() -> Self {
@@ -182,10 +186,10 @@ impl IndexMut<usize> for Stack {
     }
 }
 
-impl Index<StackFrame> for Stack {
+impl Index<StackFrameInfo> for Stack {
     type Output = [VMData];
-    fn index(&self, index: StackFrame) -> &Self::Output {
-        &self.values[index.base..index.top]
+    fn index(&self, index: StackFrameInfo) -> &Self::Output {
+        &self.values[index.base_ptr..index.pc]
     }
 }
 
