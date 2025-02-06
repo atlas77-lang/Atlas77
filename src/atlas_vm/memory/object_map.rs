@@ -68,7 +68,7 @@ impl<'mem> Memory<'mem> {
     pub fn put(&mut self, object: ObjectKind<'mem>) -> Result<ObjectIndex, RuntimeError> {
         let idx = self.free;
         let v = self.mem.get_mut(usize::from(self.free)).unwrap();
-        let repl = std::mem::replace(v, Object { kind: object, rc: 1 });
+        let repl = std::mem::replace(v, Object { kind: object, rc: 1000 });
 
         match repl {
             Object { kind: ObjectKind::Free { next }, .. } => {

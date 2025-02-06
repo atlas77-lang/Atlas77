@@ -134,6 +134,9 @@ pub enum Instruction<'run> {
         function_name: &'run str,
         nb_args: u8,
     },
+    LoadArg {
+        index: u8,
+    },
 
     ExternCall {
         function_name: &'run str,

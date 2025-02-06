@@ -35,10 +35,11 @@ pub struct Atlas77VM<'run> {
     stack_frame: Vec<StackFrameInfo>, //previous pc and previous stack top
     pub object_map: Memory<'run>,
     pub runtime_arena: RuntimeArena<'run>,
-    //pub var_map: VarMap<'run>,
     pub extern_fn: HashMap<&'run str, CallBack>,
     pub pc: usize,
     pub base_ptr: usize,
+
+    pub args: [VMData; 16],
 }
 
 impl<'run> Atlas77VM<'run> {
@@ -87,27 +88,22 @@ impl<'run> Atlas77VM<'run> {
             stack: Stack::new(),
             stack_frame: Vec::new(),
             object_map: Memory::new(256),
-            //var_map: VarMap::new(),
             runtime_arena,
             extern_fn,
             pc: 0,
             base_ptr: 0,
+            args: [VMData::new_unit(); 16],
         }
     }
     pub fn reset(&mut self) {
         self.stack.clear();
         self.stack_frame.clear();
         self.object_map.clear();
-        //self.var_map.var_map.clear();
         self.pc = 0;
         self.base_ptr = 0;
     }
     pub fn run(&mut self) -> RuntimeResult<VMData> {
-        let label = self
-            .program
-            .labels
-            .iter()
-            .find(|label| label.name == self.program.entry_point);
+        let position = self.program.functions.get(self.program.entry_point.as_str());
 
         self.stack.extends(
             &self
@@ -118,20 +114,17 @@ impl<'run> Atlas77VM<'run> {
                 .map(|t| VMData::new_fn_ptr(*t))
                 .collect::<Vec<_>>(),
         )?;
-        if let Some(label) = label {
-            self.pc = label.position;
+        if let Some(pos) = position {
+            self.pc = *pos;
         } else {
             return Err(RuntimeError::EntryPointNotFound(
                 self.program.entry_point.to_string(),
             ));
         }
         while self.pc < self.program.len() {
-            //eprintln!("Instruction: {:?}", &self.program[self.pc]);
+            println!("Instruction: {:?}", self.program[self.pc]);
             let instr = self.program[self.pc].clone();
             self.execute_instruction(instr.clone())?;
-            //eprintln!("Stack: {}", self.stack);
-            //dbg!("VarMap: {{ {} }}", self.var_map.var_map.iter().map(|(k, v)| format!("{}: {}", k.key, v)).collect::<Vec<_>>().join(", "));
-            //dbg!("ObjectMap: {{\n{}}}", self.object_map);
         }
         self.stack.top += 1;
         self.stack.last().cloned()
@@ -363,14 +356,19 @@ impl<'run> Atlas77VM<'run> {
                 self.pc = (self.pc as isize + pos) as usize;
             }
             Instruction::StoreVar(pos) => {
+                println!("Base ptr: {}", self.base_ptr);
                 let val = self.stack.pop()?;
+                println!("Before: {}", self.stack[self.base_ptr + pos]);
                 self.stack[self.base_ptr + pos] = val;
+                println!("After: {}", self.stack[self.base_ptr + pos]);
                 self.pc += 1;
+                println!("{}", self.stack);
             }
             Instruction::LoadVar(pos) => {
                 let val = self.stack[self.base_ptr + pos];
                 self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
+                println!("{}", self.stack);
             }
             Instruction::Pop => {
                 self.stack.pop_with_rc(&mut self.object_map)?;
@@ -548,18 +546,24 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.top += nb_vars as usize;
                 self.pc += 1;
             }
+            Instruction::LoadArg { index: nb_arg } => {
+                let val = self.args[nb_arg as usize];
+                eprintln!("Loading arg: {:?}", val);
+                self.stack[self.base_ptr + nb_arg as usize] = val;
+                self.pc += 1;
+            }
             Instruction::FunctionCall { function_name, nb_args } => {
-                println!("FunctionCall: {} {}", function_name, nb_args);
-                println!("Stack: {}", self.stack);
                 let position = *self.program.functions.get(function_name).unwrap();
-                let base_ptr = self.stack.top - nb_args as usize;
+                for arg in (0..nb_args).rev() {
+                    self.args[arg as usize] = self.stack.pop()?;
+                }
                 let stack_frame = StackFrameInfo {
                     pc: self.pc,
-                    base_ptr,
+                    base_ptr: self.stack.top,
                 };
                 self.stack_frame.push(stack_frame);
                 self.pc = position;
-                self.base_ptr = base_ptr;
+                self.base_ptr = self.stack.top;
             }
             Instruction::Call { nb_args } => {
                 let fn_ptr = self.stack.pop()?;
@@ -574,7 +578,7 @@ impl<'run> Atlas77VM<'run> {
                 self.pc = fn_ptr;
             }
             Instruction::Return => {
-                let stack_frame = self.stack_frame.pop().unwrap_or_else(|| {
+                let previous_stack_frame = self.stack_frame.pop().unwrap_or_else(|| {
                     eprintln!(
                         "No stack frame to return from {:?} @ {}",
                         self.stack.last(),
@@ -583,8 +587,7 @@ impl<'run> Atlas77VM<'run> {
                     std::process::exit(1);
                 });
                 let ret = *self.stack.last()?;
-                println!("Return {}", ret);
-                //This is weird asf but it works
+                println!("Returning {:?}", ret);
                 match ret.tag {
                     VMData::TAG_LIST | VMData::TAG_STR => {
                         self.object_map.rc_inc(ret.as_object());
@@ -595,11 +598,11 @@ impl<'run> Atlas77VM<'run> {
                     }
                     _ => {}
                 }
-                self.stack.truncate(stack_frame.base_ptr, &mut self.object_map)?;
-                self.pc = stack_frame.pc + 1;
-                self.base_ptr = stack_frame.base_ptr;
+                self.stack.truncate(previous_stack_frame.base_ptr, &mut self.object_map)?;
+                self.pc = previous_stack_frame.pc + 1;
+                self.base_ptr = self.stack.top;
                 self.stack.push(ret)?;
-                println!("Stack: {}", self.stack);
+                println!("{}", self.stack);
             }
             Instruction::Halt => {
                 self.pc = self.program.len();

@@ -7,9 +7,20 @@ public class Test {
         Test(data: int64) {
             self.data = data;
         }
+        func uh(self) {
+            println(self.data);
+            return;
+        }
+        func uh2(self, data: int64) {
+            println(data);
+            return;
+        }
 }
 
 func main() {
     let test = new Test(42);
     println(test.data);
+    test.uh();
+    test.uh2(42);
+    //test.uh3(42);
 }
