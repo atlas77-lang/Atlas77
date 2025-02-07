@@ -17,6 +17,17 @@ public class Test {
         }
 }
 
+public concept Builder<T, U> {
+    T(arg: U) -> T;
+}
+
+class Builder: impl Builder<T, U> {
+    public:
+        func build<T, U>(t: T, arg: U) -> T {
+            return new T(arg);
+        }
+}
+
 func main() {
     let test = new Test(42);
     println(test.data);

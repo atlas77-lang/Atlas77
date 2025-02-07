@@ -2,33 +2,26 @@ package std::vector;
 
 // Import the base functions for [T]
 import "std/list"
-/*
-    This import statement add those functions:
-    public extern len<T>(l: [T]) -> int64
-    public extern slice<T>(l: [T], start: int64, end: int64) -> [T]
-    public extern pop<T>(l: [T]) -> T
-    public extern push<T>(l: [T], val: T) -> [T]
-    public extern remove<T>(l: [T], index: int64) -> [T]
+//    This import statement add those functions:
+//    public extern len<T>(l: [T]) -> int64
+//    public extern slice<T>(l: [T], start: int64, end: int64) -> [T]
 
- */
 // This can be used as a Type to enforce the implementation of the Indexable<T> concept
 // You can also use it as a Type to store a reference to an object that implements the Indexable<T> concept
-public concept Indexable<T> 
+public concept Indexable<T, Idx>
 where T: impl Copy {
     func len() -> uint64;
-    func get(i: uint64) -> T;
-    func set(i: uint64, v: T);
+    func get(i: Idx) -> T;
+    func set(i: Idx, v: T);
 }
+public concept Copy : operator::(<-) {}
 
-public class Vec<T> : impl Indexable<T> {
-    // Every fields under this `private:` block is private
+public class Vec<T> : impl Indexable<T, uint64> {
     private:
         data: [T];
         cap: uint64;
-    // Every fields under this `public:` block is public
     public:
         len: uint64;
-    // Every functions under this `public:` block is public
     public:
         // Constructor
         // There is only one constructor in atlas77
@@ -44,7 +37,9 @@ public class Vec<T> : impl Indexable<T> {
         // It is called with the `delete` keyword
         // It is also called automatically with the reference counting system
         // It can be used if you want a specific behavior when the object is deleted
-        ~Vec() {}
+        ~Vec() {
+            delete self.data;
+        }
         // Need to find a good syntax for operator overloading
         operator [](self, i: uint64) -> T {
             return self.data[i];
@@ -52,37 +47,40 @@ public class Vec<T> : impl Indexable<T> {
         operator []=(self, i: uint64, v: T) {
             self.data[i] = v;
         }
+        //
         func with_capacity(cap: uint64) -> Vec<T> {
             let list = new [T; cap];
-            return new Vec(list);
+            let vec = new Vec(list);
+            vec.len = 0;
+            return vec;
         }
         // This specify that the function is an override of the Indexable<T> concept
-        #[override(Indexable<T>::len)]
-        func len() -> uint64 {
+        // This is not mandatory but it is a good practice
+        //
+        // It can be mandatory if you implement multiple concepts with the same function name
+        // e.g. From<[T]> or From<T> will have the same function name `from`
+        // So to let the compiler properly differentiate them, you need to specify the concept
+        #[override(Indexable<T, uint64>::len)]
+        func len(self) -> uint64 {
             return self.len;
         }
-        #[override(Indexable<T>::get)]
-        func get(i: uint64) -> T {
+        #[override(Indexable<T, uint64>::get)]
+        func get(self, i: uint64) -> T {
             // We can use `operator []`
             return self[i];
         }
-        #[override(Indexable<T>::set)]
+        #[override(Indexable<T, uint64>::set)]
         func set(i: uint64, v: T) {
             // We can use `operator []=`
             self[i] = v;
         }
         func push(self, v: T) {
             if self.len == self.cap {
-                // Take the reference of the old data so it doesn't get dropped
-                let old_data = self.data;
                 // Allocate a new array with double the capacity
-                self.data = new [T; self.cap * 2];
-                let i = 0;
-                //Need an operator for the copy of the array
-                while i < self.cap {
-                    self.data[i] = old_data[i];
-                    i = i + 1;
-                }
+                let new_data = new [T; self.cap * 2];
+                // Copy the old data to the new array
+                new_data <- self.data;
+                self.data = new_data;
                 self.cap *= 2;
             } else {
                 self.data[self.len] = v;
@@ -90,8 +88,26 @@ public class Vec<T> : impl Indexable<T> {
             }
         }
         // This should return T directly because what if self.len == 0?
-        func pop() -> T {
+        func pop(self) -> T {
             self.len -= 1;
             return self.data[self.len];
+        }
+        func insert(self, idx: uint64) {
+            if self.len == self.cap {
+                // Allocate a new array with double the capacity
+                let new_data = new [T; self.cap * 2];
+                // Copy the old data to the new array
+                new_data <- self.data;
+                self.data = new_data;
+                self.cap *= 2;
+            }
+            // Shift the elements to the right
+            let i = 0;
+            while i < self.len - idx {
+                self.data[self.len - i] = self.data[self.len - i - 1];
+                i += 1;
+            }
+
+            self.len += 1;
         }
 }

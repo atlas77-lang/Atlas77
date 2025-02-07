@@ -1,7 +1,16 @@
 import "std/io"
 
 func main() {
-    println(fib(40));
+    let a = 0;
+    let b = 1;
+    let i = 0;
+    while i < 5 {
+        let temp = a;
+        a = b;
+        b = temp + b;
+        i = i + 1;
+    }
+    print(a);
 }
 
 func fib(n: int64) -> int64 {
