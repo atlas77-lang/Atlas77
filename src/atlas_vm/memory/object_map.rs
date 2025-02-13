@@ -138,7 +138,7 @@ impl<'mem> Memory<'mem> {
     }
 
     #[inline(always)]
-    pub fn get(&mut self, index: ObjectIndex) -> RuntimeResult<ObjectKind> {
+    pub fn get(&mut self, index: ObjectIndex) -> RuntimeResult<ObjectKind<'mem>> {
         let obj = self.mem[usize::from(index)].kind.clone();
         self.rc_dec(index)?;
         Ok(obj)
@@ -168,7 +168,7 @@ impl<'mem> Memory<'mem> {
     }
 
     #[inline(always)]
-    pub fn raw(&self) -> &[Object] {
+    pub fn raw(&self) -> &[Object<'mem>] {
         &self.mem
     }
 
@@ -194,7 +194,7 @@ impl Display for Memory<'_> {
 pub enum ObjectKind<'mem> {
     String(String),
     Class(Class<'mem>),
-    List(Vec<VMData<'mem>>),
+    List(Vec<VMData>),
     Free { next: ObjectIndex },
 }
 impl Default for ObjectKind<'_> {
@@ -294,7 +294,7 @@ impl From<String> for ObjectKind<'_> {
     }
 }
 
-impl<'mem> From<Vec<VMData<'mem>>> for ObjectKind<'mem> {
+impl<'mem> From<Vec<VMData>> for ObjectKind<'mem> {
     fn from(value: Vec<VMData>) -> Self {
         ObjectKind::List(value)
     }
@@ -309,7 +309,7 @@ pub struct Class<'mem> {
 #[repr(C)]
 #[derive(Debug)]
 pub struct RawClass<'mem> {
-    pub ptr: &'mem mut [VMData<'mem>],
+    pub ptr: &'mem mut [VMData],
 }
 
 impl<'mem> Clone for RawClass<'mem> {
@@ -331,7 +331,7 @@ impl<'mem> Class<'mem> {
     }
 }
 impl<'mem> Index<usize> for Class<'mem> {
-    type Output = VMData<'mem>;
+    type Output = VMData;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.fields[index]
@@ -345,7 +345,7 @@ impl IndexMut<usize> for Class<'_> {
 }
 
 impl<'mem> Index<usize> for RawClass<'mem> {
-    type Output = VMData<'mem>;
+    type Output = VMData;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.ptr[index]

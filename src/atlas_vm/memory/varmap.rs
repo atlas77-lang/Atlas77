@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 #[derive(Debug, Default)]
 pub struct VarMap<'run> {
-    pub var_map: HashMap<Key<'run>, VMData<'run>>,
+    pub var_map: HashMap<Key<'run>, VMData>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

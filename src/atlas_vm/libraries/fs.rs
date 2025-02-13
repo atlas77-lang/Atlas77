@@ -12,7 +12,7 @@ pub const FILE_FUNCTIONS: [(&str, CallBack); 5] = [
     ("remove_file", remove_file),
 ];
 
-pub fn read_dir<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
+pub fn read_dir<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
     let path_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
     let raw_path = state.object_map.get(path_ptr)?;
     let path = raw_path.string();
@@ -37,7 +37,7 @@ pub fn read_dir<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
     }
 }
 
-pub fn read_file<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
+pub fn read_file<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
     let path_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
     let raw_path = state.object_map.get(path_ptr)?;
     let path = raw_path.string();
@@ -50,7 +50,7 @@ pub fn read_file<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
     }
 }
 
-pub fn write_file<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
+pub fn write_file<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
     let content_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
     let path_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
 
@@ -62,7 +62,7 @@ pub fn write_file<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
     Ok(VMData::new_unit())
 }
 
-pub fn file_exists<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
+pub fn file_exists<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
     let path_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
     let raw_path = state.object_map.get(path_ptr)?;
     let path = raw_path.string();
@@ -71,7 +71,7 @@ pub fn file_exists<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
     Ok(VMData::new_bool(exists))
 }
 
-pub fn remove_file<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
+pub fn remove_file<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
     let path_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();
     let raw_path = state.object_map.get(path_ptr)?;
     let path = raw_path.string();

@@ -660,7 +660,7 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                         }
                     }
                     HirExpr::FieldAccess(field_access) => {
-                        //Get the Class pointer:
+                        //Get the Class pointer: 
                         self.generate_bytecode_expr(&field_access.target, bytecode, src.clone())?;
                         for arg in &f.args {
                             self.generate_bytecode_expr(arg, bytecode, src.clone())?;
