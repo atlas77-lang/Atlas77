@@ -9,7 +9,7 @@ pub const LIST_FUNCTIONS: [(&str, CallBack); 2] = [
     ("slice", slice),
 ];
 
-pub fn len(state: VMState) -> Result<VMData, RuntimeError> {
+pub fn len<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
     let list_ptr = state.stack.pop()?.as_object();
     let raw_list = state.object_map.get(list_ptr)?;
     let list = raw_list.list();
@@ -17,7 +17,7 @@ pub fn len(state: VMState) -> Result<VMData, RuntimeError> {
 }
 
 
-pub fn slice(state: VMState) -> Result<VMData, RuntimeError> {
+pub fn slice<'lib>(state: VMState) -> Result<VMData<'lib>, RuntimeError> {
     let end = state.stack.pop_with_rc(state.object_map)?.as_i64();
     let start = state.stack.pop_with_rc(state.object_map)?.as_i64();
     let list_ptr = state.stack.pop_with_rc(state.object_map)?.as_object();

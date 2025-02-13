@@ -23,8 +23,8 @@ const STACK_SIZE: usize = 16 * 8192 / size_of::<VMData>();
 /// - `[[arguments], [local variables], [temporary values]]`
 /// ``arguments`` & ``local variables`` are fixed-size arrays
 #[derive(Debug)]
-pub struct Stack {
-    values: [VMData; STACK_SIZE],
+pub struct Stack<'stack> {
+    values: [VMData<'stack>; STACK_SIZE],
     pub top: usize,
 }
 #[derive(Debug)]
@@ -32,14 +32,14 @@ pub struct StackFrameInfo {
     pub pc: usize,
     pub base_ptr: usize,
 }
-impl Default for Stack {
+impl Default for Stack<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
 
 /// TODO: this implementation should be overhauled a bit cuz it's kinda clunky
-impl Stack {
+impl<'stack> Stack<'stack> {
     pub fn new() -> Self {
         Self {
             values: [VMData::new_unit(); STACK_SIZE],
@@ -90,7 +90,7 @@ impl Stack {
     }
 
     #[inline(always)]
-    pub fn pop(&mut self) -> Result<VMData, RuntimeError> {
+    pub fn pop(&mut self) -> Result<VMData<'stack>, RuntimeError> {
         self.top = self.top.wrapping_sub(1); // Always decrement
 
         // If underflow happens, restore `self.top` and return an error.
@@ -100,7 +100,7 @@ impl Stack {
         }
         Ok(self.values[self.top])
     }
-    pub fn pop_with_rc(&mut self, mem: &mut Memory) -> Result<VMData, RuntimeError> {
+    pub fn pop_with_rc(&mut self, mem: &mut Memory) -> Result<VMData<'stack>, RuntimeError> {
         self.top = self.top.wrapping_sub(1); // Always decrement
 
         if self.top == usize::MAX {
@@ -120,7 +120,7 @@ impl Stack {
 
     #[cold]
     #[inline(never)]
-    fn pop_stack_underflow() -> Result<VMData, RuntimeError> {
+    fn pop_stack_underflow() -> Result<VMData<'stack>, RuntimeError> {
         Err(RuntimeError::StackUnderflow)
     }
 
@@ -131,7 +131,7 @@ impl Stack {
     }
 
     #[inline(always)]
-    pub fn last(&self) -> Result<&VMData, RuntimeError> {
+    pub fn last(&self) -> Result<&VMData<'stack>, RuntimeError> {
         if self.top != 0 {
             Ok(&self.values[self.top - 1])
         } else {
@@ -139,7 +139,7 @@ impl Stack {
         }
     }
 
-    pub fn extends(&mut self, values: &[VMData]) -> Result<(), RuntimeError> {
+    pub fn extends(&mut self, values: &[VMData<'stack>]) -> Result<(), RuntimeError> {
         if self.top + values.len() < STACK_SIZE {
             for val in values {
                 self.values[self.top] = *val;
@@ -151,7 +151,7 @@ impl Stack {
         }
     }
 
-    pub fn push_object(&mut self, _obj: &[VMData]) -> Result<(), RuntimeError> {
+    pub fn push_object(&mut self, _obj: &[VMData<'stack>]) -> Result<(), RuntimeError> {
         unimplemented!("push_object(&mut self, obj: &[VMData])")
     }
 
@@ -164,8 +164,8 @@ impl Stack {
     }
 }
 
-impl IntoIterator for Stack {
-    type Item = VMData;
+impl<'stack> IntoIterator for Stack<'stack> {
+    type Item = VMData<'stack>;
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -173,28 +173,28 @@ impl IntoIterator for Stack {
     }
 }
 
-impl Index<usize> for Stack {
-    type Output = VMData;
+impl<'stack> Index<usize> for Stack<'stack> {
+    type Output = VMData<'stack>;
     fn index(&self, index: usize) -> &Self::Output {
         &self.values[index]
     }
 }
 
-impl IndexMut<usize> for Stack {
+impl IndexMut<usize> for Stack<'_> {
     fn index_mut(&mut self, index: usize) -> &mut VMData {
         &mut self.values[index]
     }
 }
 
-impl Index<StackFrameInfo> for Stack {
-    type Output = [VMData];
+impl<'stack> Index<StackFrameInfo> for Stack<'stack> {
+    type Output = [VMData<'stack>];
     fn index(&self, index: StackFrameInfo) -> &Self::Output {
         &self.values[index.base_ptr..index.pc]
     }
 }
 
 
-impl Display for Stack {
+impl Display for Stack<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

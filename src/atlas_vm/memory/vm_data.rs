@@ -3,10 +3,10 @@ use std::{
     ops::{Add, Div, Mul, Rem, Sub},
 };
 
-use super::object_map::ObjectIndex;
+use super::object_map::{Object, ObjectIndex};
 
 #[derive(Clone, Copy)]
-pub union RawVMData {
+pub union RawVMData<'vm> {
     as_unit: (),
     as_i64: i64,
     as_u64: u64,
@@ -21,12 +21,22 @@ pub union RawVMData {
     as_fn_ptr: usize,
     /// Pointer to an object in the object map
     as_object: ObjectIndex,
+    as_raw_ptr: &'vm mut Object<'vm>,
 }
 
-#[derive(Clone, Copy)]
-pub struct VMData {
+
+pub struct VMData<'vm> {
     pub tag: u8,
-    data: RawVMData,
+    data: RawVMData<'vm>,
+}
+impl<'vm> Copy for VMData<'vm> {}
+impl<'vm> Clone for VMData<'vm> {
+    fn clone(&self) -> Self {
+        if self.tag == Self::TAG_RAW_OBJECT {
+            unreachable!("You can't copy/clone a mutable pointer.")
+        }
+        *self
+    }
 }
 
 macro_rules! def_new_vm_data_func {
@@ -38,7 +48,7 @@ macro_rules! def_new_vm_data_func {
     };
 }
 
-impl VMData {
+impl<'vm> VMData<'vm> {
     pub const TAG_UNIT: u8 = 0;
     pub const TAG_NONE: u8 = 1;
     pub const TAG_U64: u8 = 4;
@@ -51,8 +61,9 @@ impl VMData {
     pub const TAG_FN_PTR: u8 = 14;
     pub const TAG_LIST: u8 = 15;
     pub const TAG_OBJECT: u8 = 16;
+    pub const TAG_RAW_OBJECT: u8 = 17;
 
-    pub fn new(tag: u8, data: RawVMData) -> Self {
+    pub fn new(tag: u8, data: RawVMData<'vm>) -> Self {
         Self { tag, data }
     }
 
@@ -97,9 +108,10 @@ impl VMData {
     def_new_vm_data_func!(new_char, as_char, char, TAG_CHAR);
     def_new_vm_data_func!(new_stack_ptr, as_stack_ptr, usize, TAG_STACK_PTR);
     def_new_vm_data_func!(new_fn_ptr, as_fn_ptr, usize, TAG_FN_PTR);
+    def_new_vm_data_func!(new_raw_object, as_raw_ptr, &'vm mut Object<'vm>, TAG_RAW_OBJECT);
 }
 
-impl PartialEq for VMData {
+impl PartialEq for VMData<'_> {
     fn eq(&self, other: &Self) -> bool {
         if self.tag != other.tag {
             return false;
@@ -118,7 +130,7 @@ impl PartialEq for VMData {
     }
 }
 
-impl PartialOrd for VMData {
+impl PartialOrd for VMData<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.tag != other.tag {
             return None;
@@ -133,7 +145,7 @@ impl PartialOrd for VMData {
     }
 }
 
-impl Add for VMData {
+impl Add for VMData<'_> {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
@@ -146,7 +158,7 @@ impl Add for VMData {
     }
 }
 
-impl Sub for VMData {
+impl Sub for VMData<'_> {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
@@ -159,7 +171,7 @@ impl Sub for VMData {
     }
 }
 
-impl Mul for VMData {
+impl Mul for VMData<'_> {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self {
@@ -172,7 +184,7 @@ impl Mul for VMData {
     }
 }
 
-impl Div for VMData {
+impl Div for VMData<'_> {
     type Output = Self;
 
     fn div(self, other: Self) -> Self {
@@ -185,7 +197,7 @@ impl Div for VMData {
     }
 }
 
-impl Rem for VMData {
+impl Rem for VMData<'_> {
     type Output = Self;
 
     fn rem(self, other: Self) -> Self {
@@ -197,7 +209,7 @@ impl Rem for VMData {
     }
 }
 
-impl Display for VMData {
+impl Display for VMData<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -218,7 +230,7 @@ impl Display for VMData {
     }
 }
 
-impl std::fmt::Debug for VMData {
+impl std::fmt::Debug for VMData<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -257,7 +269,7 @@ macro_rules! enum_variant_function {
     };
 }
 
-impl VMData {
+impl<'vm> VMData<'vm> {
     enum_variant_function!(as_i64, is_i64, TAG_I64, i64);
     enum_variant_function!(as_f64, is_f64, TAG_FLOAT, f64);
     enum_variant_function!(as_u64, is_u64, TAG_U64, u64);
@@ -304,5 +316,16 @@ impl VMData {
         }
 
         unsafe { self.data.as_object }
+    }
+
+    pub fn is_raw_object(self) -> bool {
+        self.tag == Self::TAG_RAW_OBJECT
+    }
+
+    pub fn as_raw_object(self) -> &'vm mut Object<'vm> {
+        if !self.is_raw_object() {
+            unreachable!("Attempted to get an object from a non-raw pointer VMData {:?}", self);
+        }
+        unsafe { self.data.as_raw_ptr }
     }
 }

@@ -27,19 +27,19 @@ use crate::atlas_vm::{
 };
 
 pub type RuntimeResult<T> = Result<T, RuntimeError>;
-pub type CallBack = fn(VMState) -> RuntimeResult<VMData>;
+pub type CallBack<'run> = fn(VMState) -> RuntimeResult<VMData<'run>>;
 
 pub struct Atlas77VM<'run> {
     pub program: ProgramDescriptor<'run>,
-    pub stack: Stack,
+    pub stack: Stack<'run>,
     stack_frame: Vec<StackFrameInfo>, //previous pc and previous stack top
     pub object_map: Memory<'run>,
     pub runtime_arena: RuntimeArena<'run>,
-    pub extern_fn: HashMap<&'run str, CallBack>,
+    pub extern_fn: HashMap<&'run str, CallBack<'run>>,
     pub pc: usize,
     pub base_ptr: usize,
 
-    pub args: [VMData; 16],
+    pub args: [VMData<'run>; 16],
 }
 
 impl<'run> Atlas77VM<'run> {
