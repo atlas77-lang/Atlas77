@@ -1,5 +1,5 @@
 use crate::atlas_vm::errors::RuntimeError;
-use crate::atlas_vm::memory::vm_data::VMData;
+use crate::atlas_vm::memory::vm_data::{VMData, VMTag};
 use crate::atlas_vm::RuntimeResult;
 use std::borrow::Borrow;
 use std::ops::{Index, IndexMut};
@@ -17,7 +17,7 @@ pub struct Memory<'mem> {
     pub used_space: usize,
 }
 
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Clone, Copy, Default, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct ObjectIndex {
     pub idx: usize,
@@ -91,7 +91,7 @@ impl<'mem> Memory<'mem> {
             ObjectKind::Class(Class { fields, .. }) => {
                 for field in fields.ptr.iter() {
                     match field.tag {
-                        VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                        VMTag::Str | VMTag::List | VMTag::Object => {
                             obj_to_dec.push(field.as_object());
                         }
                         _ => {}
@@ -101,7 +101,7 @@ impl<'mem> Memory<'mem> {
             ObjectKind::List(list) => {
                 for item in list {
                     match item.tag {
-                        VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                        VMTag::Str | VMTag::List | VMTag::Object => {
                             obj_to_dec.push(item.as_object());
                         }
                         _ => {}

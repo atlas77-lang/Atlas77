@@ -1,13 +1,13 @@
 use crate::atlas_vm::memory::object_map::Memory;
+use crate::atlas_vm::memory::vm_data::VMTag;
 use crate::atlas_vm::{errors::RuntimeError, memory::vm_data::VMData, RuntimeResult};
 use std::fmt::Display;
 use std::ops::{Index, IndexMut};
-use std::slice::SliceIndex;
 
 /// The size of the stack in bytes
 ///
 /// I'll try allocating the stack into the heap later on so
-const STACK_SIZE: usize = 16 * 8192 / size_of::<VMData>();
+const STACK_SIZE: usize = 16 * 1024 / size_of::<VMData>();
 
 /// The stack for the VM
 ///
@@ -27,6 +27,20 @@ pub struct Stack {
     values: [VMData; STACK_SIZE],
     pub top: usize,
 }
+
+#[derive(Debug)]
+pub struct NewStack {
+    /// Must be created with Vec::with_capacity(stack::STACK_SIZE)
+    pub frames: Vec<StackFrame>,
+}
+
+#[derive(Debug)]
+pub struct StackFrame {
+    /// The program counter of the caller function
+    pub previous: usize,
+    values: Vec<VMData>,
+}
+
 #[derive(Debug)]
 pub struct StackFrameInfo {
     pub pc: usize,
@@ -63,7 +77,7 @@ impl Stack {
         if self.top < STACK_SIZE {
             self.values[self.top] = val;
             match val.tag {
-                VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                VMTag::Str | VMTag::List | VMTag::Object => {
                     mem.rc_inc(val.as_object());
                 }
                 _ => {}
@@ -79,7 +93,7 @@ impl Stack {
     pub fn truncate(&mut self, new_top: usize, mem: &mut Memory) -> RuntimeResult<()> {
         for i in new_top..=self.top {
             match self.values[i].tag {
-                VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                VMTag::Str | VMTag::List | VMTag::Object => {
                     mem.rc_dec(self.values[i].as_object())?;
                 }
                 _ => {}
@@ -110,7 +124,7 @@ impl Stack {
 
         let r = self.values[self.top];
         match r.tag {
-            VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+            VMTag::Str | VMTag::List | VMTag::Object => {
                 mem.rc_dec(r.as_object())?;
             }
             _ => {}

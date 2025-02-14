@@ -4,6 +4,10 @@ use serde::{Deserialize, Serialize};
 
 #[repr(u8)]
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+/// # The opcodes for the VM
+///
+/// ## Instruction format
+/// An instruction in the atlas VM is a 1 byte opcode followed by the immediate data
 pub enum OpCode {
     /// No operation
     Nop = 0x00,
@@ -74,70 +78,30 @@ pub enum OpCode {
 
     // Arithmetics
 
-    /// Multiply two signed integers 64 bits
+    /// Multiply the top 2 values in the stack
     ///
-    /// The two integers are popped from the stack and the result is pushed back
-    IMul,
-    /// Multiply two floats 64 bits
-    ///
-    /// The two floats are popped from the stack and the result is pushed back
-    FMul,
-    /// Multiply two unsigned integers 64 bits
-    ///
-    /// The two unsigned integers are popped from the stack and the result is pushed back
-    UIMul,
+    /// The two values are popped from the stack and the result is pushed back
+    Mul,
 
-    /// Divide two signed integers 64 bits
+    /// Divide the top 2 values in the stack
     ///
-    /// The two integers are popped from the stack and the result is pushed back
-    IDiv,
-    /// Divide two floats 64 bits
-    ///
-    /// The two floats are popped from the stack and the result is pushed back
-    FDiv,
-    /// Divide two unsigned integers 64 bits
-    ///
-    /// The two unsigned integers are popped from the stack and the result is pushed back
-    UIDiv,
+    /// The two values are popped from the stack and the result is pushed back
+    Div,
 
-    /// Subtract two signed integers 64 bits
+    /// Subtract the top 2 values in the stack
     ///
-    /// The two integers are popped from the stack and the result is pushed back
-    ISub,
-    /// Subtract two floats 64 bits
-    ///
-    /// The two floats are popped from the stack and the result is pushed back
-    FSub,
-    /// Subtract two unsigned integers 64 bits
-    ///
-    /// The two unsigned integers are popped from the stack and the result is pushed back
-    UISub,
+    /// The two values are popped from the stack and the result is pushed back
+    Sub,
 
-    /// Modulo two signed integers 64 bits
+    /// Modulo the top two values in the stack
     ///
-    /// The two integers are popped from the stack and the result is pushed back
-    IMod,
-    /// Modulo two floats 64 bits
-    ///
-    /// The two floats are popped from the stack and the result is pushed back
-    FMod,
-    /// Modulo two unsigned integers 64 bits
-    ///
-    /// The two unsigned integers are popped from the stack and the result is pushed back
-    UIMod,
+    /// The two values are popped from the stack and the result is pushed back
+    Mod,
 
-    /// Add two signed integers 64 bits
+    /// Add the top two values in the stack
     ///
     /// The two integers are popped from the stack and the result is pushed back
-    IAdd,
-    /// Add two floats 64 bits
-    ///
-    /// The two floats are popped from the stack and the result is pushed back
-    FAdd,
-    /// Add two unsigned integers 64 bits
-    ///
-    /// The two unsigned integers are popped from the stack and the result is pushed back
-    UIAdd,
+    Add,
 
     // Comparisons
     /// Compare two values for equality
@@ -186,14 +150,14 @@ pub enum OpCode {
     Call,
     /// Call a function
     ///
-    /// The function pointer is stored in the next 4 bytes
-    /// The number of arguments is stored in the next 1 byte
+    /// The function descriptor is stored in the next 4 bytes
     DirectCall,
     /// Call an external function and return the result to the top of the stack
     ///
     /// The function name is a string stored in the constant pool. The function name index is stored in the next 4 bytes
     /// The number of arguments is stored in the next 1 byte
     ExternCall,
+    /// Returns from the current function, pushing a return value from the callee's stack onto the caller's stack
     Return,
 
     // List operations
@@ -218,4 +182,26 @@ pub enum OpCode {
     ListStore,
 
     Halt,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Program {
+    pub instructions: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ConstantPool {
+    pub strings: Vec<String>,
+    pub functions: Vec<FunctionDescriptor>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FunctionPool {
+    pub functions: Vec<FunctionDescriptor>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FunctionDescriptor {
+    pub name: String,
+    pub nb_args: u8,
 }

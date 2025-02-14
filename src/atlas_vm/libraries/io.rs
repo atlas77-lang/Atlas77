@@ -1,6 +1,6 @@
 use crate::atlas_vm::errors::RuntimeError;
 use crate::atlas_vm::memory::object_map::ObjectKind;
-use crate::atlas_vm::memory::vm_data::VMData;
+use crate::atlas_vm::memory::vm_data::{VMData, VMTag};
 use crate::atlas_vm::runtime::vm_state::VMState;
 use crate::atlas_vm::CallBack;
 
@@ -13,16 +13,16 @@ pub const IO_FUNCTIONS: [(&str, CallBack); 4] = [
 pub fn println<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
     match val.tag {
-        VMData::TAG_UNIT
-        | VMData::TAG_BOOL
-        | VMData::TAG_U64
-        | VMData::TAG_I64
-        | VMData::TAG_FLOAT
-        | VMData::TAG_CHAR
-        | VMData::TAG_NONE => {
+        VMTag::Unit
+        | VMTag::Bool
+        | VMTag::UInt64
+        | VMTag::Int64
+        | VMTag::Float64
+        | VMTag::Char
+        | VMTag::Null => {
             println!("{}", val)
         }
-        VMData::TAG_STR => {
+        VMTag::Str => {
             println!("{}", state.object_map.get(val.as_object())?.string())
         }
         _ => {
@@ -35,16 +35,16 @@ pub fn println<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
 pub fn print<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
     match val.tag {
-        VMData::TAG_UNIT
-        | VMData::TAG_BOOL
-        | VMData::TAG_U64
-        | VMData::TAG_I64
-        | VMData::TAG_FLOAT
-        | VMData::TAG_CHAR
-        | VMData::TAG_NONE => {
+        VMTag::Unit
+        | VMTag::Bool
+        | VMTag::UInt64
+        | VMTag::Int64
+        | VMTag::Float64
+        | VMTag::Char
+        | VMTag::Null => {
             print!("{}", val)
         }
-        VMData::TAG_STR => {
+        VMTag::Str => {
             print!("{}", state.object_map.get(val.as_object())?.string())
         }
         _ => {
@@ -71,17 +71,17 @@ pub fn input<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
 pub fn panic<'lib>(state: VMState) -> Result<VMData, RuntimeError> {
     let val = state.stack.pop()?;
     match val.tag {
-        VMData::TAG_UNIT
-        | VMData::TAG_BOOL
-        | VMData::TAG_U64
-        | VMData::TAG_I64
-        | VMData::TAG_FLOAT
-        | VMData::TAG_CHAR
-        | VMData::TAG_NONE => {
+        VMTag::Unit
+        | VMTag::Bool
+        | VMTag::UInt64
+        | VMTag::Int64
+        | VMTag::Float64
+        | VMTag::Char
+        | VMTag::Null => {
             println!("{}", val);
             std::process::exit(1);
         }
-        VMData::TAG_STR => {
+        VMTag::Str => {
             println!("{}", state.object_map.get(val.as_object())?.string());
             std::process::exit(1);
         }

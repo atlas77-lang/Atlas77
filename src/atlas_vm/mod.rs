@@ -6,6 +6,7 @@ pub mod libraries;
 use std::collections::HashMap;
 
 use crate::atlas_vm::memory::stack::StackFrameInfo;
+use crate::atlas_vm::memory::vm_data::VMTag;
 use crate::atlas_vm::{
     errors::RuntimeError,
     libraries::{
@@ -159,7 +160,7 @@ impl<'run> Atlas77VM<'run> {
             Instruction::SetField { field } => {
                 let val = self.stack.pop()?;
                 match val.tag {
-                    VMData::TAG_OBJECT | VMData::TAG_LIST | VMData::TAG_STR => {
+                    VMTag::Str | VMTag::List | VMTag::Object => {
                         self.object_map.rc_inc(val.as_object());
                     }
                     _ => {}
@@ -280,7 +281,7 @@ impl<'run> Atlas77VM<'run> {
                     }
                     Type::Char => {
                         match val.tag {
-                            VMData::TAG_STR => {
+                            VMTag::Str => {
                                 let raw_string = self.object_map.get(val.as_object())?;
                                 let string = raw_string.string();
                                 if string.len() != 1 {
@@ -298,7 +299,7 @@ impl<'run> Atlas77VM<'run> {
                     }
                     Type::Boolean => {
                         match val.tag {
-                            VMData::TAG_STR => {
+                            VMTag::Str => {
                                 let raw_string = self.object_map.get(val.as_object())?;
                                 let string = raw_string.string();
                                 VMData::new_bool(string.parse::<bool>().unwrap())
@@ -308,43 +309,43 @@ impl<'run> Atlas77VM<'run> {
                     }
                     Type::Float => {
                         match val.tag {
-                            VMData::TAG_STR => {
+                            VMTag::Str => {
                                 let raw_string = self.object_map.get(val.as_object())?;
                                 let string = raw_string.string();
                                 VMData::new_f64(string.parse::<f64>().unwrap())
                             }
-                            VMData::TAG_U64 => VMData::new_f64(val.as_u64() as f64),
-                            VMData::TAG_I64 => VMData::new_f64(val.as_i64() as f64),
-                            VMData::TAG_BOOL => VMData::new_f64(val.as_bool() as i64 as f64),
-                            VMData::TAG_CHAR => VMData::new_f64(val.as_char() as i64 as f64),
+                            VMTag::UInt64 => VMData::new_f64(val.as_u64() as f64),
+                            VMTag::Int64 => VMData::new_f64(val.as_i64() as f64),
+                            VMTag::Bool => VMData::new_f64(val.as_bool() as i64 as f64),
+                            VMTag::Char => VMData::new_f64(val.as_char() as i64 as f64),
                             _ => unreachable!("Invalid cast to float"),
                         }
                     }
                     Type::Integer => {
                         match val.tag {
-                            VMData::TAG_STR => {
+                            VMTag::Str => {
                                 let raw_string = self.object_map.get(val.as_object())?;
                                 let string = raw_string.string();
                                 VMData::new_i64(string.parse::<i64>().unwrap())
                             }
-                            VMData::TAG_U64 => VMData::new_i64(val.as_u64() as i64),
-                            VMData::TAG_FLOAT => VMData::new_i64(val.as_f64() as i64),
-                            VMData::TAG_BOOL => VMData::new_i64(val.as_bool() as i64),
-                            VMData::TAG_CHAR => VMData::new_i64(val.as_char() as i64),
+                            VMTag::UInt64 => VMData::new_i64(val.as_u64() as i64),
+                            VMTag::Float64 => VMData::new_i64(val.as_f64() as i64),
+                            VMTag::Bool => VMData::new_i64(val.as_bool() as i64),
+                            VMTag::Char => VMData::new_i64(val.as_char() as i64),
                             _ => unreachable!("Invalid cast to integer"),
                         }
                     }
                     Type::UnsignedInteger => {
                         match val.tag {
-                            VMData::TAG_STR => {
+                            VMTag::Str => {
                                 let raw_string = self.object_map.get(val.as_object())?;
                                 let string = raw_string.string();
                                 VMData::new_u64(string.parse::<u64>().unwrap())
                             }
-                            VMData::TAG_I64 => VMData::new_u64(val.as_i64() as u64),
-                            VMData::TAG_FLOAT => VMData::new_u64(val.as_f64() as u64),
-                            VMData::TAG_BOOL => VMData::new_u64(val.as_bool() as u64),
-                            VMData::TAG_CHAR => VMData::new_u64(val.as_char() as u64),
+                            VMTag::Int64 => VMData::new_u64(val.as_i64() as u64),
+                            VMTag::Float64 => VMData::new_u64(val.as_f64() as u64),
+                            VMTag::Bool => VMData::new_u64(val.as_bool() as u64),
+                            VMTag::Char => VMData::new_u64(val.as_char() as u64),
                             _ => unreachable!("Invalid cast to unsigned integer"),
                         }
                     }
@@ -386,104 +387,37 @@ impl<'run> Atlas77VM<'run> {
                 self.stack.push_with_rc(val, &mut self.object_map)?;
                 self.pc += 1;
             }
-            Instruction::IMul => {
+            Instruction::Mul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
-                let res = VMData::new_i64(b.as_i64() * a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push(a * b)?;
                 self.pc += 1;
             }
-            Instruction::FMul => {
+            Instruction::Div => {
                 let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                let res = VMData::new_f64(b.as_f64() * a.as_f64());
-                self.stack.push(res)?;
-                self.pc += 1;
-            }
-            Instruction::UIMul => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                let res = VMData::new_u64(b.as_u64() * a.as_u64());
-                self.stack.push(res)?;
-                self.pc += 1;
-            }
-            Instruction::IDiv => {
-                let a = self.stack.pop()?;
-                if a == VMData::new_i64(0) {
+                if a.is_zero() {
                     return Err(RuntimeError::DivisionByZero);
                 }
                 let b = self.stack.pop()?;
-                let res = VMData::new_i64(b.as_i64() / a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push(b / a)?;
                 self.pc += 1;
             }
-            Instruction::FDiv => {
+            Instruction::Add => {
                 let a = self.stack.pop()?;
-                if a == VMData::new_f64(0.0) {
-                    return Err(RuntimeError::DivisionByZero);
-                }
                 let b = self.stack.pop()?;
-                let res = VMData::new_f64(b.as_f64() / a.as_f64());
-                self.stack.push(res)?;
+                self.stack.push(b + a)?;
                 self.pc += 1;
             }
-            Instruction::UIDiv => {
+            Instruction::Sub => {
                 let a = self.stack.pop()?;
-                if a == VMData::new_u64(0) {
-                    return Err(RuntimeError::DivisionByZero);
-                }
                 let b = self.stack.pop()?;
-                let res = VMData::new_u64(b.as_u64() / a.as_u64());
-                self.stack.push(res)?;
+                self.stack.push(b - a)?;
                 self.pc += 1;
             }
-            Instruction::IAdd => {
+            Instruction::Mod => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
-                let res = VMData::new_i64(b.as_i64() + a.as_i64());
-                self.stack.push(res)?;
-                self.pc += 1;
-            }
-            Instruction::FAdd => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                let res = VMData::new_f64(b.as_f64() + a.as_f64());
-                self.stack.push(res)?;
-                self.pc += 1;
-            }
-            Instruction::UIAdd => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                let res = VMData::new_u64(b.as_u64() + a.as_u64());
-                self.stack.push(res)?;
-                self.pc += 1;
-            }
-            Instruction::ISub => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                let res = VMData::new_i64(b.as_i64() - a.as_i64());
-                self.stack.push(res)?;
-                self.pc += 1;
-            }
-            Instruction::FSub => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                let res = VMData::new_f64(b.as_f64() - a.as_f64());
-                self.stack.push(res)?;
-                self.pc += 1;
-            }
-            Instruction::UISub => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                let res = VMData::new_u64(b.as_u64() - a.as_u64());
-                self.stack.push(res)?;
-                self.pc += 1;
-            }
-            Instruction::IMod => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                let res = VMData::new_i64(b.as_i64() % a.as_i64());
-                self.stack.push(res)?;
+                self.stack.push(b % a)?;
                 self.pc += 1;
             }
             Instruction::StringLoad => {
@@ -589,11 +523,11 @@ impl<'run> Atlas77VM<'run> {
                 let ret = *self.stack.last()?;
                 println!("Returning {:?}", ret);
                 match ret.tag {
-                    VMData::TAG_LIST | VMData::TAG_STR => {
+                    VMTag::Str | VMTag::List => {
                         self.object_map.rc_inc(ret.as_object());
                         self.object_map.rc_inc(ret.as_object());
                     }
-                    VMData::TAG_OBJECT => {
+                    VMTag::Object => {
                         self.object_map.rc_inc(ret.as_object());
                     }
                     _ => {}

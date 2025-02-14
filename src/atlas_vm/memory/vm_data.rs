@@ -1,32 +1,111 @@
-use std::{
-    fmt::Display,
-    ops::{Add, Div, Mul, Rem, Sub},
-};
-
 use super::object_map::ObjectIndex;
+use std::fmt::Formatter;
+use std::{fmt, fmt::Display, ops::{Add, Div, Mul, Rem, Sub}};
 
 #[derive(Copy, Clone)]
 pub union RawVMData {
     as_unit: (),
     as_i64: i64,
+    as_i32: i32,
     as_u64: u64,
+    as_u32: u32,
     as_f64: f64,
+    as_f32: f32,
     as_bool: bool,
     as_char: char,
     /// Null value
     as_none: (),
     /// Pointer to a value in the stack
-    as_stack_ptr: usize,
+    ///
+    /// The first element is the stack frame index and the second is the index in the frame
+    as_stack_ptr: [u32; 2],
     /// Pointer to a function
     as_fn_ptr: usize,
     /// Pointer to an object in the object map
     as_object: ObjectIndex,
 }
 
+#[cfg(test)]
+pub mod test {
+    #[test]
+    fn correct_size() {
+        assert_eq!(size_of::<super::RawVMData>(), size_of::<[u32; 2]>());
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct VMData {
-    pub tag: u8,
+    pub tag: VMTag,
     data: RawVMData,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Debug)]
+pub enum VMTag {
+    Unit,
+    Null,
+
+    Int64,
+    Int32,
+    UInt64,
+    UInt32,
+    Float64,
+    Float32,
+
+    Bool,
+    Str,
+    Char,
+    StackPtr,
+    FnPtr,
+    List,
+    Object,
+}
+
+impl From<VMTag> for u8 {
+    fn from(tag: VMTag) -> u8 {
+        tag as u8
+    }
+}
+impl From<u8> for VMTag {
+    fn from(tag: u8) -> VMTag {
+        unsafe { std::mem::transmute(tag) }
+    }
+}
+
+impl Display for VMTag {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                VMTag::Unit => "unit",
+                VMTag::Null => "null",
+                VMTag::Int64 => "int64",
+                VMTag::Int32 => "int32",
+                VMTag::UInt64 => "uint64",
+                VMTag::UInt32 => "uint32",
+                VMTag::Float64 => "float64",
+                VMTag::Float32 => "float32",
+                VMTag::Bool => "bool",
+                VMTag::Str => "str",
+                VMTag::Char => "char",
+                VMTag::StackPtr => "stack_ptr",
+                VMTag::FnPtr => "fn_ptr",
+                VMTag::List => "list",
+                VMTag::Object => "object",
+            }
+        )
+    }
+}
+impl VMTag {
+    pub fn is_equivalent(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Int64, Self::Int32) | (Self::Int32, Self::Int64) => true,
+            (Self::UInt64, Self::UInt32) | (Self::UInt32, Self::UInt64) => true,
+            (Self::Float64, Self::Float32) | (Self::Float32, Self::Float64) => true,
+            _ => self == other,
+        }
+    }
 }
 
 
@@ -34,84 +113,85 @@ macro_rules! def_new_vm_data_func {
     ($ident: ident, $field: ident, $ty: ty, $const: ident) => {
         #[inline(always)]
         pub fn $ident(val: $ty) -> Self {
-            Self::new(Self::$const, RawVMData { $field: val })
+            Self::new(VMTag::$const, RawVMData { $field: val })
         }
     };
 }
 
 impl VMData {
-    pub const TAG_UNIT: u8 = 0;
-    pub const TAG_NONE: u8 = 1;
-    pub const TAG_U64: u8 = 4;
-    pub const TAG_I64: u8 = 8;
-    pub const TAG_FLOAT: u8 = 9;
-    pub const TAG_BOOL: u8 = 10;
-    pub const TAG_STR: u8 = 11;
-    pub const TAG_CHAR: u8 = 12;
-    pub const TAG_STACK_PTR: u8 = 13;
-    pub const TAG_FN_PTR: u8 = 14;
-    pub const TAG_LIST: u8 = 15;
-    pub const TAG_OBJECT: u8 = 16;
-
-    pub fn new(tag: u8, data: RawVMData) -> Self {
+    pub fn new(tag: VMTag, data: RawVMData) -> Self {
         Self { tag, data }
     }
 
     pub fn new_unit() -> Self {
         Self {
-            tag: Self::TAG_UNIT,
+            tag: VMTag::Unit,
             data: RawVMData { as_unit: () },
         }
     }
     pub fn new_none() -> Self {
         Self {
-            tag: Self::TAG_NONE,
+            tag: VMTag::Null,
             data: RawVMData { as_none: () },
         }
     }
 
     pub fn new_object(val: ObjectIndex) -> Self {
         Self {
-            tag: Self::TAG_OBJECT,
+            tag: VMTag::Object,
             data: RawVMData { as_object: val },
         }
     }
 
     pub fn new_string(val: ObjectIndex) -> Self {
         Self {
-            tag: Self::TAG_STR,
+            tag: VMTag::Str,
             data: RawVMData { as_object: val },
         }
     }
 
     pub fn new_list(val: ObjectIndex) -> Self {
         Self {
-            tag: Self::TAG_LIST,
+            tag: VMTag::List,
             data: RawVMData { as_object: val },
         }
     }
 
-    def_new_vm_data_func!(new_i64, as_i64, i64, TAG_I64);
-    def_new_vm_data_func!(new_u64, as_u64, u64, TAG_U64);
-    def_new_vm_data_func!(new_f64, as_f64, f64, TAG_FLOAT);
-    def_new_vm_data_func!(new_bool, as_bool, bool, TAG_BOOL);
-    def_new_vm_data_func!(new_char, as_char, char, TAG_CHAR);
-    def_new_vm_data_func!(new_stack_ptr, as_stack_ptr, usize, TAG_STACK_PTR);
-    def_new_vm_data_func!(new_fn_ptr, as_fn_ptr, usize, TAG_FN_PTR);
+    pub fn is_zero(&self) -> bool {
+        match self.tag {
+            VMTag::Int64 => self.as_i64() == 0,
+            VMTag::Int32 => self.as_i32() == 0,
+            VMTag::UInt64 => self.as_u64() == 0,
+            VMTag::UInt32 => self.as_u32() == 0,
+            VMTag::Float64 => self.as_f64() == 0.0,
+            VMTag::Float32 => self.as_f32() == 0.0,
+            _ => false,
+        }
+    }
+    def_new_vm_data_func!(new_i64, as_i64, i64, Int64);
+    def_new_vm_data_func!(new_i32, as_i32, i32, Int32);
+    def_new_vm_data_func!(new_u64, as_u64, u64, UInt64);
+    def_new_vm_data_func!(new_u32, as_u32, u32, UInt32);
+    def_new_vm_data_func!(new_f64, as_f64, f64, Float64);
+    def_new_vm_data_func!(new_f32, as_f32, f32, Float32);
+    def_new_vm_data_func!(new_bool, as_bool, bool, Bool);
+    def_new_vm_data_func!(new_char, as_char, char, Char);
+    def_new_vm_data_func!(new_stack_ptr, as_stack_ptr, [u32; 2], StackPtr);
+    def_new_vm_data_func!(new_fn_ptr, as_fn_ptr, usize, FnPtr);
 }
 
 impl PartialEq for VMData {
     fn eq(&self, other: &Self) -> bool {
-        if self.tag != other.tag {
+        if self.tag.is_equivalent(&other.tag) {
             return false;
         }
         match self.tag {
-            Self::TAG_BOOL => self.as_bool() == other.as_bool(),
-            Self::TAG_FLOAT => self.as_f64() == other.as_f64(),
-            Self::TAG_I64 => self.as_i64() == other.as_i64(),
-            Self::TAG_U64 => self.as_u64() == other.as_u64(),
-            Self::TAG_CHAR => self.as_char() == other.as_char(),
-            Self::TAG_UNIT | Self::TAG_NONE => true,
+            VMTag::Bool => self.as_bool() == other.as_bool(),
+            VMTag::Float64 => self.as_f64() == other.as_f64(),
+            VMTag::Int64 => self.as_i64() == other.as_i64(),
+            VMTag::UInt64 => self.as_u64() == other.as_u64(),
+            VMTag::Char => self.as_char() == other.as_char(),
+            VMTag::Unit | VMTag::Null => true,
             // comparison based on pointer and not inner data
             _ if self.is_object() => self.as_object() == other.as_object(),
             _ => panic!("Illegal comparison between {:?} and {:?}", self, other),
@@ -125,10 +205,10 @@ impl PartialOrd for VMData {
             return None;
         }
         match self.tag {
-            Self::TAG_FLOAT => self.as_f64().partial_cmp(&other.as_f64()),
-            Self::TAG_U64 => self.as_u64().partial_cmp(&other.as_u64()),
-            Self::TAG_I64 => self.as_i64().partial_cmp(&other.as_i64()),
-            Self::TAG_CHAR => self.as_char().partial_cmp(&other.as_char()),
+            VMTag::Float64 => self.as_f64().partial_cmp(&other.as_f64()),
+            VMTag::UInt64 => self.as_u64().partial_cmp(&other.as_u64()),
+            VMTag::Int64 => self.as_i64().partial_cmp(&other.as_i64()),
+            VMTag::Char => self.as_char().partial_cmp(&other.as_char()),
             _ => panic!("Illegal comparison between {:?} and {:?}", self, other),
         }
     }
@@ -139,9 +219,9 @@ impl Add for VMData {
 
     fn add(self, other: Self) -> Self {
         match (self.tag, other.tag) {
-            (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() + other.as_i64()),
-            (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() + other.as_u64()),
-            (Self::TAG_FLOAT, Self::TAG_FLOAT) => Self::new_f64(self.as_f64() + other.as_f64()),
+            (VMTag::Int64, VMTag::Int64) => Self::new_i64(self.as_i64() + other.as_i64()),
+            (VMTag::UInt64, VMTag::UInt64) => Self::new_u64(self.as_u64() + other.as_u64()),
+            (VMTag::Float64, VMTag::Float64) => Self::new_f64(self.as_f64() + other.as_f64()),
             _ => panic!("Illegal addition between {:?} and {:?}", self, other),
         }
     }
@@ -152,10 +232,10 @@ impl Sub for VMData {
 
     fn sub(self, other: Self) -> Self {
         match (self.tag, other.tag) {
-            (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() - other.as_i64()),
-            (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() - other.as_u64()),
-            (Self::TAG_FLOAT, Self::TAG_FLOAT) => Self::new_f64(self.as_f64() - other.as_f64()),
-            _ => panic!("Illegal subtraction between {:?} and {:?}", self, other),
+            (VMTag::Int64, VMTag::Int64) => Self::new_i64(self.as_i64() - other.as_i64()),
+            (VMTag::UInt64, VMTag::UInt64) => Self::new_u64(self.as_u64() - other.as_u64()),
+            (VMTag::Float64, VMTag::Float64) => Self::new_f64(self.as_f64() - other.as_f64()),
+            _ => panic!("Illegal addition between {:?} and {:?}", self, other),
         }
     }
 }
@@ -165,10 +245,10 @@ impl Mul for VMData {
 
     fn mul(self, other: Self) -> Self {
         match (self.tag, other.tag) {
-            (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() * other.as_i64()),
-            (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() * other.as_u64()),
-            (Self::TAG_FLOAT, Self::TAG_FLOAT) => Self::new_f64(self.as_f64() * other.as_f64()),
-            _ => panic!("Illegal multiplication between {:?} and {:?}", self, other),
+            (VMTag::Int64, VMTag::Int64) => Self::new_i64(self.as_i64() * other.as_i64()),
+            (VMTag::UInt64, VMTag::UInt64) => Self::new_u64(self.as_u64() * other.as_u64()),
+            (VMTag::Float64, VMTag::Float64) => Self::new_f64(self.as_f64() * other.as_f64()),
+            _ => panic!("Illegal addition between {:?} and {:?}", self, other),
         }
     }
 }
@@ -178,10 +258,10 @@ impl Div for VMData {
 
     fn div(self, other: Self) -> Self {
         match (self.tag, other.tag) {
-            (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() / other.as_i64()),
-            (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() / other.as_u64()),
-            (Self::TAG_FLOAT, Self::TAG_FLOAT) => Self::new_f64(self.as_f64() / other.as_f64()),
-            _ => panic!("Illegal division between {:?} and {:?}", self, other),
+            (VMTag::Int64, VMTag::Int64) => Self::new_i64(self.as_i64() / other.as_i64()),
+            (VMTag::UInt64, VMTag::UInt64) => Self::new_u64(self.as_u64() / other.as_u64()),
+            (VMTag::Float64, VMTag::Float64) => Self::new_f64(self.as_f64() / other.as_f64()),
+            _ => panic!("Illegal addition between {:?} and {:?}", self, other),
         }
     }
 }
@@ -191,9 +271,10 @@ impl Rem for VMData {
 
     fn rem(self, other: Self) -> Self {
         match (self.tag, other.tag) {
-            (Self::TAG_I64, Self::TAG_I64) => Self::new_i64(self.as_i64() % other.as_i64()),
-            (Self::TAG_U64, Self::TAG_U64) => Self::new_u64(self.as_u64() % other.as_u64()),
-            _ => panic!("Illegal remainder between {:?} and {:?}", self, other),
+            (VMTag::Int64, VMTag::Int64) => Self::new_i64(self.as_i64() % other.as_i64()),
+            (VMTag::UInt64, VMTag::UInt64) => Self::new_u64(self.as_u64() % other.as_u64()),
+            (VMTag::Float64, VMTag::Float64) => Self::new_f64(self.as_f64() % other.as_f64()),
+            _ => panic!("Illegal addition between {:?} and {:?}", self, other),
         }
     }
 }
@@ -204,14 +285,14 @@ impl Display for VMData {
             f,
             "{}",
             match self.tag {
-                Self::TAG_UNIT => "()".to_string(),
-                Self::TAG_I64 => self.as_i64().to_string(),
-                Self::TAG_U64 => self.as_u64().to_string(),
-                Self::TAG_FLOAT => self.as_f64().to_string(),
-                Self::TAG_BOOL => self.as_bool().to_string(),
-                Self::TAG_CHAR => format!("'{}'", self.as_char()),
-                Self::TAG_STACK_PTR => self.as_stack_ptr().to_string(),
-                Self::TAG_FN_PTR => self.as_fn_ptr().to_string(),
+                VMTag::Unit => "()".to_string(),
+                VMTag::Int64 => self.as_i64().to_string(),
+                VMTag::UInt64 => self.as_u64().to_string(),
+                VMTag::Float64 => self.as_f64().to_string(),
+                VMTag::Bool => self.as_bool().to_string(),
+                VMTag::Char => format!("'{}'", self.as_char()),
+                VMTag::StackPtr => format!("&[{}, {}]", self.as_stack_ptr()[0], self.as_stack_ptr()[1]),
+                VMTag::FnPtr => self.as_fn_ptr().to_string(),
                 _ if self.is_object() => self.as_object().to_string(),
                 _ => "reserved".to_string(),
             }
@@ -219,24 +300,12 @@ impl Display for VMData {
     }
 }
 
-impl std::fmt::Debug for VMData {
+impl fmt::Debug for VMData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "VMData {{ tag: {}({}), data: {}}}",
+            "VMData {{ tag: {}, data: {}}}",
             self.tag,
-            match self.tag {
-                Self::TAG_BOOL => "bool",
-                Self::TAG_UNIT => "unit",
-                Self::TAG_FLOAT => "f64",
-                Self::TAG_I64 => "i64",
-                Self::TAG_U64 => "u64",
-                Self::TAG_CHAR => "char",
-                Self::TAG_STACK_PTR => "&",
-                Self::TAG_FN_PTR => "fn",
-                _ if self.is_object() => "obj",
-                _ => "res",
-            },
             format!("{}", self)
         )
     }
@@ -253,19 +322,22 @@ macro_rules! enum_variant_function {
         #[inline(always)]
         #[must_use]
         pub fn $is(self) -> bool {
-            self.tag == Self::$variant
+            self.tag == VMTag::$variant
         }
     };
 }
 
 impl VMData {
-    enum_variant_function!(as_i64, is_i64, TAG_I64, i64);
-    enum_variant_function!(as_f64, is_f64, TAG_FLOAT, f64);
-    enum_variant_function!(as_u64, is_u64, TAG_U64, u64);
-    enum_variant_function!(as_bool, is_bool, TAG_BOOL, bool);
-    enum_variant_function!(as_char, is_char, TAG_CHAR, char);
-    enum_variant_function!(as_stack_ptr, is_stack_ptr, TAG_STACK_PTR, usize);
-    enum_variant_function!(as_fn_ptr, is_fn_ptr, TAG_FN_PTR, usize);
+    enum_variant_function!(as_i64, is_i64, Int64, i64);
+    enum_variant_function!(as_i32, is_i32, Int32, i32);
+    enum_variant_function!(as_f64, is_f64, Float64, f64);
+    enum_variant_function!(as_f32, is_f32, Float32, f32);
+    enum_variant_function!(as_u64, is_u64, UInt64, u64);
+    enum_variant_function!(as_u32, is_u32, UInt32, u32);
+    enum_variant_function!(as_bool, is_bool, Bool, bool);
+    enum_variant_function!(as_char, is_char, Char, char);
+    enum_variant_function!(as_stack_ptr, is_stack_ptr, StackPtr, [u32; 2]);
+    enum_variant_function!(as_fn_ptr, is_fn_ptr, FnPtr, usize);
     //Clippy doesn't like #[must_use] on () return types
     #[inline(always)]
     pub fn as_unit(self) {
@@ -276,7 +348,7 @@ impl VMData {
     #[inline(always)]
     #[must_use]
     pub fn is_unit(self) -> bool {
-        self.tag == Self::TAG_UNIT
+        self.tag == VMTag::Unit
     }
 
     #[inline(always)]
@@ -288,13 +360,13 @@ impl VMData {
     #[inline(always)]
     #[must_use]
     pub fn is_none(self) -> bool {
-        self.tag == Self::TAG_NONE
+        self.tag == VMTag::Null
     }
 
     #[inline(always)]
     #[must_use]
     pub fn is_object(self) -> bool {
-        self.tag == Self::TAG_OBJECT || self.tag == Self::TAG_LIST || self.tag == Self::TAG_STR
+        self.tag == VMTag::Object || self.tag == VMTag::List || self.tag == VMTag::Str
     }
 
     #[inline(always)]

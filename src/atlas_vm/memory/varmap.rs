@@ -1,5 +1,5 @@
 use crate::atlas_vm::memory::object_map::Memory;
-use crate::atlas_vm::memory::vm_data::VMData;
+use crate::atlas_vm::memory::vm_data::{VMData, VMTag};
 use crate::atlas_vm::RuntimeResult;
 use std::collections::HashMap;
 
@@ -26,7 +26,7 @@ impl<'run> VarMap<'run> {
         let old_data = self.var_map.insert(key, value);
         if let Some(old_data) = old_data {
             match old_data.tag {
-                VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                VMTag::Str | VMTag::List | VMTag::Object => {
                     mem.rc_dec(old_data.as_object())?;
                 }
                 _ => {}
@@ -45,7 +45,7 @@ impl<'run> VarMap<'run> {
         self.var_map.retain(|key, value| {
             if key.scope == scope {
                 match value.tag {
-                    VMData::TAG_STR | VMData::TAG_LIST | VMData::TAG_OBJECT => {
+                    VMTag::Str | VMTag::List | VMTag::Object => {
                         to_remove.push(value.as_object());
                     }
                     _ => {}

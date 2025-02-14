@@ -435,88 +435,17 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                 self.generate_bytecode_expr(&b.lhs, bytecode, src.clone())?;
                 self.generate_bytecode_expr(&b.rhs, bytecode, src)?;
                 match b.op {
-                    atlas_hir::expr::HirBinaryOp::Add => match b.ty {
-                        HirTy::Int64(_) => {
-                            bytecode.push(Instruction::IAdd);
-                        }
-                        HirTy::Float64(_) => {
-                            bytecode.push(Instruction::FAdd);
-                        }
-                        HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::UIAdd);
-                        }
-                        _ => unimplemented!("Unsupported type for now"),
-                    },
-                    atlas_hir::expr::HirBinaryOp::Sub => match b.ty {
-                        HirTy::Int64(_) => {
-                            bytecode.push(Instruction::ISub);
-                        }
-                        HirTy::Float64(_) => {
-                            bytecode.push(Instruction::FSub);
-                        }
-                        HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::UISub);
-                        }
-                        _ => unimplemented!("Unsupported type for now"),
-                    },
-                    atlas_hir::expr::HirBinaryOp::Mul => match b.ty {
-                        HirTy::Int64(_) => {
-                            bytecode.push(Instruction::IMul);
-                        }
-                        HirTy::Float64(_) => {
-                            bytecode.push(Instruction::FMul);
-                        }
-                        HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::UIMul);
-                        }
-                        _ => unimplemented!("Unsupported type for now"),
-                    },
-                    atlas_hir::expr::HirBinaryOp::Div => match b.ty {
-                        HirTy::Int64(_) => {
-                            bytecode.push(Instruction::IDiv);
-                        }
-                        HirTy::Float64(_) => {
-                            bytecode.push(Instruction::FDiv);
-                        }
-                        HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::UIDiv);
-                        }
-                        HirTy::Char(_) => {
-                            bytecode.push(Instruction::IDiv);
-                        }
-                        _ => unimplemented!("Unsupported type for now"),
-                    },
-                    atlas_hir::expr::HirBinaryOp::Mod => match b.ty {
-                        HirTy::Int64(_) => {
-                            bytecode.push(Instruction::IMod);
-                        }
-                        HirTy::Float64(_) => {
-                            //Should be a proper error
-                            unimplemented!("Modulo not supported for float");
-                        }
-                        HirTy::UInt64(_) => {
-                            bytecode.push(Instruction::IMod);
-                        }
-                        _ => unimplemented!("Unsupported type for now"),
-                    },
-                    atlas_hir::expr::HirBinaryOp::Eq => {
-                        bytecode.push(Instruction::Eq);
-                    }
-                    atlas_hir::expr::HirBinaryOp::Neq => {
-                        bytecode.push(Instruction::Neq);
-                    }
-                    atlas_hir::expr::HirBinaryOp::Gt => {
-                        bytecode.push(Instruction::Gt);
-                    }
-                    atlas_hir::expr::HirBinaryOp::Gte => {
-                        bytecode.push(Instruction::Gte);
-                    }
-                    atlas_hir::expr::HirBinaryOp::Lt => {
-                        bytecode.push(Instruction::Lt);
-                    }
-                    atlas_hir::expr::HirBinaryOp::Lte => {
-                        bytecode.push(Instruction::Lte);
-                    }
+                    atlas_hir::expr::HirBinaryOp::Add => bytecode.push(Instruction::Add),
+                    atlas_hir::expr::HirBinaryOp::Sub => bytecode.push(Instruction::Sub),
+                    atlas_hir::expr::HirBinaryOp::Mul => bytecode.push(Instruction::Mul),
+                    atlas_hir::expr::HirBinaryOp::Div => bytecode.push(Instruction::Div),
+                    atlas_hir::expr::HirBinaryOp::Mod => bytecode.push(Instruction::Mod),
+                    atlas_hir::expr::HirBinaryOp::Eq => bytecode.push(Instruction::Eq),
+                    atlas_hir::expr::HirBinaryOp::Neq => bytecode.push(Instruction::Neq),
+                    atlas_hir::expr::HirBinaryOp::Gt => bytecode.push(Instruction::Gt),
+                    atlas_hir::expr::HirBinaryOp::Gte => bytecode.push(Instruction::Gte),
+                    atlas_hir::expr::HirBinaryOp::Lt => bytecode.push(Instruction::Lt),
+                    atlas_hir::expr::HirBinaryOp::Lte => bytecode.push(Instruction::Lte),
                     _ => unimplemented!("Unsupported binary operator for now"),
                 }
             }
@@ -530,19 +459,13 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                             match u.expr.ty() {
                                 HirTy::Int64(_) => {
                                     bytecode.push(Instruction::PushInt(0));
-                                    bytecode.push(Instruction::Swap);
-                                    bytecode.push(Instruction::ISub);
                                 }
                                 HirTy::Float64(_) => {
                                     bytecode.push(Instruction::PushFloat(0.0));
-                                    bytecode.push(Instruction::Swap);
-                                    bytecode.push(Instruction::FSub);
                                 }
                                 // This won't really work, because you're subtracting a 32-bit char from a 64-bit integer
                                 HirTy::Char(_) => {
                                     bytecode.push(Instruction::PushInt(0));
-                                    bytecode.push(Instruction::Swap);
-                                    bytecode.push(Instruction::ISub);
                                 }
                                 _ => {
                                     return Err(atlas_hir::error::HirError::UnsupportedExpr(
@@ -557,13 +480,15 @@ impl<'hir, 'gen> CodeGenUnit<'hir, 'gen> {
                                     ))
                                 }
                             }
+                            bytecode.push(Instruction::Swap);
+                            bytecode.push(Instruction::Sub);
                         }
                         HirUnaryOp::Not => {
                             if let HirTy::Boolean(_) = u.expr.ty() {
                                 bytecode.push(Instruction::PushBool(false));
                                 bytecode.push(Instruction::Eq);
                             } else {
-                                return Err(atlas_hir::error::HirError::UnsupportedExpr(
+                                return Err(HirError::UnsupportedExpr(
                                     UnsupportedExpr {
                                         span: SourceSpan::new(
                                             SourceOffset::from(expr.span().start),

@@ -87,25 +87,11 @@ pub enum Instruction<'run> {
 
     CastTo(Type),
     //Math
-    IAdd,
-    FAdd,
-    UIAdd,
-
-    ISub,
-    FSub,
-    UISub,
-
-    IMul,
-    FMul,
-    UIMul,
-
-    IDiv,
-    FDiv,
-    UIDiv,
-
-    IMod,
-    FMod,
-    UIMod,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
 
     Eq,
     Neq,
