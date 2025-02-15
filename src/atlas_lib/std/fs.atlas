@@ -3,6 +3,7 @@ extern read_file(path: str) -> str
 extern write_file(path: str, content: str) -> unit
 extern remove_file(path: str) -> unit
 extern file_exists(path: str) -> bool
+extern close_file(path: str) -> unit
 
 public class File {
     private:
@@ -15,7 +16,11 @@ public class File {
             self.path = path;
         }
         // destructor
-        ~File() {}
+        ~File() {
+            ///Following the RAII pattern,
+            /// we close the file when it goes out of scope
+            self.close();
+        }
         func read(path: str) -> File {
             let file: File = new File();
             file.path = path;
@@ -27,7 +32,7 @@ public class File {
             return;
         }
         func close(self) {
-            write_file(self.path, self.content);
+            close_file(self.path);
             return;
         }
         func write(self, content: str) {

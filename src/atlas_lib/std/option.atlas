@@ -1,3 +1,5 @@
+package std::option;
+
 public struct Option<T> {
     private:
         data: T?;

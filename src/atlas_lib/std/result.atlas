@@ -1,3 +1,5 @@
+package std::result;
+
 public struct Result<T, E> {
     private:
         data: T?;
