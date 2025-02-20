@@ -19,7 +19,7 @@ use ast::{
 };
 
 use crate::atlas_c::atlas_frontend::lexer::{token::{Token, TokenKind}, Spanned, TokenVec};
-use crate::atlas_c::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstConstructor, AstDeleteObjExpr, AstDestructor, AstGeneric, AstGenericConstraint, AstListLiteral, AstListType, AstMethod, AstMethodModifier, AstNewArrayExpr, AstNewObjExpr, AstNoneLiteral, AstNullType, AstNullableType, AstOperatorOverload, AstSelfLiteral, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
+use crate::atlas_c::atlas_frontend::parser::ast::{AstCastingExpr, AstCharLiteral, AstCharType, AstClass, AstConstructor, AstDeleteObjExpr, AstDestructor, AstGeneric, AstGenericConstraint, AstListLiteral, AstListType, AstMethod, AstMethodModifier, AstNewArrayExpr, AstNewObjExpr, AstNoneLiteral, AstNullType, AstNullableType, AstOperatorOverload, AstReadOnlyType, AstSelfLiteral, AstSelfType, AstStaticAccessExpr, AstUnitLiteral, AstVisibility};
 use arena::AstArena;
 use logos::Span;
 
@@ -1123,8 +1123,17 @@ impl<'ast> Parser<'ast> {
             }
         }
         self.expect(TokenKind::RParen)?;
-        let _ = self.expect(TokenKind::RArrow)?;
-        let ret_ty = self.parse_type()?;
+        let ret_ty;
+        if self.current().kind() == TokenKind::RArrow {
+            let _ = self.expect(TokenKind::RArrow)?;
+            ret_ty = self.parse_type()?;
+
+        } else {
+            ret_ty = AstType::Unit(AstUnitType {
+                span: self.current().span(),
+            })
+        }
+        self.expect(TokenKind::Semicolon)?;
         let node = AstExternFunction {
             span: Span::union_span(&name.span, &ret_ty.span()),
             name: self.arena.alloc(name),
@@ -1323,6 +1332,14 @@ impl<'ast> Parser<'ast> {
         let token = self.current();
         let start = self.current().span();
         let ty = match token.kind() {
+            TokenKind::ReadOnly => {
+                let _ = self.advance();
+                let inner = self.parse_type()?;
+                AstType::ReadOnly(AstReadOnlyType{
+                    span: Span::union_span(&start, &self.current().span()),
+                    inner: self.arena.alloc(inner),
+                })
+            }
             TokenKind::Int64Ty => {
                 let _ = self.advance();
                 AstType::Integer(AstIntegerType {

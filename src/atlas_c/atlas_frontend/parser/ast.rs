@@ -591,6 +591,7 @@ pub enum AstType<'ast> {
     Pointer(AstPointerType<'ast>),
     Function(AstFunctionType<'ast>),
     Nullable(AstNullableType<'ast>),
+    ReadOnly(AstReadOnlyType<'ast>),
     Null(AstNullType),
     List(AstListType<'ast>),
     Generic(AstGenericType<'ast>),
@@ -611,6 +612,7 @@ impl AstType<'_> {
             AstType::Pointer(t) => t.span.clone(),
             AstType::Function(t) => t.span.clone(),
             AstType::Nullable(t) => t.span.clone(),
+            AstType::ReadOnly(r) => r.span.clone(),
             AstType::Null(t) => t.span.clone(),
             AstType::List(t) => t.span.clone(),
             AstType::Generic(t) => t.span.clone(),
@@ -619,12 +621,19 @@ impl AstType<'_> {
 }
 
 #[derive(Debug, Clone, Serialize)]
+/// A readonly type in atlas has the form of `readonly T`
+pub struct AstReadOnlyType<'ast> {
+    pub span: Span,
+    pub inner: &'ast AstType<'ast>
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct AstNullType {
     pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize)]
-/// A nullable type in atlas as the form of `T?`
+/// A nullable type in atlas has the form of `T?`
 pub struct AstNullableType<'ast> {
     pub span: Span,
     pub inner: &'ast AstType<'ast>,

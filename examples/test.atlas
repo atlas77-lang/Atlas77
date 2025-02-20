@@ -1,8 +1,21 @@
 import "std/io"
 
+public class Bar {
+    public:
+        baz: int64;
+}
+
+public class Foo {
+    public:
+        owned: Bar;
+        borrowed: readonly Bar;
+        mut_borrowed: mut Bar;
+}
+
+
 public class Test {
     public:
-        data: int64;
+        data: readonly int64;
     public:
         Test(data: int64) {
             self.data = data;
@@ -21,7 +34,7 @@ public concept Builder<T, U> {
     T(arg: U) -> T;
 }
 
-class Builder: impl Builder<T, U> {
+class Builder impl Builder<T, U> {
     public:
         func build<T, U>(t: T, arg: U) -> T {
             return new T(arg);
