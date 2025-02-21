@@ -1052,6 +1052,10 @@ where
                 let ty = self.visit_ty(n.inner)?;
                 self.arena.types().get_nullable_ty(ty)
             }
+            AstType::ReadOnly(r) => {
+                let ty = self.visit_ty(r.inner)?;
+                self.arena.types().get_readonly_ty(ty)
+            }
             //The self ty is replaced during the type checking phase
             AstType::SelfTy(_) => self.arena.types().get_uninitialized_ty(),
             _ => return Err(HirError::UnsupportedExpr(UnsupportedExpr {

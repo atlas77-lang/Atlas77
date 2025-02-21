@@ -1332,7 +1332,7 @@ impl<'ast> Parser<'ast> {
         let token = self.current();
         let start = self.current().span();
         let ty = match token.kind() {
-            TokenKind::ReadOnly => {
+            TokenKind::KwConst => {
                 let _ = self.advance();
                 let inner = self.parse_type()?;
                 AstType::ReadOnly(AstReadOnlyType{

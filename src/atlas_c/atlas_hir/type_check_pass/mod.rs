@@ -999,6 +999,12 @@ impl<'hir> TypeChecker<'hir> {
                 eprintln!("ty1: {:?} ty2: {:?}", n1.inner, n2.inner);
                 self.is_equivalent_ty(n1.inner, ty1_span, n2.inner, ty2_span)
             }
+            (HirTy::ReadOnly(r1), _) => {
+                self.is_equivalent_ty(r1.inner, ty1_span, ty2, ty2_span)
+            }
+            (_, HirTy::ReadOnly(r2)) => {
+                self.is_equivalent_ty(ty1, ty1_span, r2.inner, ty2_span)
+            }
             (HirTy::Nullable(_), HirTy::Null(_)) |
             (HirTy::Null(_), HirTy::Nullable(_)) => {
                 Ok(())

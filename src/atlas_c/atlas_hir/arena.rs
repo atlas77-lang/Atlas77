@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use super::ty::{HirBooleanTy, HirCharTy, HirFloatTy, HirIntegerTy, HirListTy, HirNamedTy, HirNone, HirNullableTy, HirStringTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirUnsignedIntTy};
+use super::ty::{HirBooleanTy, HirCharTy, HirFloatTy, HirIntegerTy, HirListTy, HirNamedTy, HirNullTy, HirNullableTy, HirReadOnlyTy, HirStringTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirUnsignedIntTy};
 use bumpalo::Bump;
 use logos::Span;
 
@@ -92,7 +92,7 @@ impl<'arena> TypeArena<'arena> {
         self.intern
             .borrow_mut()
             .entry(id)
-            .or_insert_with(|| self.allocator.alloc(HirTy::Null(HirNone {})))
+            .or_insert_with(|| self.allocator.alloc(HirTy::Null(HirNullTy {})))
     }
 
     pub fn get_integer64_ty(&'arena self) -> &'arena HirTy<'arena> {
@@ -149,6 +149,14 @@ impl<'arena> TypeArena<'arena> {
             .borrow_mut()
             .entry(id)
             .or_insert_with(|| self.allocator.alloc(HirTy::Nullable(HirNullableTy { inner })))
+    }
+
+    pub fn get_readonly_ty(&'arena self, inner: &'arena HirTy<'arena>) -> &'arena HirTy<'arena> {
+        let id = HirTyId::compute_readonly_ty_id(&HirTyId::from(inner));
+        self.intern
+            .borrow_mut()
+            .entry(id)
+            .or_insert_with(|| self.allocator.alloc(HirTy::ReadOnly(HirReadOnlyTy { inner })))
     }
 
     pub fn get_unit_ty(&'arena self) -> &'arena HirTy<'arena> {

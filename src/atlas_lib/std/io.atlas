@@ -1,6 +1,6 @@
 //All of the functions in comments are not implemented yet
 
-public extern println<T>(s: readonly T);
-public extern print<T>(s: readonly T);
+public extern println<T>(s: const T);
+public extern print<T>(s: const T);
 public extern input() -> str;
-public extern panic<T>(s: readonly T);
+public extern panic<T>(s: const T);

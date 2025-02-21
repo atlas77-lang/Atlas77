@@ -241,8 +241,6 @@ pub enum TokenKind {
     SelfTy,
     #[token("str")]
     StrTy,
-    #[token("readonly")]
-    ReadOnly,
     EoI,
 }
 
